@@ -24,6 +24,7 @@ import { issueTypes } from '@/data/clientMockData';
 import SapAreaPicker from '@/components/ticket/SapAreaPicker';
 import { useUsableAgreements } from '@/hooks/useAgreements';
 import { attachTicket } from '@/lib/agreements/api';
+import { agreementLabel } from '@/lib/agreements/model';
 import { Handshake } from 'lucide-react';
 import SolutionSuggestions from '@/components/ticket/SolutionSuggestions';
 import SapNotesField from '@/components/ticket/SapNotesField';
@@ -711,7 +712,7 @@ export default function NewRequestPage() {
     if (useAgreementSwitch && matchingAgreement) {
       try {
         const r = await attachTicket(ticketId, matchingAgreement.id);
-        if (r.linked) toast.success(t('agreements.newRequest.linked', { name: matchingAgreement.name }));
+        if (r.linked) toast.success(t('agreements.newRequest.linked', { name: agreementLabel(matchingAgreement) }));
       } catch { /* the request continues in the normal flow */ }
     }
     // the consultants who were alerted by the database also get an e-mail (best effort, in the background)
@@ -988,7 +989,7 @@ export default function NewRequestPage() {
               <label className="mt-4 flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
                 <Switch checked={useAgreementSwitch} onCheckedChange={setUseAgreementSwitch} aria-describedby="sa-use-hint" />
                 <span><span className="flex items-center gap-1 font-medium"><Handshake className="h-4 w-4 text-primary" aria-hidden /> {t('agreements.newRequest.use')}</span>
-                  <span id="sa-use-hint" className="block text-xs text-muted-foreground">{t('agreements.newRequest.hint', { name: matchingAgreement.name })}</span></span>
+                  <span id="sa-use-hint" className="block text-xs text-muted-foreground">{t('agreements.newRequest.hint', { name: agreementLabel(matchingAgreement) })}</span></span>
               </label>
             )}
           </CardContent>

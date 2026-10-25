@@ -41,7 +41,8 @@ export default function AgreementsListPage({ portal }: { portal: 'client' | 'con
       {rows.map((r) => (
         <Link key={r.id} to={`/${portal}/agreements/${r.id}`} className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <Card className="h-full rounded-2xl transition-shadow hover:shadow-md"><CardContent className="space-y-2 p-4">
-            <div className="flex items-start justify-between gap-2"><p className="font-semibold">{r.name}</p><AgreementStatusBadge status={r.status} /></div>
+            <div className="flex items-start justify-between gap-2"><div><p className="font-semibold">{r.name}</p>{r.reference && <p className="font-mono text-xs text-muted-foreground">{r.reference}</p>}</div><AgreementStatusBadge status={r.status} /></div>
+            {r.crew && r.crew.members > 0 && ['agreed', 'active', 'renewal_due', 'suspended'].includes(r.status) && <p className="text-xs text-muted-foreground">{t('agreements.crew.listLine', { confirmed: r.crew.confirmed, total: r.crew.members })}</p>}
             <p className="text-sm text-muted-foreground">{r.modules.join(', ') || '—'} · {t(`agreements.model.${r.model}`, { defaultValue: '—' })}</p>
             <p className="text-xs text-muted-foreground">{fmtDate(r.start_date, lang)} – {r.end_date ? fmtDate(r.end_date, lang) : t('agreements.f.openEnded')}</p>
             <div className="flex flex-wrap gap-1.5"><Badge variant="outline">{t(`agreements.role.${r.role}`, { defaultValue: r.role })}</Badge>
@@ -72,7 +73,7 @@ export default function AgreementsListPage({ portal }: { portal: 'client' | 'con
       {head}
       {data.replacements.map((r) => (
         <Card key={r.id} className="rounded-2xl border-warning/50"><CardContent className="flex flex-wrap items-center justify-between gap-2 p-4 text-sm">
-          <p>{t('agreements.replacementOffer', { name: r.name })}</p>
+          <p>{t('agreements.replacementOffer', { name: r.reference ? `${r.name} (${r.reference})` : r.name })}</p>
           <div className="flex gap-2"><Button size="sm" onClick={() => api.replacementAccept(r.id, true).then(refresh)}>{t('agreements.accept')}</Button>
             <Button size="sm" variant="ghost" onClick={() => api.replacementAccept(r.id, false).then(refresh)}>{t('agreements.decline')}</Button></div>
         </CardContent></Card>
@@ -86,7 +87,7 @@ export default function AgreementsListPage({ portal }: { portal: 'client' | 'con
             <div className="grid gap-3 md:grid-cols-2">
               {opps.data.map((o) => (
                 <Card key={o.id} className="rounded-2xl"><CardContent className="space-y-2 p-4">
-                  <div className="flex items-start justify-between gap-2"><Link to={`/consultant/agreements/${o.id}`} className="font-semibold hover:underline">{o.name}</Link>
+                  <div className="flex items-start justify-between gap-2"><Link to={`/consultant/agreements/${o.id}`} className="font-semibold hover:underline">{o.name}{o.reference ? <span className="ms-1 font-mono text-xs font-normal text-muted-foreground">{o.reference}</span> : null}</Link>
                     {o.invited && <Badge>{t('agreements.invited')}</Badge>}</div>
                   <p className="text-sm text-muted-foreground">{o.modules.join(', ')} · {t(`agreements.model.${o.model}`)}</p>
                   <p className="text-xs text-muted-foreground">{fmtDate(o.term?.start_date, lang)} – {o.term?.end_date ? fmtDate(o.term.end_date, lang) : t('agreements.f.openEnded')}

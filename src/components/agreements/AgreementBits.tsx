@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, Circle, FileSignature, Handshake, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Circle, Clock, FileSignature, Handshake, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CHIP, ICON } from '@/components/tracking/trackingStyles';
 import { MAIN_STEPS, STATUS_COLOR, stepIndex, type SaStatus, type SaTerms } from '@/lib/agreements/model';
@@ -26,19 +26,34 @@ export function AgreementStatusBadge({ status, className }: { status: SaStatus; 
   );
 }
 
-/** "Agreement: <name>" chip for one ticket header (nothing when the ticket has no agreement). */
+/**
+ * Ticket header: "Agreement: <name> · SA-…" chip plus which SLA the ticket runs on — "Agreement SLA" once the crew is
+ * confirmed and the ticket carries the agreement's SLA snapshot, otherwise "Platform SLA" (normal flow).
+ */
 export function AgreementTicketTag({ ticketId, portal }: { ticketId: string; portal: 'client' | 'consultant' | 'admin' }) {
+  const { t } = useTranslation();
   const tags = useAgreementTags([ticketId]);
   const tag = tags.get(ticketId);
   if (!tag) return null;
-  return <AgreementTagChip name={tag.name} to={portal === 'admin' ? '/admin/agreements' : `/${portal}/agreements/${tag.agreement_id}`} />;
+  const agreementSla = !!tag.sla_applied;
+  return (
+    <>
+      <AgreementTagChip name={tag.name} reference={tag.reference} to={portal === 'admin' ? '/admin/agreements' : `/${portal}/agreements/${tag.agreement_id}`} />
+      <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium', agreementSla ? CHIP.success : CHIP.muted)}
+        title={agreementSla ? t('agreements.slaChip.agreementHint', { name: tag.sla_name ?? '' }) : t('agreements.slaChip.platformHint')}>
+        {agreementSla ? <ShieldCheck className={cn('h-3 w-3', ICON.success)} aria-hidden /> : <Clock className="h-3 w-3 text-muted-foreground" aria-hidden />}
+        {agreementSla ? t('agreements.slaChip.agreement') : t('agreements.slaChip.platform')}
+      </span>
+    </>
+  );
 }
 
-export function AgreementTagChip({ name, to }: { name: string; to?: string }) {
+export function AgreementTagChip({ name, reference, to }: { name: string; reference?: string | null; to?: string }) {
   const { t } = useTranslation();
+  const label = reference ? `${name} · ${reference}` : name;
   const body = (
-    <span className={cn('inline-flex max-w-[16rem] items-center gap-1 truncate rounded-full border px-2 py-0.5 text-[11px] font-medium', CHIP.primary)} title={name}>
-      <Handshake className="h-3 w-3 shrink-0 text-primary" aria-hidden /> <span className="truncate">{t('agreements.tag', { name })}</span>
+    <span className={cn('inline-flex max-w-[20rem] items-center gap-1 truncate rounded-full border px-2 py-0.5 text-[11px] font-medium', CHIP.primary)} title={label}>
+      <Handshake className="h-3 w-3 shrink-0 text-primary" aria-hidden /> <span className="truncate">{t('agreements.tag', { name: label })}</span>
     </span>
   );
   return to ? <Link to={to} className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{body}</Link> : body;
@@ -121,6 +136,7 @@ export function TermsSummary({ terms, showRate = true }: { terms: Partial<SaTerm
     if (terms.model === 'hours_bank') rows.push([t('agreements.f.overage'), ov ? money(ov, rate.currency, lang) : t('agreements.f.overageSame')]);
   }
   rows.push([t('agreements.f.sla'), terms.sla?.summary || t('agreements.f.slaDefault')]);
+  if (terms.reporting) rows.push([t('agreements.f.reporting'), t(`agreements.reporting.${terms.reporting}`) + (terms.statement_email ? ` · ${t('agreements.f.statementEmailOn', { count: terms.statement_recipients?.length ?? 0 })}` : '')]);
   if (terms.nda_required !== undefined) rows.push([t('agreements.f.nda'), terms.nda_required ? t('agreements.yes') : t('agreements.no')]);
   if (terms.term) rows.push([t('agreements.f.autoRenew'), terms.term.auto_renew ? t('agreements.f.autoRenewOn', { count: terms.term.renew_months }) : t('agreements.no')]);
   return (

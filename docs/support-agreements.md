@@ -1,8 +1,10 @@
 # Support agreements (long-term support commitments)
 
-Status: built, switched OFF. Database file `docs/sql/support-agreements.sql` (+ `support-agreements.test.sql`, 26 rolled-back
-checks, all passing on a private copy together with `sla-policies.sql`) is prepared and NOT applied. Apply `sla-policies.sql`
-first (it creates the SLA hook), then `support-agreements.sql`, then switch on in Admin > System > Support agreements.
+Status: built, switched OFF. `docs/sql/sla-policies.sql` is LIVE (Oct 25, switch OFF). `docs/sql/support-agreements.sql`
+(+ `support-agreements.test.sql`, 36 rolled-back checks, all passing on a private copy rebuilt from the migration history,
+together with the 30 SLA checks; the file loads twice cleanly) is prepared and NOT applied - the owner reviews it first.
+At apply time also create the private storage bucket `agreement-documents` (platform storage tool, not SQL), then switch on
+in Admin > System > Support agreements.
 
 ## 1. Inventory (what exists today and what is reused)
 
@@ -35,6 +37,18 @@ first (it creates the SLA hook), then `support-agreements.sql`, then switch on i
   settings, fee examples, legal clause list, test e-mail). Ticket header and list tag "Agreement: name". New-request switch
   "Use my support agreement". Agreement summary PDF (shared BRD PDF writer, EN/AR). Menus hidden while the switch is off.
 
+### Owner requirements of Oct 25 (built)
+
+| Requirement | Where |
+| --- | --- |
+| Name + reference "SA-2026-000012" everywhere | `sa_guard_agreement` (reference on insert, never changes; name only in Draft), unique index per company; lists, ticket tag, notices (reference appended to every title), e-mail badge, summary/SLA/statement PDFs, invoice text, ticket rate note, assignment request text |
+| Per client company, several agreements, own SLA snapshot | `sa_resolve_sla`: one of the company's ACTIVE policies, an active template or the platform default, always its active version; body + hash copied into the terms (part of the accepted hash) |
+| Client crew | terms.team (planned before, kept when the lead is selected) -> `sa_members` with role (lead/functional/technical/basis/backup), hours/week, working hours/time zone, backup cover, required; `sa_invite_member` / `sa_update_member` / `sa_remove_member`; members accept place + SLA (`sa_member_respond`, append-only `sa_member_acceptances`) |
+| Nobody works before confirmation | `sa_confirmation` checklist = terms accepted by client + lead, every required member accepted place + SLA, NDA both-signed per working member, admin review (pilot), start date; `sa_try_activate` uses it |
+| SLA only after confirmation | `sa_ticket_sla` returns the agreement SLA only while Active/Renewal due; ticket chip "Agreement SLA" / "Platform SLA" (`sa_ticket_tags.sla_applied`); the lead's per-ticket SLA acceptance is recorded automatically when the ticket carries exactly the accepted version |
+| Agreement documents | generated: summary PDF (version, both acceptances, fingerprint, crew), SLA snapshot PDF, rate records, crew + NDA references, monthly statements PDF, notices; uploads: SOW, scope annex, access plan, escalation matrix, other - PDF/DOCX/XLSX/PNG/JPG/WebP up to 20 MB, private bucket, versions, archive (never deleted), download log; NDA gate as for ticket documents; "no passwords" warning + confirmation + text filter |
+| One settings form | Basics, Term, Rates, Commitment, SLA, Crew, Reporting (statement e-mails to company members only), Escalation contacts (company members only), Documents, Review & accept; progress checklist, validation per section, save draft any time |
+
 ## 3. Settings and defaults (admin)
 
 | Setting | Default |
@@ -52,6 +66,8 @@ first (it creates the SLA hook), then `support-agreements.sql`, then switch on i
 | Maximum notice | 90 days; handover 14 days |
 | Prepayment / expire unused hours without charge | OFF / OFF |
 | Applications per consultant per day | 10 |
+| Crew size (lead included) / contacts per list | 6 / 5 |
+| Document size / documents per agreement | 20 MB / 50 |
 
 ## 4. Fee options for long commitments (owner decision - NOT decided)
 
@@ -67,14 +83,16 @@ Today the agreement fee setting changes month-end agreement statements only; tic
 Applying a lower fee to agreement ticket timesheets too needs a small change in the payment pricing (prepared, commented out
 in the SQL file) - only after the owner decides.
 
-## 5. Open owner decisions
+## 5. Owner decisions
 
-1. Portal fee for long commitments (above).
-2. Minimum term (default 1 month) and maximum notice period.
-3. Who may terminate (today: client or lead consultant, reason required, notice respected; admins can reject first-time agreements).
-4. Liability wording and the clauses below (lawyer).
-5. Prepayment of hours-bank months and expiring unused hours without charge (both OFF).
-6. Out-of-hours multiplier is stored and shown but not applied automatically, because work logs do not record out-of-hours work.
+Decided (Oct 25): termination by client, consultant (notice period) and admin - all with a reason; minimum term 1 month;
+prepayment OFF; out-of-hours multipliers stored and shown, not applied automatically (work logs do not mark out-of-hours
+work); agreement portal fee default = the existing 10 %.
+
+Still open:
+1. A lower portal fee for long commitments (options above) - not decided.
+2. Liability wording and the clauses below (lawyer).
+3. Expiring unused hours without charge (OFF).
 
 Lawyer check list: term and renewal; termination and notice; rate changes (never retroactive); non-circumvention (work stays on
 the platform); IP and confidentiality; liability; freelancer status (independent contractor, no employment); tax
@@ -88,12 +106,16 @@ responsibility; governing law. E-signature gap: acceptance is an in-portal elect
   the agreement SLA; propose a rate change with a past date (refused) and a future date; suspend and resume; end with reason.
 - Lead consultant: see the opportunity, apply (rate outside bounds refused, SLA tick required), accept the client's counter,
   accept terms, see Usage, approve the rate change, write a handover note after termination.
-- Team consultant: accept the team invitation, see the agreement but not change terms.
+- Crew member: get the invitation, open the Crew tab, accept place + SLA (box + typed name), sign the NDA from Team
+  confirmation; see documents only after that; leave the crew with a reason.
+- Client crew/documents: plan two members in the settings form, see the Team confirmation checklist after agreeing,
+  upload a SOW (exe refused, "password:" refused), upload version 2, download and see the download log; an agreement ticket
+  shows "Agreement SLA" only once Active.
 - Applicant (not selected): sees only the request and own application, never other applicants or rates.
 - Unrelated consultant: cannot open the agreement (forbidden) and does not see it in opportunities unless matched.
 - Admin: approve a first-time agreement, see a no-activity alert, change settings (audited), send test e-mail.
 
 ## 7. Arabic strings
 
-All screen texts are under `agreements.*` in `src/i18n/locales/ar.json` (422 keys, same set as English, checked by script);
+All screen texts are under `agreements.*` in `src/i18n/locales/ar.json` (630 keys, same set as English, checked by script);
 e-mail and PDF texts are in `_shared/agreementEmail.ts` and `src/lib/agreements/pdf.ts`; database notices carry both languages.

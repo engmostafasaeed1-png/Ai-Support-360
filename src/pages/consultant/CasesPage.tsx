@@ -177,7 +177,7 @@ export default function CasesPage() {
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
                           {tt.active && <TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} />}
                           {sla.on && <SlaRowChip state={sla.map.get(ticket.id)} atRiskPct={sla.atRisk} />}
-                          {agreementTags.get(ticket.id) && <AgreementTagChip name={agreementTags.get(ticket.id)!.name} />}
+                          {agreementTags.get(ticket.id) && <AgreementTagChip name={agreementTags.get(ticket.id)!.name} reference={agreementTags.get(ticket.id)!.reference} />}
                           <BrdApprovalRowChip row={approvals.get(ticket.id)} />
                         </div>
                       )}

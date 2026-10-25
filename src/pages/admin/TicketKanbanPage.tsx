@@ -90,7 +90,7 @@ export default function TicketKanbanPage() {
                         <p className="text-xs text-muted-foreground mt-2">{ticket.client}</p>
                         {tt.active && <div className="mt-2"><TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} /></div>}
                         {sla.on && <div className="mt-1"><SlaRowChip state={sla.map.get(ticket.id)} atRiskPct={sla.atRisk} /></div>}
-                        {agreementTags.get(ticket.id) && <div className="mt-1"><AgreementTagChip name={agreementTags.get(ticket.id)!.name} /></div>}
+                        {agreementTags.get(ticket.id) && <div className="mt-1"><AgreementTagChip name={agreementTags.get(ticket.id)!.name} reference={agreementTags.get(ticket.id)!.reference} /></div>}
                         <div className="flex gap-1.5 mt-2">
                           <Button
                             size="sm"

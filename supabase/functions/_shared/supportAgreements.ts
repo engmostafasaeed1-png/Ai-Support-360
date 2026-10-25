@@ -408,7 +408,7 @@ const SECTION_OF: Record<string, SettingsSection> = {
   rate_low: 'rates', rate_high: 'rates', multiplier: 'rates', overage_low: 'rates', currency: 'rates',
   crew_size: 'crew', crew_member: 'crew', crew_duplicate: 'crew', crew_role: 'crew', crew_capacity: 'crew', crew_hours: 'crew', crew_backup: 'crew', crew_blocked: 'crew',
   recipients_max: 'reporting', recipient_outside: 'reporting', escalation_max: 'escalation', escalation_outside: 'escalation', escalation_level: 'escalation', escalation_title: 'escalation',
-  sla_invalid: 'sla',
+  sla_invalid: 'sla', name_taken: 'basics',
 };
 export const sectionOfProblem = (p: string): SettingsSection => SECTION_OF[p] ?? 'review';
 
