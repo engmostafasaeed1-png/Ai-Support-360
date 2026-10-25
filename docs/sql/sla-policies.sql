@@ -331,9 +331,11 @@ BEGIN
     IF pg_trigger_depth() > 1 THEN RETURN OLD; END IF;
     RAISE EXCEPTION 'sla_immutable: % rows cannot be deleted', TG_TABLE_NAME USING ERRCODE = '42501';
   END IF;
-  IF TG_TABLE_NAME = 'sla_ticket_snapshots' AND OLD.superseded_at IS NULL AND NEW.superseded_at IS NOT NULL
-     AND (to_jsonb(NEW) - 'superseded_at') = (to_jsonb(OLD) - 'superseded_at') THEN
-    RETURN NEW;
+  IF TG_TABLE_NAME = 'sla_ticket_snapshots' THEN
+    IF (to_jsonb(OLD) ->> 'superseded_at') IS NULL AND (to_jsonb(NEW) ->> 'superseded_at') IS NOT NULL
+       AND (to_jsonb(NEW) - 'superseded_at') = (to_jsonb(OLD) - 'superseded_at') THEN
+      RETURN NEW;
+    END IF;
   END IF;
   RAISE EXCEPTION 'sla_immutable: % rows cannot be changed', TG_TABLE_NAME USING ERRCODE = '42501';
 END $$;
