@@ -193,7 +193,7 @@ export default function NdaSignForm(p: NdaSignFormProps) {
           {preview && <p className="text-[11px] text-muted-foreground">{t('ndaSign.f.maskedPreview', { masked: preview })}</p>}
           <p id="nda-id-consent" className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-            <span>{t('ndaSign.f.consent')} <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline-offset-2 hover:underline">{t('ndaSign.f.privacyLink')}</Link></span>
+            <span>{t('ndaSign.f.consent')} <Link to="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary underline-offset-2 hover:underline">{t('ndaSign.f.privacyLink')}</Link></span>
           </p>
         </div>
       </fieldset>

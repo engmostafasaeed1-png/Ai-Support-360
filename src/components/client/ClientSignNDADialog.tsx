@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNdaSigningSettings } from '@/hooks/useNdaSigning';
+import NdaSignDialog from '@/components/nda/NdaSignDialog';
 
 interface Props {
   open: boolean;
@@ -19,7 +21,21 @@ interface Props {
   onSigned?: () => void;
 }
 
-export default function ClientSignNDADialog({ open, onOpenChange, ndaId, ndaContent, consultantName, defaultName, onSigned }: Props) {
+export default function ClientSignNDADialog(props: Props) {
+  const strict = useNdaSigningSettings();
+  // never offer the old signing form while we still find out whether the stricter one is installed
+  if (strict.isLoading) return null;
+  if (strict.data) {
+    return (
+      <NdaSignDialog open={props.open} onOpenChange={props.onOpenChange} party="client" action="sign" ndaId={props.ndaId}
+        content={props.ndaContent} otherName={props.consultantName} onDone={() => props.onSigned?.()} />
+    );
+  }
+  return <LegacyClientSignNDADialog {...props} />;
+}
+
+/** The countersign dialog used until docs/sql/nda-signature-identity.sql is applied. */
+function LegacyClientSignNDADialog({ open, onOpenChange, ndaId, ndaContent, consultantName, defaultName, onSigned }: Props) {
   const { toast } = useToast();
   const [sigType, setSigType] = useState<'type' | 'draw'>('type');
   const [fullName, setFullName] = useState(defaultName || '');

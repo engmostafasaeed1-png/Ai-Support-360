@@ -109,6 +109,7 @@ const CasesPage = lazyWithRetry(() => import("./pages/consultant/CasesPage.tsx")
 const CaseDetailPage = lazyWithRetry(() => import("./pages/consultant/CaseDetailPage.tsx"), 'CaseDetailPage');
 const BrdPage = lazyWithRetry(() => import("./pages/brd/BrdPage.tsx"), 'BrdPage');
 const RequestsPage = lazyWithRetry(() => import("./pages/consultant/RequestsPage.tsx"), 'RequestsPage');
+const ConsultantNdaAgreementsPage = lazyWithRetry(() => import("./pages/consultant/NdaAgreementsPage.tsx"), 'ConsultantNdaAgreementsPage');
 const ResponsivenessPage = lazyWithRetry(() => import("./pages/consultant/ResponsivenessPage.tsx"), 'ResponsivenessPage');
 const ResponsivenessAdminPage = lazyWithRetry(() => import("./pages/admin/ResponsivenessAdminPage.tsx"), 'ResponsivenessAdminPage');
 const ReferralsAdminPage = lazyWithRetry(() => import("./pages/admin/ReferralsAdminPage.tsx"), 'ReferralsAdminPage');
@@ -385,6 +386,7 @@ const App = () => (
               <Route path="cases/:caseId" element={<CaseDetailPage />} />
               <Route path="cases/:caseId/brd" element={<BrdPage />} />
               <Route path="requests" element={<RequestsPage />} />
+              <Route path="ndas" element={<ConsultantNdaAgreementsPage />} />
               <Route path="agreements" element={<AgreementsListPage portal="consultant" />} />
               <Route path="agreements/:agreementId" element={<AgreementDetailPage portal="consultant" />} />
               <Route path="calendar" element={<CalendarPage />} />

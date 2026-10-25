@@ -7,6 +7,10 @@ import { ShieldCheck, ShieldX, Download, FileSignature } from 'lucide-react';
 import { format } from 'date-fns';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useNdaSigningSettings } from '@/hooks/useNdaSigning';
+import NdaStatusCard from '@/components/nda/NdaStatusCard';
+import NdaSignDialog from '@/components/nda/NdaSignDialog';
 
 interface TicketNDAStatusProps {
   consultantId: string;
@@ -15,7 +19,34 @@ interface TicketNDAStatusProps {
   clientName?: string;
 }
 
-export default function TicketNDAStatus({ consultantId, clientId, consultantName, clientName }: TicketNDAStatusProps) {
+export default function TicketNDAStatus(props: TicketNDAStatusProps) {
+  const strict = useNdaSigningSettings();
+  const [signOpen, setSignOpen] = useState<{ ndaId: string; content: string | null } | null>(null);
+  if (strict.isLoading) return null;
+  if (strict.data) {
+    return (
+      <>
+        <NdaStatusCard
+          consultantId={props.consultantId}
+          clientId={props.clientId}
+          consultantName={props.consultantName}
+          clientName={props.clientName}
+          onReviewAndSign={(s) => s.nda_id && setSignOpen({ ndaId: s.nda_id, content: null })}
+          fallback={<LegacyTicketNDAStatus {...props} />}
+          anchorId="nda"
+        />
+        {signOpen && (
+          <NdaSignDialog open onOpenChange={(o) => { if (!o) setSignOpen(null); }} party="client" action="sign"
+            ndaId={signOpen.ndaId} otherName={props.consultantName} />
+        )}
+      </>
+    );
+  }
+  return <LegacyTicketNDAStatus {...props} />;
+}
+
+/** The NDA box before docs/sql/nda-signature-identity.sql is applied. */
+function LegacyTicketNDAStatus({ consultantId, clientId, consultantName, clientName }: TicketNDAStatusProps) {
   const { data: nda, isLoading } = useQuery({
     queryKey: ['ticket-nda-status', consultantId, clientId],
     queryFn: async () => {

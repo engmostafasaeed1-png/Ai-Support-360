@@ -18,6 +18,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, formatDistanceToNow } from 'date-fns';
 import NDASigningModal from '@/components/consultant/NDASigningModal';
+import NdaStatusCard from '@/components/nda/NdaStatusCard';
+import { useNdaSigningSettings } from '@/hooks/useNdaSigning';
 import TicketQuickActions from '@/components/tickets/TicketQuickActions';
 import RemoteAccessStatusPanel from '@/components/tickets/RemoteAccessStatusPanel';
 import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
@@ -136,6 +138,7 @@ export default function CaseDetailPage() {
   });
 
   const ndaSigned = ndaStatus?.signed ?? false;
+  const strictNda = useNdaSigningSettings().data ?? null;
 
   const { data: sessions } = useQuery({
     queryKey: ['case-sessions', caseId],
@@ -422,6 +425,12 @@ export default function CaseDetailPage() {
 
       {/* What the client chose and wrote: every area, details about the areas, SAP Notes already tried */}
       <TicketAreasNotes areas={caseAreas} other={ticket.sap_module_other} details={ticket.area_details} notes={triedNotes} />
+
+      {/* NDA box (stricter signing): who signed, waiting / reminder, downloads, legacy marks */}
+      {strictNda && ticket?.client_id && consultantData?.id && (
+        <NdaStatusCard consultantId={consultantData.id} clientId={ticket.client_id} clientName={clientProfile?.company_name || undefined}
+          onReviewAndSign={() => setNdaModalOpen(true)} anchorId="nda" />
+      )}
 
       {/* Client System Landscape — gated behind NDA. The sign prompt must not depend on the client's
           company details: consultants cannot read those before signing, which hid the prompt. */}

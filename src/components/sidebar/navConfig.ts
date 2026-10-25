@@ -159,6 +159,7 @@ export const consultantNavGroups: NavGroup[] = [
       { key: 'proposals', icon: Receipt, path: '/consultant/proposals', fallback: 'My bids', tourId: 'nav-my-bids' },
       { key: 'open_tickets', icon: ShoppingBag, path: '/consultant/open-tickets', fallback: 'Open requests', tourId: 'nav-open-requests' },
       { key: 'agreements', icon: Handshake, path: '/consultant/agreements', fallback: 'Support agreements', visibleSetting: 'support_agreements_visible' },
+      { key: 'ndas', icon: ScrollText, path: '/consultant/ndas', fallback: 'NDA agreements' },
       { key: 'work_diary', icon: Timer, path: '/consultant/work-diary' },
       { key: 'calendar', icon: CalendarClock, path: '/consultant/calendar', tourId: 'nav-sessions' },
       { key: 'chat', icon: MessagesSquare, path: '/consultant/chat', tourId: 'nav-messages' },

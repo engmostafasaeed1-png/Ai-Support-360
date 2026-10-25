@@ -40,7 +40,7 @@ const L = {
     title: 'Non-Disclosure Agreement', between: (a: string, b: string) => `${a} and ${b}`,
     full: 'Fully signed by both parties', waiting: (r: string) => `Waiting for the ${r} to sign`, draft: 'Draft - not signed yet', revoked: (d: string) => `Revoked on ${d}`,
     signatures: 'Signatures', consultant: 'Consultant (receiving party)', client: 'Client (disclosing party)', roleC: 'consultant', roleK: 'client',
-    name: 'Printed name', id: 'ID document', at: 'Signed at (UTC)', role: 'Role', company: 'Company', title: 'Job title', method: 'Method',
+    name: 'Printed name', id: 'ID document', at: 'Signed at (UTC)', role: 'Role', company: 'Company', jobTitle: 'Job title', method: 'Method',
     drawn: 'Free-hand electronic signature', typedM: 'Typed electronic signature', legacy: 'Signed (legacy signature, no ID collected)',
     notSigned: 'Not signed yet', sigHash: 'Signature fingerprint (SHA-256)', docHash: 'Document version hash (SHA-256)', ref: 'NDA reference',
     types: { passport: 'Passport', national_id: 'National ID' } as Record<string, string>, details: 'Identity details added later on', page: (a: number, b: number) => `Page ${a} of ${b}`,
@@ -49,7 +49,7 @@ const L = {
     title: 'اتفاقية عدم الإفصاح', between: (a: string, b: string) => `${a} و ${b}`,
     full: 'موقعة بالكامل من الطرفين', waiting: (r: string) => `بانتظار توقيع ${r}`, draft: 'مسودة - غير موقعة بعد', revoked: (d: string) => `أُلغيت في ${d}`,
     signatures: 'التوقيعات', consultant: 'الاستشاري (الطرف المتلقي)', client: 'العميل (الطرف المفصح)', roleC: 'الاستشاري', roleK: 'العميل',
-    name: 'الاسم', id: 'وثيقة الهوية', at: 'وقت التوقيع (UTC)', role: 'الصفة', company: 'الشركة', title: 'المسمى الوظيفي', method: 'الطريقة',
+    name: 'الاسم', id: 'وثيقة الهوية', at: 'وقت التوقيع (UTC)', role: 'الصفة', company: 'الشركة', jobTitle: 'المسمى الوظيفي', method: 'الطريقة',
     drawn: 'توقيع إلكتروني بخط اليد', typedM: 'توقيع إلكتروني مكتوب', legacy: 'موقّعة (توقيع سابق، دون بيانات هوية)',
     notSigned: 'لم يوقّع بعد', sigHash: 'بصمة التوقيع (SHA-256)', docHash: 'بصمة إصدار المستند (SHA-256)', ref: 'مرجع الاتفاقية',
     types: { passport: 'جواز سفر', national_id: 'هوية وطنية' } as Record<string, string>, details: 'أضيفت بيانات الهوية لاحقًا في', page: (a: number, b: number) => `صفحة ${a} من ${b}`,
@@ -74,7 +74,7 @@ export function partyRows(p: NdaPdfParty, role: 'consultant' | 'client', lang: L
     [t.role, role === 'consultant' ? t.roleC : t.roleK],
   ];
   if (role === 'client' || e?.company_name) rows.push([t.company, e?.company_name || p.company || '—']);
-  if (e?.job_title) rows.push([t.title, e.job_title]);
+  if (e?.job_title) rows.push([t.jobTitle, e.job_title]);
   rows.push([t.at, p.signedAt ? utc(p.signedAt) : t.notSigned]);
   if (p.signedAt) {
     rows.push([t.id, e ? idLine(e, lang) : t.legacy]);

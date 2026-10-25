@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNdaStatus, useRefreshNda } from '@/hooks/useNdaSigning';
-import { errorKey, ndaView, sendNdaReminder, type NdaEvidence, type NdaParty } from '@/lib/nda/api';
+import { errorKey, ndaView, sendNdaReminder, type NdaEvidence, type NdaParty, type NdaStatus } from '@/lib/nda/api';
 import { downloadNdaById } from '@/lib/nda/download';
 import NdaSignDialog from './NdaSignDialog';
 
@@ -17,10 +17,12 @@ interface Props {
   consultantName?: string;
   clientName?: string;
   /** Opens the signing step for the party who still has to sign (consultant first signature / client countersignature). */
-  onReviewAndSign?: () => void;
+  onReviewAndSign?: (s: NdaStatus) => void;
   /** Shown when the stricter signing is not installed (legacy box). */
   fallback?: React.ReactNode;
   className?: string;
+  /** Element id for in-page links (ticket pages use "nda"). */
+  anchorId?: string;
 }
 
 const fmt = (iso: string | null | undefined, lang: string) =>
@@ -31,7 +33,7 @@ const fmt = (iso: string | null | undefined, lang: string) =>
  * for the party who still has to sign, "You signed on ..." + download for the signer, "Waiting for ... to sign" with a
  * rate-limited reminder, "Fully signed" + download for both, legacy marks and "Add my signature details".
  */
-export default function NdaStatusCard({ ndaId, consultantId, clientId, consultantName, clientName, onReviewAndSign, fallback = null, className }: Props) {
+export default function NdaStatusCard({ ndaId, consultantId, clientId, consultantName, clientName, onReviewAndSign, fallback = null, className, anchorId }: Props) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
   const q = useNdaStatus({ ndaId, consultantId, clientId });
@@ -42,7 +44,7 @@ export default function NdaStatusCard({ ndaId, consultantId, clientId, consultan
 
   if (q.isLoading) return <Skeleton className={`h-24 w-full rounded-2xl ${className ?? ''}`} />;
   const s = q.data;
-  if (!s) return <>{fallback}</>;
+  if (!s || s.available === false) return <>{fallback}</>;
   const v = ndaView(s);
   const roleLabel = (p: NdaParty | null) => (p ? t(`ndaSign.role.${p}`) : '');
   const otherName = v.other === 'consultant' ? consultantName : clientName;
@@ -75,7 +77,7 @@ export default function NdaStatusCard({ ndaId, consultantId, clientId, consultan
 
   const tone = v.kind === 'fully_signed' ? 'border-success/40' : v.kind === 'revoked' ? 'border-destructive/40' : 'border-warning/40';
   return (
-    <div className={`space-y-3 rounded-2xl border bg-card p-4 ${tone} ${className ?? ''}`} data-testid="nda-status-card" id="nda">
+    <div className={`space-y-3 rounded-2xl border bg-card p-4 ${tone} ${className ?? ''}`} data-testid="nda-status-card" id={anchorId}>
       <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
         <FileSignature className="h-4 w-4 text-primary" aria-hidden /> {t('ndaSign.card.title')}
       </div>
@@ -89,7 +91,7 @@ export default function NdaStatusCard({ ndaId, consultantId, clientId, consultan
               : t('ndaSign.card.signFirst')}
           </p>
           {onReviewAndSign && (
-            <Button size="lg" className="w-full gap-2 sm:w-auto" onClick={onReviewAndSign}><PenTool className="h-4 w-4" aria-hidden /> {t('ndaSign.card.reviewAndSign')}</Button>
+            <Button size="lg" className="w-full gap-2 sm:w-auto" onClick={() => onReviewAndSign(s)}><PenTool className="h-4 w-4" aria-hidden /> {t('ndaSign.card.reviewAndSign')}</Button>
           )}
         </div>
       )}
@@ -127,7 +129,7 @@ export default function NdaStatusCard({ ndaId, consultantId, clientId, consultan
       {v.kind === 'revoked' && (
         <div className="space-y-2 rounded-xl bg-destructive/10 p-3" role="status">
           <p className="flex items-center gap-2 text-sm font-medium text-destructive"><ShieldX className="h-4 w-4" aria-hidden /> {t('ndaSign.card.revoked', { date: fmt(s.revoked_at, lang) })}</p>
-          {v.me === 'consultant' && onReviewAndSign && <Button size="sm" onClick={onReviewAndSign}>{t('ndaSign.card.signNew')}</Button>}
+          {v.me === 'consultant' && onReviewAndSign && <Button size="sm" onClick={() => onReviewAndSign(s)}>{t('ndaSign.card.signNew')}</Button>}
         </div>
       )}
 

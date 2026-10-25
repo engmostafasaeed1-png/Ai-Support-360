@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, History, ListChecks, Pencil, RotateCcw } from 'lucide-react';
+import { CheckCircle2, History, ListChecks, Pencil, PenTool, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,9 @@ import { StageChip, WorkingStatusChip } from './TrackingChips';
 import WorkingStatusDialog from './WorkingStatusDialog';
 import StatusHistoryBar from './StatusHistoryBar';
 import TrackingTimeline from './TrackingTimeline';
+
+/** Engagement steps where the viewer's NDA signature is the next action. */
+const NDA_STEPS = new Set(['client_sign_nda', 'consultant_sign_nda', 'team_sign_nda']);
 
 /** Header chips: automatic stage + manual working status ("set by the consultant 2 h ago"). Nothing while off. */
 export function TrackingHeaderChips({ ticketId }: { ticketId: string }) {
@@ -99,6 +102,16 @@ export default function TicketTrackingPanel({ ticketId, ticketTitle, fallback = 
                 )}
               </p>
             )}
+          </div>
+        )}
+
+        {NDA_STEPS.has(derived.next.key) && derived.next.actor === role && !closed && (
+          <div className="rounded-xl border border-warning/50 bg-warning/10 p-3 text-xs" role="status" data-testid="tracking-nda-step">
+            <p className="font-medium text-foreground">{t('ndaSign.step.title')}</p>
+            <p className="mt-1 text-muted-foreground">{t('ndaSign.step.body')}</p>
+            <Button asChild size="sm" className="mt-2 h-8 gap-1 text-xs">
+              <a href="#nda"><PenTool className="h-3.5 w-3.5" aria-hidden /> {t('ndaSign.card.reviewAndSign')}</a>
+            </Button>
           </div>
         )}
 

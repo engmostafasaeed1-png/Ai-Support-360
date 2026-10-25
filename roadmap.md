@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Strict NDA signing (Oct 25): drawn signature (min size), full legal name, ID type/country/number (encrypted, masked 2+3 for others, logged admin reads), authorisation tick, client job title + company; PNG evidence + hashes, append-only; NDA box states (sign / you signed + download / waiting + reminder 1/24 h / fully signed) on ticket, Contracts, consultant NDA agreements page, engagement + crew checklists; e-mails EN/AR; admin NDA signatures + settings; legacy NDAs stay signed; tests. docs/sql/nda-signature-identity.sql + test (22/22 on a private copy), NOT applied.
+- [ ] Switch on strict NDA signing: awaits owner review + applying docs/sql/nda-signature-identity.sql, the NDA_ID_ENCRYPTION_KEY backend secret, publishing, and lawyer wording for the privacy policy.
+
 - [x] SLA policies (Oct 25) built; waiting for owner to review/apply docs/sql/sla-policies.sql and switch on: inventory, severities S1-S4, platform default (= today's SLA) + client policies with versions, business-hour clock with pauses, escalation ladder, snapshot per ticket, consultant acceptance, chips/lists/dashboards, reminder engine, admin reports, EN/AR, tests. SQL docs/sql/sla-policies.sql + test, NOT applied; switch OFF.
 - [x] Support agreements (Oct 25, extension of SLA policies) built and OFF: inventory, request/apply/counter/accept with immutable rate records, three commitment models, lifecycle + daily job, ticket link with agreed rate + SLA, usage, PDF summary, anti-bypass alert, admin settings, EN/AR, tests (26 SQL checks). SQL docs/sql/support-agreements.sql + test, NOT applied.
 - [x] SLA policies SQL live (Oct 25, switch OFF; 30/30 checks passed rolled back); consultant SLA box on Requests page.

@@ -49,6 +49,17 @@ export default function NdaSignDialog({ open, onOpenChange, party, action, ndaId
   const { t } = useTranslation();
   const settings = useNdaSigningSettings();
   const defaults = useSignerDefaults(open);
+  // the exact text being signed (read from the NDA itself when the caller did not pass it)
+  const text = useQuery({
+    queryKey: ['nda-text', ndaId],
+    enabled: open && !!ndaId && content == null,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from('nda_agreements').select('nda_content').eq('id', ndaId!).maybeSingle();
+      return (data?.nda_content as string) ?? null;
+    },
+  });
+  const shown = content ?? text.data ?? null;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[92vh] max-w-2xl flex-col overflow-hidden p-0 sm:p-0">
@@ -62,9 +73,9 @@ export default function NdaSignDialog({ open, onOpenChange, party, action, ndaId
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 space-y-4 overflow-y-auto px-5 pb-5">
-          {content && (
+          {shown && (
             <ScrollArea className="max-h-[200px] rounded-xl border bg-muted/30 p-3">
-              <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground" dir="auto">{content}</pre>
+              <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground" dir="auto">{shown}</pre>
             </ScrollArea>
           )}
           {settings.isLoading || defaults.isLoading ? (
