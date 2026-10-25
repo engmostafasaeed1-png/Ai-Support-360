@@ -1187,12 +1187,12 @@ BEGIN
          a.terms -> 'sla' ->> 'hash', COALESCE(a.terms -> 'sla' ->> 'summary', ''), x.typed_name, x.legal_draft
     FROM public.sa_acceptances x WHERE x.agreement_id = _id AND x.version = a.version AND x.party = 'consultant';
   FOR te IN SELECT jsonb_array_elements(COALESCE(a.terms -> 'team', '[]'::jsonb)) LOOP
-    CONTINUE WHEN tte ->> 'consultant_id' = a.consultant_id::text;
+    CONTINUE WHEN te ->> 'consultant_id' = a.consultant_id::text;
     INSERT INTO public.sa_members (agreement_id, consultant_id, member_role, status, required, capacity_hours_per_week, working_hours, backup_for, invited_by)
-    VALUES (_id, (tte ->> 'consultant_id')::uuid, tte ->> 'role', 'invited', COALESCE((tte ->> 'required')::boolean, true), NULLIF(tte ->> 'capacity_hours_per_week', '')::numeric,
-            COALESCE(te -> 'working_hours', '{}'::jsonb), NULLIF(tte ->> 'backup_for', '')::uuid, a.client_id)
+    VALUES (_id, (te ->> 'consultant_id')::uuid, te ->> 'role', 'invited', COALESCE((te ->> 'required')::boolean, true), NULLIF(te ->> 'capacity_hours_per_week', '')::numeric,
+            COALESCE(te -> 'working_hours', '{}'::jsonb), NULLIF(te ->> 'backup_for', '')::uuid, a.client_id)
     ON CONFLICT DO NOTHING;
-    PERFORM public.sa_notify_member_invite(_id, (tte ->> 'consultant_id')::uuid);
+    PERFORM public.sa_notify_member_invite(_id, (te ->> 'consultant_id')::uuid);
   END LOOP;
   UPDATE public.sa_applications SET status = 'declined', updated_at = now() WHERE agreement_id = _id AND id <> a.application_id AND status IN ('pending', 'shortlisted');
   PERFORM public.sa_set_status(_id, 'agreed', uid, jsonb_build_object('version', a.version, 'rate_record', rid));
