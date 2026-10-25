@@ -4170,11 +4170,12 @@
       "breached": "{{clock}} target passed",
       "reminder_sent": "{{clock}} reminder sent to {{to}}",
       "escalated": "{{clock}} escalated to {{to}}",
-      "acknowledged": "Consultant acknowledged the reminder{{eta, ' · ETA '}}",
+      "acknowledged": "Consultant acknowledged the reminder",
       "accepted": "Consultant accepted the SLA (v{{version}})",
       "reclass_proposed": "Consultant proposes {{from}} → {{to}}",
       "reclass_declined": "Client kept the severity",
-      "breach_choice": "Client chose: {{choice}}"
+      "breach_choice": "Client chose: {{choice}}",
+      "eta": "ETA {{eta}}"
     },
     "chip": {
       "due": "Due {{at}}",

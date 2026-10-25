@@ -5260,7 +5260,8 @@
       "accepted": "قبل الاستشاري اتفاقية مستوى الخدمة (الإصدار {{version}})",
       "reclass_proposed": "يقترح الاستشاري {{from}} ← {{to}}",
       "reclass_declined": "أبقى العميل الأولوية كما هي",
-      "breach_choice": "اختار العميل: {{choice}}"
+      "breach_choice": "اختار العميل: {{choice}}",
+      "eta": "الموعد المتوقع {{eta}}"
     },
     "chip": {
       "due": "الموعد {{at}}",

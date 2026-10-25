@@ -196,7 +196,8 @@ function eventText(t: ReturnType<typeof useTranslation>['t'], kind: string, d: R
     severity: d.severity ?? '', from: d.from ?? '', version: d.version ?? '', policy: d.policy ?? '', note: d.note ?? '',
     choice: d.choice ? t(`sla.choice.${d.choice}`) : '', eta: d.eta ? fmtAt(String(d.eta), tz, lang) : '',
   };
-  return t(`sla.event.${kind}`, { ...params, defaultValue: kind });
+  const text = t(`sla.event.${kind}`, { ...params, defaultValue: kind });
+  return kind === 'acknowledged' && params.eta ? `${text} · ${t('sla.event.eta', { eta: params.eta })}` : text;
 }
 
 export function SlaTimeline({ events, tz }: { events: api.SlaEvent[]; tz: string }) {
