@@ -17091,9 +17091,53 @@ export type Database = {
         Returns: boolean
       }
       share_in_validity_period: { Args: { _config: Json }; Returns: boolean }
+      sla_accept: {
+        Args: { _context?: string; _ticket: string }
+        Returns: Json
+      }
+      sla_acceptance_missing: {
+        Args: { _consultant: string; _ticket: string }
+        Returns: boolean
+      }
+      sla_acknowledge: {
+        Args: { _eta?: string; _note?: string; _ticket: string }
+        Returns: undefined
+      }
       sla_add_business_minutes: {
         Args: { _cal: Json; _from: string; _minutes: number }
         Returns: string
+      }
+      sla_admin_policies: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _status?: string
+        }
+        Returns: Json
+      }
+      sla_admin_report: { Args: { _days?: number }; Returns: Json }
+      sla_admin_set_holiday: {
+        Args: {
+          _day: string
+          _label_ar?: string
+          _label_en?: string
+          _list: string
+          _remove?: boolean
+        }
+        Returns: undefined
+      }
+      sla_admin_set_settings: {
+        Args: { _reason?: string; _value: Json }
+        Returns: Json
+      }
+      sla_admin_simulate: {
+        Args: { _policy?: string; _ticket: string; _version?: number }
+        Returns: Json
+      }
+      sla_apply_new_policy: {
+        Args: { _note?: string; _ticket: string }
+        Returns: Json
       }
       sla_apply_snapshot: {
         Args: {
@@ -17119,6 +17163,16 @@ export type Database = {
         }[]
       }
       sla_breach_actions: { Args: { _ticket: string }; Returns: undefined }
+      sla_breach_choice: {
+        Args: {
+          _choice: string
+          _clock: string
+          _extend_min?: number
+          _note?: string
+          _ticket: string
+        }
+        Returns: undefined
+      }
       sla_breach_financial_hook: {
         Args: { _clock: string; _ticket: string }
         Returns: undefined
@@ -17135,9 +17189,57 @@ export type Database = {
         Args: { _client: string; _tenant: string; _uid: string }
         Returns: boolean
       }
+      sla_can_read_policy: {
+        Args: {
+          _p: Database["public"]["Tables"]["sla_policies"]["Row"]
+          _uid: string
+        }
+        Returns: boolean
+      }
+      sla_claim_deliveries: {
+        Args: { _limit?: number }
+        Returns: {
+          channel: string
+          email: string
+          id: string
+          kind: string
+          payload: Json
+          ticket_id: string
+          user_id: string
+        }[]
+      }
       sla_client_can_act: {
         Args: { _ticket: string; _uid: string }
         Returns: boolean
+      }
+      sla_client_report: {
+        Args: { _days?: number; _tenant?: string }
+        Returns: Json
+      }
+      sla_clock_json: {
+        Args: {
+          _c: Database["public"]["Tables"]["sla_ticket_clocks"]["Row"]
+          _cal: Json
+        }
+        Returns: Json
+      }
+      sla_consultant_report: { Args: { _days?: number }; Returns: Json }
+      sla_counter_propose: {
+        Args: {
+          _note?: string
+          _proposal?: string
+          _targets: Json
+          _ticket: string
+        }
+        Returns: string
+      }
+      sla_decide_counter: {
+        Args: { _accept: boolean; _id: string; _note?: string }
+        Returns: undefined
+      }
+      sla_decide_reclass: {
+        Args: { _accept: boolean; _id: string }
+        Returns: undefined
       }
       sla_default_settings: { Args: never; Returns: Json }
       sla_deliver: {
@@ -17166,6 +17268,10 @@ export type Database = {
         Args: { _actor: string; _data?: Json; _kind: string; _ticket: string }
         Returns: undefined
       }
+      sla_finish_delivery: {
+        Args: { _error?: string; _id: string; _ok: boolean }
+        Returns: undefined
+      }
       sla_fire_steps: { Args: { _ticket: string }; Returns: number }
       sla_first_response_at: {
         Args: { _since: string; _ticket: string }
@@ -17177,25 +17283,113 @@ export type Database = {
       }
       sla_has_errors: { Args: { _problems: Json }; Returns: boolean }
       sla_hash: { Args: { _body: Json; _meta: Json }; Returns: string }
+      sla_holidays_list: { Args: never; Returns: Json }
       sla_in_quiet_hours: { Args: { _q: Json; _tz: string }; Returns: boolean }
       sla_is_admin: { Args: { _uid: string }; Returns: boolean }
       sla_lang: { Args: { _user: string }; Returns: string }
+      sla_list_states: { Args: { _tickets: string[] }; Returns: Json }
+      sla_mark_workaround: {
+        Args: { _note?: string; _ticket: string }
+        Returns: undefined
+      }
+      sla_my_policies: { Args: { _tenant?: string }; Returns: Json }
       sla_pause_reason: {
         Args: { _pauses: Json; _ticket: string }
         Returns: string
+      }
+      sla_policy_activate: {
+        Args: {
+          _apply_to_open?: boolean
+          _effective_from?: string
+          _id: string
+          _version: number
+        }
+        Returns: Json
+      }
+      sla_policy_archive: {
+        Args: { _id: string; _reason?: string }
+        Returns: undefined
+      }
+      sla_policy_duplicate: {
+        Args: { _id: string; _name?: string; _tenant: string }
+        Returns: Json
+      }
+      sla_policy_get: { Args: { _id: string }; Returns: Json }
+      sla_policy_json: {
+        Args: {
+          _p: Database["public"]["Tables"]["sla_policies"]["Row"]
+          _uid: string
+        }
+        Returns: Json
       }
       sla_policy_problems: {
         Args: { _body: Json; _meta: Json; _tenant?: string }
         Returns: Json
       }
+      sla_policy_restore: {
+        Args: { _id: string; _note?: string; _version: number }
+        Returns: Json
+      }
+      sla_policy_save: {
+        Args: {
+          _body: Json
+          _expected_lock?: number
+          _id: string
+          _meta: Json
+          _note?: string
+          _tenant: string
+        }
+        Returns: Json
+      }
+      sla_policy_version: {
+        Args: { _id: string; _version: number }
+        Returns: Json
+      }
+      sla_propose_reclass: {
+        Args: { _reason: string; _severity: string; _ticket: string }
+        Returns: string
+      }
+      sla_public_settings: { Args: never; Returns: Json }
       sla_rate_ok: {
         Args: { _bucket: string; _limit: number; _seconds: number }
         Returns: boolean
       }
+      sla_reclassify: {
+        Args: { _reason: string; _severity: string; _ticket: string }
+        Returns: undefined
+      }
       sla_reconcile: { Args: { _ticket: string }; Returns: undefined }
+      sla_report_rows: {
+        Args: { _since: string }
+        Returns: {
+          breached_at: string
+          client_id: string
+          consultant_id: string
+          created_at: string
+          due_at: string
+          kind: string
+          met_at: string
+          paused: boolean
+          severity: string
+          target: number
+          tenant_id: string
+          ticket_id: string
+          title: string
+          used: number
+        }[]
+      }
       sla_resolve_calendar: {
         Args: { _company_tz: string; _coverage: Json }
         Returns: Json
+      }
+      sla_set_severity: {
+        Args: {
+          _actor: string
+          _reason: string
+          _severity: string
+          _ticket: string
+        }
+        Returns: undefined
       }
       sla_settings: { Args: never; Returns: Json }
       sla_severity_for: { Args: { _urgency: string }; Returns: string }
@@ -17220,13 +17414,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      sla_summarise: { Args: { _at_risk: number; _rows: Json }; Returns: Json }
       sla_sweep: { Args: { _limit?: number }; Returns: number }
       sla_text_ok: { Args: { _t: string }; Returns: boolean }
       sla_ticket_role: {
         Args: { _ticket: string; _uid: string }
         Returns: string
       }
+      sla_ticket_view: { Args: { _ticket: string }; Returns: Json }
       sla_valid_tz: { Args: { _tz: string }; Returns: boolean }
+      sla_wake: { Args: never; Returns: undefined }
       submit_consultant_profile: { Args: never; Returns: Json }
       submit_demo_request: {
         Args: {
