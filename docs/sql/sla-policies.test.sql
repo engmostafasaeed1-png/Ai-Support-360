@@ -167,6 +167,7 @@ BEGIN
   -- SL14 unassigned consultant denied; assigned consultant sees clocks but not the extra contacts.
   PERFORM pg_temp.as_user(NULL);
   UPDATE public.tickets SET consultant_id = kc, status = 'in_progress' WHERE id = t1;
+  INSERT INTO public.nda_agreements (consultant_id, client_id, signature_data, nda_content, signed_at, client_signed_at) VALUES (kc, ca, 'sig', 'nda', now(), now());
   PERFORM pg_temp.as_user(u);
   IF pg_temp.err(format('SELECT public.sla_ticket_view(%L)', t1)) NOT LIKE '%sla_forbidden%' THEN RAISE EXCEPTION 'SL14 unassigned'; END IF;
   PERFORM pg_temp.as_user(k);
