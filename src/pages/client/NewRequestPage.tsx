@@ -22,6 +22,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { issueTypes } from '@/data/clientMockData';
 import SapAreaPicker from '@/components/ticket/SapAreaPicker';
+import { useUsableAgreements } from '@/hooks/useAgreements';
+import { attachTicket } from '@/lib/agreements/api';
+import { Handshake } from 'lucide-react';
 import SolutionSuggestions from '@/components/ticket/SolutionSuggestions';
 import SapNotesField from '@/components/ticket/SapNotesField';
 import { MAX_SAP_AREAS, MAX_OTHER_AREA_LENGTH, MAX_AREA_DETAILS_LENGTH, OTHER_AREA, areasSummary, areaLabel, isOtherArea, resolveArea } from '@/lib/sapAreas';
@@ -242,6 +245,10 @@ export default function NewRequestPage() {
     }));
   }, [companyProfile]);
   const ticketContext = useMemo(() => buildTicketContext(contextInput), [contextInput]);
+  // Support agreements: a live agreement whose scope covers the chosen area is picked automatically (switch below).
+  const usableAgreements = useUsableAgreements(true).data ?? [];
+  const [useAgreementSwitch, setUseAgreementSwitch] = useState(true);
+  const matchingAgreement = useMemo(() => usableAgreements.find((a) => form.sap_modules.some((m) => a.modules.includes(m))) ?? null, [usableAgreements, form.sap_modules]);
   // What did not get through on the last try: shown on the confirmation page, not only in a toast.
   const [sendIssues, setSendIssues] = useState<{ files: string[]; links: number; expertIds: string[] }>({ files: [], links: 0, expertIds: [] });
   const [solvedBySuggestion, setSolvedBySuggestion] = useState(false);
@@ -699,6 +706,13 @@ export default function NewRequestPage() {
     savedTicketRef.current = ticketId;
     setCreatedTicketId(ticketId);
     markSubmit('save', 'done');
+    // "Use my support agreement": agreed rate, agreement SLA and a direct request to the committed consultant.
+    if (useAgreementSwitch && matchingAgreement) {
+      try {
+        const r = await attachTicket(ticketId, matchingAgreement.id);
+        if (r.linked) toast.success(t('agreements.newRequest.linked', { name: matchingAgreement.name }));
+      } catch { /* the request continues in the normal flow */ }
+    }
     // the consultants who were alerted by the database also get an e-mail (best effort, in the background)
     if (form.urgency === 'critical' && critical.on) void notifyCriticalByEmail(ticketId);
 
@@ -969,6 +983,13 @@ export default function NewRequestPage() {
               otherError={fieldErrors.sap_module_other}
               detailsError={fieldErrors.area_details}
             />
+            {matchingAgreement && (
+              <label className="mt-4 flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
+                <Switch checked={useAgreementSwitch} onCheckedChange={setUseAgreementSwitch} aria-describedby="sa-use-hint" />
+                <span><span className="flex items-center gap-1 font-medium"><Handshake className="h-4 w-4 text-primary" aria-hidden /> {t('agreements.newRequest.use')}</span>
+                  <span id="sa-use-hint" className="block text-xs text-muted-foreground">{t('agreements.newRequest.hint', { name: matchingAgreement.name })}</span></span>
+              </label>
+            )}
           </CardContent>
         </Card>
       )}
