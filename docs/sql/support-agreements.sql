@@ -38,7 +38,8 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path = public AS $$
     'service_fee_percent', NULL, 'max_multiplier', 2,
     'renewal_reminder_days', jsonb_build_array(60, 30, 7), 'inactivity_weeks', 6,
     'min_term_months', 1, 'max_notice_days', 90, 'handover_days', 14,
-    'allow_prepayment', false, 'allow_forfeit', false, 'application_limit_per_day', 10)
+    'allow_prepayment', false, 'allow_forfeit', false, 'application_limit_per_day', 10,
+    'crew_max', 6, 'contacts_max', 5, 'doc_max_mb', 20, 'docs_per_agreement', 50)
 $$;
 
 CREATE OR REPLACE FUNCTION public.sa_settings()
@@ -71,6 +72,7 @@ CREATE TABLE IF NOT EXISTS public.sa_agreements (
   tenant_id uuid,
   client_id uuid NOT NULL,
   name text NOT NULL CHECK (char_length(name) BETWEEN 1 AND 120),
+  reference text UNIQUE,                                  -- "SA-2026-000012", set once by sa_guard_agreement
   status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'open', 'negotiating', 'agreed', 'active', 'suspended', 'renewal_due', 'expired', 'terminated', 'archived')),
   request jsonb NOT NULL DEFAULT '{}'::jsonb,
   terms jsonb NOT NULL DEFAULT '{}'::jsonb,
@@ -206,16 +208,106 @@ CREATE TABLE IF NOT EXISTS public.sa_rate_changes (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS sa_rate_changes_one_pending ON public.sa_rate_changes (agreement_id) WHERE status = 'pending';
 
+-- The client's crew ("support team"): lead + members with a role, weekly capacity, working hours and backup cover.
+-- Each member accepts the place and the agreement's SLA snapshot (sa_member_acceptances) and signs the NDA.
 CREATE TABLE IF NOT EXISTS public.sa_members (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agreement_id uuid NOT NULL REFERENCES public.sa_agreements(id) ON DELETE CASCADE,
   consultant_id uuid NOT NULL,
-  member_role text NOT NULL CHECK (member_role IN ('lead', 'support')),
+  member_role text NOT NULL CHECK (member_role IN ('lead', 'functional', 'technical', 'basis', 'backup', 'support')),
   status text NOT NULL DEFAULT 'invited' CHECK (status IN ('invited', 'active', 'declined', 'ended')),
+  required boolean NOT NULL DEFAULT true,
+  capacity_hours_per_week numeric CHECK (capacity_hours_per_week IS NULL OR capacity_hours_per_week BETWEEN 0 AND 60),
+  working_hours jsonb NOT NULL DEFAULT '{}'::jsonb,       -- {timezone, days [1-7], from "08:00", to "17:00"}
+  backup_for uuid,                                         -- consultant this member covers
+  invited_by uuid,
+  accepted_at timestamptz,
+  sla_policy_id uuid,
+  sla_version integer,
+  sla_hash text,
+  sla_accepted_at timestamptz,
+  end_reason text,
   added_at timestamptz NOT NULL DEFAULT now(),
   ended_at timestamptz
 );
-CREATE UNIQUE INDEX IF NOT EXISTS sa_members_one_open ON public.sa_members (agreement_id, consultant_id) WHERE status IN ('invited', 'active');
+CREATE UNIQUE INDEX IF NOT EXISTS sa_members_one_open ON public.sa_members (agreement_id, consultant_id) WHERE status IN ('invited', 'active', 'declined');
+
+-- Append-only record of each member's acceptance of the place + SLA (checkbox + typed name + SLA version and hash).
+CREATE TABLE IF NOT EXISTS public.sa_member_acceptances (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  agreement_id uuid NOT NULL REFERENCES public.sa_agreements(id) ON DELETE CASCADE,
+  consultant_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  member_role text NOT NULL,
+  terms_version integer,
+  terms_hash text,
+  sla_policy_id uuid,
+  sla_version integer,
+  sla_hash text,
+  sla_summary text NOT NULL DEFAULT '',
+  typed_name text NOT NULL CHECK (char_length(typed_name) BETWEEN 2 AND 120),
+  legal_draft boolean NOT NULL DEFAULT true,
+  accepted_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Agreement documents: supporting files (SOW, scope annex, access plan, escalation matrix) in the private bucket
+-- 'agreement-documents' under <agreement>/<upload>/<file>; versions, uploads in progress and every download are kept.
+CREATE TABLE IF NOT EXISTS public.sa_documents (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  agreement_id uuid NOT NULL REFERENCES public.sa_agreements(id) ON DELETE CASCADE,
+  kind text NOT NULL CHECK (kind IN ('sow', 'scope_annex', 'access_plan', 'escalation_matrix', 'other')),
+  title text NOT NULL CHECK (char_length(title) BETWEEN 1 AND 120),
+  current_version integer NOT NULL DEFAULT 0,
+  created_by uuid,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  archived_at timestamptz,
+  archived_by uuid
+);
+CREATE INDEX IF NOT EXISTS sa_documents_agreement ON public.sa_documents (agreement_id);
+
+CREATE TABLE IF NOT EXISTS public.sa_document_versions (
+  document_id uuid NOT NULL REFERENCES public.sa_documents(id) ON DELETE CASCADE,
+  version integer NOT NULL,
+  agreement_id uuid NOT NULL,
+  storage_path text NOT NULL UNIQUE,
+  file_name text NOT NULL,
+  mime_type text NOT NULL,
+  size_bytes bigint NOT NULL,
+  note text NOT NULL DEFAULT '',
+  uploaded_by uuid NOT NULL,
+  uploaded_role text NOT NULL,
+  uploaded_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (document_id, version)
+);
+
+CREATE TABLE IF NOT EXISTS public.sa_document_uploads (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  agreement_id uuid NOT NULL REFERENCES public.sa_agreements(id) ON DELETE CASCADE,
+  document_id uuid,
+  kind text NOT NULL,
+  title text NOT NULL,
+  storage_path text NOT NULL UNIQUE,
+  file_name text NOT NULL,
+  mime_type text NOT NULL,
+  size_bytes bigint NOT NULL,
+  note text NOT NULL DEFAULT '',
+  user_id uuid NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  finished_at timestamptz
+);
+
+CREATE TABLE IF NOT EXISTS public.sa_document_access (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  agreement_id uuid NOT NULL REFERENCES public.sa_agreements(id) ON DELETE CASCADE,
+  document_id uuid NOT NULL,
+  version integer NOT NULL,
+  storage_path text NOT NULL,
+  user_id uuid NOT NULL,
+  actor_role text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS sa_document_access_path ON public.sa_document_access (storage_path, user_id, created_at);
 
 CREATE TABLE IF NOT EXISTS public.sa_replacements (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
