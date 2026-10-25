@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptyTerms, offerPatch, saErrorCode, saProblemList, slaSummary, SA_DEFAULT_SETTINGS, stepIndex, termsProblems, withModel } from './model';
 import { platformDefaultBody } from '@/lib/sla/policy';
-import { rankConsultants } from '../../../supabase/functions/_shared/ticketMatch';
+import { extractTicketSignals, scoreConsultant, type MatchConsultant, type MatchTicket } from '../../../supabase/functions/_shared/ticketMatch';
 
 describe('support agreement form rules', () => {
   it('a fresh draft passes the terms check once it has a name, an area and a rate inside the bounds', () => {
@@ -41,14 +41,13 @@ describe('support agreement form rules', () => {
 });
 
 describe('availability commitments in matching', () => {
-  const base = { id: 'a', availability_status: 'available', skills: [{ sap_module: 'FI', proficiency_level: 'expert' }] } as never;
-  it('a consultant with half the week reserved by agreements scores lower on availability than a free one', () => {
-    const ranked = rankConsultants({ sap_modules: ['FI'] } as never, [
-      { ...(base as object), id: 'free' } as never,
-      { ...(base as object), id: 'busy', reserved_share: 0.5 } as never,
-    ]);
-    const free = ranked.find((r: { id: string }) => r.id === 'free') as { score: number };
-    const busy = ranked.find((r: { id: string }) => r.id === 'busy') as { score: number };
-    expect(free.score).toBeGreaterThan(busy.score);
+  it('half the week reserved by agreements lowers the availability fit by a quarter', () => {
+    const t = { title: 'FI posting error', description: 'GL posting', sap_modules: ['FI'], urgency: 'high' } as unknown as MatchTicket;
+    const base = { id: 'c1', availability_status: 'available', skills: [{ module: 'FI', years: 5 }] } as unknown as MatchConsultant;
+    const s = extractTicketSignals(t);
+    const fit = (c: MatchConsultant) => scoreConsultant(c, t, s).breakdown.find((b) => b.key === 'availability')!;
+    const free = fit(base);
+    const busy = fit({ ...base, reserved_share: 0.5 } as MatchConsultant);
+    expect(busy.contribution).toBeCloseTo(free.contribution * 0.75, 2);
   });
 });
