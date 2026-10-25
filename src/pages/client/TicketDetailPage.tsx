@@ -64,7 +64,6 @@ import { isolateDates } from '@/lib/bidi';
 import { ticketContextBadges } from '@/lib/ticketContext';
 import { splitBadge } from '@/components/client/ContextFitBadges';
 import BrdButton from '@/components/brd/BrdButton';
-import TicketArchitectureCard from '@/components/architecture/TicketArchitectureCard';
 import TicketTrackingPanel, { TrackingHeaderChips } from '@/components/tracking/TicketTrackingPanel';
 import { BrdApprovalHeaderChip } from '@/components/brd/approval/BrdApprovalChip';
 
@@ -294,8 +293,6 @@ export default function TicketDetailPage() {
       {(ticket as any).critical_response && (
         <CriticalRequestPanel ticketId={ticket.id} role={isAdmin ? 'admin' : isConsultant ? 'consultant' : 'client'} />
       )}
-
-      <TicketArchitectureCard ticketId={ticket.id} docBase={isAdmin ? '/admin/architecture' : '/client/solution-architecture'} />
 
       {/* ─── Two-layer tracking (automatic stage + working status); the official stepper while it is off ─── */}
       <TicketTrackingPanel
