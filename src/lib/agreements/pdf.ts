@@ -228,7 +228,6 @@ export function buildStatementPdf(JsPDF: JsPdfCtor, a: StatementPdfInput, lang: 
   w.table([0.2, 0.16, 0.16, 0.16, 0.16, 0.16], [plain(t.month), plain(t.used), plain(t.committed), plain(t.expired), plain(t.charged), plain(t.amount)],
     a.months.map((m) => [plain(m.month.slice(0, 7)), plain(String(m.used_hours)), plain(m.committed != null ? String(m.committed) : '—'), plain(m.expired_hours != null ? String(m.expired_hours) : '—'),
       plain(m.charge_hours != null ? String(m.charge_hours) : '—'), plain(m.amount ? `${m.amount} ${a.currency}` : '—')]), base, 8.5);
-  w.paragraph(plain(t.fees(10, 5, 15).split(':')[0]), { base, size: 9, color: C.muted });
   footer(doc, lang, new Date());
   return doc;
 }
