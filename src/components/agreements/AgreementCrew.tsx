@@ -294,7 +294,7 @@ export function CrewPanel({ a, settings }: { a: api.SaDetail; settings: SaSettin
           <div className="space-y-1.5"><Label htmlFor="crew-reason">{t('agreements.dlg.reason')}</Label><Textarea id="crew-reason" rows={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} /></div>
           <DialogFooter><Button variant="ghost" onClick={() => setRemoveId(null)}>{t('agreements.cancel')}</Button>
             <Button variant="destructive" disabled={busy || reason.trim().length < 5} onClick={async () => {
-              const target = removeId === 'self' ? (members.find((m) => m.role !== 'lead' && a.my_member && m.status === 'active' && m.role === a.my_member.role)?.consultant_id ?? '') : removeId!;
+              const target = removeId === 'self' ? (a.my_member?.consultant_id ?? '') : removeId!;
               const ok = await run(() => api.removeMember(a.id, target, reason.trim()), t('agreements.saved'));
               if (ok) { setRemoveId(null); setReason(''); }
             }}>{t('agreements.confirm')}</Button></DialogFooter>

@@ -74,7 +74,7 @@ export interface SaDetail {
   applications?: SaApplication[] | null;
   members?: SaMember[];
   confirmation?: SaConfirmation | null;
-  my_member?: { role: string; status: string; required: boolean; capacity_hours_per_week: number | null; working_hours: WorkingHours; backup_for: string | null; sla_accepted_at: string | null } | null;
+  my_member?: { consultant_id: string; role: string; status: string; required: boolean; capacity_hours_per_week: number | null; working_hours: WorkingHours; backup_for: string | null; sla_accepted_at: string | null } | null;
   member_acceptances?: Array<{ consultant_id: string; name?: string; role: string; typed_name: string; sla_version: number | null; sla_hash: string | null; terms_version: number | null; at: string }>;
   documents_locked?: boolean; can_upload?: boolean; documents?: SaDocument[] | null;
   downloads?: Array<{ document_id: string; version: number; role: string; by: string; at: string }> | null;

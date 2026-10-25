@@ -1775,7 +1775,7 @@ BEGIN
     'applications', CASE WHEN r IN ('admin', 'client', 'client_member') THEN COALESCE((SELECT jsonb_agg((to_jsonb(p) - 'user_id') || jsonb_build_object('name', public.consultant_public_name(p.consultant_id)) ORDER BY p.created_at) FROM public.sa_applications p WHERE p.agreement_id = _id), '[]'::jsonb) END,
     'confirmation', public.sa_confirmation(_id),
     'members', COALESCE(public.sa_confirmation(_id) -> 'members', '[]'::jsonb),
-    'my_member', (SELECT jsonb_build_object('role', m.member_role, 'status', m.status, 'required', m.required, 'capacity_hours_per_week', m.capacity_hours_per_week,
+    'my_member', (SELECT jsonb_build_object('consultant_id', m.consultant_id, 'role', m.member_role, 'status', m.status, 'required', m.required, 'capacity_hours_per_week', m.capacity_hours_per_week,
                     'working_hours', m.working_hours, 'backup_for', m.backup_for, 'sla_accepted_at', m.sla_accepted_at)
                   FROM public.sa_members m WHERE m.agreement_id = _id AND m.consultant_id = cid AND m.status IN ('invited', 'active') LIMIT 1),
     'replacement', (SELECT jsonb_build_object('id', x.id, 'status', x.status, 'to', x.to_consultant, 'reason', x.reason) FROM public.sa_replacements x WHERE x.agreement_id = _id AND x.status IN ('pending_admin', 'pending_consultant') LIMIT 1),
