@@ -2,7 +2,8 @@
 
 Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql/`); read it before changing files there.
 
-- Reuse the consultant payout reminder on dashboard and Earnings and render administrator readiness badges from existing presence/status metadata only; this keeps bank identifiers out of readiness UI.
+- Payout reminders are shared by dashboard and Earnings; admin readiness badges use presence/status metadata only, keeping bank identifiers out.
+- Dimmed buttons use Button `reason` (keys in `src/lib/blockedReasons.ts`, which also maps server refusal codes) or `busy`, never bare `disabled` (guard test; `disabled-ok:` opt-out), so each block says why and what next.
 - Shared Button drops its variant gradient when callers pass a base background colour (custom gradients kept), preserving emergency/status colours.
 - Consultant landing/pricing pages own head tags via useHeadTags (dedupe, restore on unmount), never also via RouteSeo, to avoid competing updates.
 - Admin full consultant profiles load only via the audited admin-only RPC in the shared sheet (ephemeral queries, short-lived links, timed in-memory bank reveals), so private payout data is never persisted.
@@ -20,7 +21,7 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - Consultant field visibility/required state comes only from admin field rules via useProfileFieldRules (FieldGate/RequiredMark), except hard-required country/city enforced by the shared consultant location helpers and server grace checks; client lists drop hidden_consultant_ids (show everyone if that call fails), so one rule applies everywhere without blocking saves.
 - Portal-menu public links are `external: true` (new tab).
 - Founding Consultant awards live in a separate read-only badge table with locked server-only allocation and audited admin RPC overrides; optional feature queries fail closed until the user applies the prepared SQL, so existing consultant queries and private profile access remain unchanged.
-- Profile autosave uses loaded baselines, immutable snapshots and readiness gating; sensitive fields stay manual to prevent empty writes and audit flooding. Radix save guidance preserves focus, continuation and session rules.
+- Profile autosave uses loaded baselines, immutable snapshots and readiness gating; sensitive fields stay manual (no empty writes or audit floods).
 - AI interviews start only through the shared interviewStart resolver (resume in-progress, else reuse newest pending, single-flight insert) behind a visible blocker/preflight; completion counts the interview as its own weighted item from the shared helper, and evaluation confirms trigger-awarded badges, so no surface creates duplicates or a different percent.
 - Long ticket submits and matching runs use the shared TaskProgressPanel with real step states; new tickets save via ticketSubmission helpers (single-flight, tab-stored id) so progress stays honest and tickets never duplicate.
 - Team engagement: on gated tickets only team activation writes active assignments and tickets.consultant_id, after all four gates, for client- and admin-added members (admin changes audited); team requests only invite and team rows only mirror existing tables, so access rules follow the gates.
@@ -29,7 +30,7 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - Others' consultant names come only from the database viewer rule and the shared consultantName formatter, so no screen, e-mail or AI text leaks a hidden name.
 - Realtime uses `subscribeWhileVisible` with row filters (whole tables only on admin pages); portals and Arabic load lazily, cutting DB/bundle load.
 - Meetings are created only by the schedule-meeting function; entry points use ScheduleMeetingButton/Launcher with `_shared/meetingSchedule.ts`, so disabled buttons show why and screen and server agree.
-- Window scroll rules live only in ScrollToTop/lib/scrollUtils; landing reveals use lib/reveal, which hides only what it marks, so content shows without scripts.
+- Scroll rules live only in ScrollToTop/lib/scrollUtils; landing reveals use lib/reveal (hides only what it marks), so content shows without scripts.
 - Sign-up confirmation links open /auth/confirm, verifying only on a button press (code fallback) so scanners cannot use them up; expired links show ConfirmLinkProblem, never the social error.
 - Consultant referrals (Feature Z): attribution, activation, fraud signals, rewards and referral payouts are decided only by docs/sql/referral-program.sql triggers; the browser reads only via my_referral_* / admin_referral_* RPCs (masked, default-deny) and `src/lib/referrals.ts` mirrors the rules (threats/tests: docs/referral-security.md), so money is never set from a screen.
 - The Refer & earn "Programme rules" hub builds all screen and PDF text only through `components/referral/rules/rulesContent.ts` from live settings (admin notes are plain-text settings), and checklist/journey/simulator math lives only in `src/lib/referralRules.ts`, so no programme number is hard-coded and screen, PDF and tests agree.
