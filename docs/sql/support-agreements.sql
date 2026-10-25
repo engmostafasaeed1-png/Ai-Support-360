@@ -1163,12 +1163,33 @@ BEGIN
          end_date = NULLIF(terms -> 'term' ->> 'end_date', '')::date,
          admin_review = CASE WHEN COALESCE((s ->> 'needs_admin_review')::boolean, true) AND first_pair THEN 'pending' ELSE 'not_needed' END
    WHERE id = _id;
-  INSERT INTO public.sa_members (agreement_id, consultant_id, member_role, status) VALUES (_id, a.consultant_id, 'lead', 'active') ON CONFLICT DO NOTHING;
+  -- Crew: the lead's place and SLA acceptance come from the terms acceptance (+ the SLA box ticked when applying);
+  -- every other crew member is invited and must accept the place and the SLA snapshot.
+  INSERT INTO public.sa_members (agreement_id, consultant_id, member_role, status, required, capacity_hours_per_week, working_hours, invited_by,
+                                 accepted_at, sla_policy_id, sla_version, sla_hash, sla_accepted_at)
+  SELECT _id, a.consultant_id, 'lead', 'active', true, NULLIF(q.le ->> 'capacity_hours_per_week', '')::numeric, COALESCE(q.le -> 'working_hours', '{}'::jsonb), a.client_id,
+         now(), NULLIF(a.terms -> 'sla' ->> 'policy_id', '')::uuid, NULLIF(a.terms -> 'sla' ->> 'version', '')::int, a.terms -> 'sla' ->> 'hash',
+         COALESCE((SELECT p.sla_accepted_at FROM public.sa_applications p WHERE p.id = a.application_id), now())
+    FROM (SELECT (SELECT e FROM jsonb_array_elements(COALESCE(a.terms -> 'team', '[]'::jsonb)) e WHERE e ->> 'consultant_id' = a.consultant_id::text LIMIT 1) AS le) q
+  ON CONFLICT DO NOTHING;
+  INSERT INTO public.sa_member_acceptances (agreement_id, consultant_id, user_id, member_role, terms_version, terms_hash, sla_policy_id, sla_version, sla_hash, sla_summary, typed_name, legal_draft)
+  SELECT _id, a.consultant_id, x.user_id, 'lead', a.version, x.content_hash, NULLIF(a.terms -> 'sla' ->> 'policy_id', '')::uuid, NULLIF(a.terms -> 'sla' ->> 'version', '')::int,
+         a.terms -> 'sla' ->> 'hash', COALESCE(a.terms -> 'sla' ->> 'summary', ''), x.typed_name, x.legal_draft
+    FROM public.sa_acceptances x WHERE x.agreement_id = _id AND x.version = a.version AND x.party = 'consultant';
+  FOR e IN SELECT jsonb_array_elements(COALESCE(a.terms -> 'team', '[]'::jsonb)) LOOP
+    CONTINUE WHEN e ->> 'consultant_id' = a.consultant_id::text;
+    INSERT INTO public.sa_members (agreement_id, consultant_id, member_role, status, required, capacity_hours_per_week, working_hours, backup_for, invited_by)
+    VALUES (_id, (e ->> 'consultant_id')::uuid, e ->> 'role', 'invited', COALESCE((e ->> 'required')::boolean, true), NULLIF(e ->> 'capacity_hours_per_week', '')::numeric,
+            COALESCE(e -> 'working_hours', '{}'::jsonb), NULLIF(e ->> 'backup_for', '')::uuid, a.client_id)
+    ON CONFLICT DO NOTHING;
+    PERFORM public.sa_notify_member_invite(_id, (e ->> 'consultant_id')::uuid);
+  END LOOP;
   UPDATE public.sa_applications SET status = 'declined', updated_at = now() WHERE agreement_id = _id AND id <> a.application_id AND status IN ('pending', 'shortlisted');
   PERFORM public.sa_set_status(_id, 'agreed', uid, jsonb_build_object('version', a.version, 'rate_record', rid));
   PERFORM public.sa_notify_parties(_id, 'Support agreement agreed: ' || a.name, 'تم الاتفاق على اتفاقية الدعم: ' || a.name,
-    'Both parties accepted version ' || a.version || '. It starts on the start date once the NDA is signed by both' || CASE WHEN first_pair AND COALESCE((s ->> 'needs_admin_review')::boolean, true) THEN ' and our team has reviewed it.' ELSE '.' END,
-    'قبل الطرفان الإصدار ' || a.version || '. تبدأ في تاريخ البدء بعد توقيع اتفاقية عدم الإفصاح من الطرفين.', true, 'agreed:' || _id);
+    'Both parties accepted version ' || a.version || '. It starts when the crew is confirmed: every required member accepted the place and the SLA, the NDA is signed by both sides and the start date has come'
+      || CASE WHEN first_pair AND COALESCE((s ->> 'needs_admin_review')::boolean, true) THEN ', after our team has reviewed it.' ELSE '.' END,
+    'قبل الطرفان الإصدار ' || a.version || '. تبدأ عند تأكيد الفريق: قبول كل عضو مطلوب لمكانه ولاتفاقية مستوى الخدمة، وتوقيع اتفاقية عدم الإفصاح من الطرفين، وحلول تاريخ البدء.', true, 'agreed:' || _id);
   IF first_pair AND COALESCE((s ->> 'needs_admin_review')::boolean, true) THEN
     PERFORM public.sa_notify_admins(_id, 'Support agreement to review', a.name || ' needs an admin review before it starts.', 'review:' || _id);
   END IF;
@@ -1176,18 +1197,29 @@ BEGIN
   RETURN jsonb_build_object('agreed', true, 'admin_review', first_pair AND COALESCE((s ->> 'needs_admin_review')::boolean, true));
 END $$;
 
--- Agreed -> Active when: admin review done (or not needed), NDA signed by both (if required), start date reached.
+CREATE OR REPLACE FUNCTION public.sa_notify_member_invite(_id uuid, _consultant uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE nm text := (SELECT a.name FROM public.sa_agreements a WHERE a.id = _id);
+BEGIN
+  PERFORM public.sa_notify(_id, public.sa_user_of(_consultant), 'Join a support crew: ' || nm, 'الانضمام إلى فريق دعم: ' || nm,
+    'A client invites you to the crew of a long-term support agreement at the agreed rate. Review your role, capacity and the SLA, then accept or decline.',
+    'يدعوك عميل إلى فريق اتفاقية دعم طويلة الأمد بالسعر المتفق عليه. راجع دورك وساعاتك واتفاقية مستوى الخدمة ثم اقبل أو اعتذر.',
+    'consultant', true, 'member:' || _id || ':' || _consultant || ':' || extract(epoch FROM now())::bigint / 86400);
+END $$;
+
+-- Agreed -> Active only when the team confirmation checklist is complete (sa_confirmation). From that moment the
+-- agreement's SLA snapshot applies to new tickets under the agreement ("SLA starts when the crew is confirmed").
 CREATE OR REPLACE FUNCTION public.sa_try_activate(_id uuid)
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE a public.sa_agreements;
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id FOR UPDATE;
-  IF a.status <> 'agreed' OR a.admin_review NOT IN ('not_needed', 'approved') OR a.start_date > current_date OR NOT public.sa_nda_ok(a) THEN RETURN false; END IF;
+  IF a.status <> 'agreed' OR NOT COALESCE((public.sa_confirmation(_id) ->> 'ready')::boolean, false) THEN RETURN false; END IF;
   UPDATE public.sa_agreements SET started_at = now(), last_activity_at = now() WHERE id = _id;
   PERFORM public.sa_set_status(_id, 'active', NULL);
   PERFORM public.sa_notify_parties(_id, 'Support agreement active: ' || a.name, 'اتفاقية الدعم نشطة: ' || a.name,
-    'From today new tickets under this agreement go directly to the committed consultant at the agreed rate and SLA.',
-    'من اليوم تذهب التذاكر الجديدة ضمن هذه الاتفاقية مباشرة إلى الاستشاري الملتزم بالسعر والاتفاقية المتفق عليهما.', true, 'active:' || _id);
+    'The crew is confirmed. From today new tickets under this agreement go directly to the committed consultant at the agreed rate, and the agreement SLA applies.',
+    'تم تأكيد الفريق. من اليوم تذهب التذاكر الجديدة ضمن هذه الاتفاقية مباشرة إلى الاستشاري الملتزم بالسعر المتفق عليه، وتسري اتفاقية مستوى الخدمة الخاصة بالاتفاقية.', true, 'active:' || _id);
   RETURN true;
 END $$;
 
