@@ -92,7 +92,7 @@ export default function AdminAgreementsPage() {
           <Card className="rounded-2xl"><CardContent className="overflow-x-auto p-0">
             <table className="w-full text-sm"><thead><tr className="text-xs text-muted-foreground"><th className="p-3 text-start">{t('agreements.f.name')}</th><th className="p-3 text-start">{t('agreements.admin.company')}</th><th className="p-3 text-start">{t('agreements.role.lead')}</th><th className="p-3 text-start">{t('agreements.f.rate')}</th><th className="p-3 text-start">{t('agreements.admin.statusCol')}</th><th className="p-3 text-start">{t('agreements.admin.activity')}</th></tr></thead>
               <tbody>{list.map((r) => (
-                <tr key={r.id} className="border-t"><td className="p-3 font-medium">{r.name}</td><td className="p-3">{r.company ?? '—'}</td><td className="p-3">{r.consultant ?? '—'}</td>
+                <tr key={r.id} className="border-t"><td className="p-3 font-medium">{r.name}{r.reference && <span className="block font-mono text-xs font-normal text-muted-foreground">{r.reference}</span>}</td><td className="p-3">{r.company ?? '—'}</td><td className="p-3">{r.consultant ?? '—'}</td>
                   <td className="p-3">{r.rate ? money(r.rate.hourly_rate, r.rate.currency, lang) : '—'}</td><td className="p-3"><AgreementStatusBadge status={r.status} /></td>
                   <td className="p-3">{fmtDate(r.last_activity_at, lang)}{r.inactive && <AlertTriangle className="ms-1 inline h-3.5 w-3.5 text-warning" aria-label={t('agreements.admin.inactive')} />}</td></tr>))}
                 {!list.length && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">{t('agreements.empty')}</td></tr>}</tbody></table>
@@ -104,14 +104,14 @@ export default function AdminAgreementsPage() {
           {!review.length && !repl.length && <p className="text-sm text-muted-foreground">{t('agreements.admin.noReview')}</p>}
           {review.map((r) => (
             <Card key={r.id} className="rounded-2xl"><CardContent className="flex flex-wrap items-center justify-between gap-2 p-4 text-sm">
-              <div><p className="font-medium">{r.name}</p><p className="text-muted-foreground">{r.company ?? '—'} · {r.consultant ?? '—'} · {r.rate ? money(r.rate.hourly_rate, r.rate.currency, lang) : '—'}</p></div>
+              <div><p className="font-medium">{r.name} {r.reference && <span className="font-mono text-xs font-normal text-muted-foreground">{r.reference}</span>}</p><p className="text-muted-foreground">{r.company ?? '—'} · {r.consultant ?? '—'} · {r.rate ? money(r.rate.hourly_rate, r.rate.currency, lang) : '—'}</p></div>
               <div className="flex gap-2"><Button size="sm" onClick={() => act(() => api.adminReview(r.id, true, note))}>{t('agreements.admin.approve')}</Button>
                 <Button size="sm" variant="destructive" disabled={note.trim().length < 5} onClick={() => act(() => api.adminReview(r.id, false, note))}>{t('agreements.admin.reject')}</Button></div>
             </CardContent></Card>
           ))}
           {repl.map((r) => (
             <Card key={r.replacement!.id} className="rounded-2xl"><CardContent className="flex flex-wrap items-center justify-between gap-2 p-4 text-sm">
-              <div><p className="font-medium">{t('agreements.admin.replacement', { name: r.name })}</p><p className="text-muted-foreground">{r.replacement!.reason}</p></div>
+              <div><p className="font-medium">{t('agreements.admin.replacement', { name: r.reference ? `${r.name} (${r.reference})` : r.name })}</p><p className="text-muted-foreground">{r.replacement!.reason}</p></div>
               <div className="flex gap-2"><Button size="sm" onClick={() => act(() => api.adminDecideReplacement(r.replacement!.id, true, note))}>{t('agreements.admin.approve')}</Button>
                 <Button size="sm" variant="ghost" onClick={() => act(() => api.adminDecideReplacement(r.replacement!.id, false, note))}>{t('agreements.admin.reject')}</Button></div>
             </CardContent></Card>
@@ -121,7 +121,7 @@ export default function AdminAgreementsPage() {
         <TabsContent value="alerts" className="space-y-3">
           <p className="text-sm text-muted-foreground">{t('agreements.admin.alertsText', { weeks: draft.inactivity_weeks })}</p>
           {!inactive.length && <p className="text-sm text-muted-foreground">{t('agreements.admin.noAlerts')}</p>}
-          {inactive.map((r) => <Card key={r.id} className="rounded-2xl border-warning/50"><CardContent className="p-4 text-sm"><p className="font-medium">{r.name}</p>
+          {inactive.map((r) => <Card key={r.id} className="rounded-2xl border-warning/50"><CardContent className="p-4 text-sm"><p className="font-medium">{r.name} {r.reference && <span className="font-mono text-xs font-normal text-muted-foreground">{r.reference}</span>}</p>
             <p className="text-muted-foreground">{r.company ?? '—'} · {r.consultant ?? '—'} · {t('agreements.admin.lastActivity', { date: fmtDate(r.last_activity_at, lang) })}</p></CardContent></Card>)}
         </TabsContent>
 
