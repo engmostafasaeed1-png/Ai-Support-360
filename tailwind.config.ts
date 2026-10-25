@@ -42,6 +42,10 @@ export default {
           foreground: "hsl(var(--destructive-foreground))",
           shade: "hsl(var(--destructive-shade))",
         },
+        signature: {
+          paper: "hsl(var(--signature-paper))",
+          ink: "hsl(var(--signature-ink))",
+        },
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
