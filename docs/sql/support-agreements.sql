@@ -625,8 +625,8 @@ BEGIN
   INSERT INTO public.sa_agreements (tenant_id, client_id, name, request, terms, created_by)
   VALUES (_tenant, uid, left(COALESCE(NULLIF(btrim(_terms ->> 'name'), ''), 'Support agreement'), 120), COALESCE(_request, '{}'::jsonb), COALESCE(_terms, '{}'::jsonb), uid)
   RETURNING sa_agreements.id INTO new_id;
-  PERFORM public.sa_event(id, 'created', uid);
-  PERFORM public.sa_audit_log(uid, 'create', id);
+  PERFORM public.sa_event(new_id, 'created', uid);
+  PERFORM public.sa_audit_log(uid, 'create', new_id);
   RETURN new_id;
 END $$;
 
