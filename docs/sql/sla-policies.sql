@@ -718,8 +718,20 @@ RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
     FROM (SELECT COALESCE(public.sla_settings() -> 'urgency_map' ->> COALESCE(_urgency, 'medium'), 'S3') AS x) q
 $$;
 
--- Most specific active client policy of the ticket owner (module > SAP area > all; newest effective first), else the
--- platform default. Draft and archived policies never apply; effective_from in the future does not apply yet.
+-- Hook for support agreements (docs/sql/support-agreements.sql): a ticket opened under an agreement uses the SLA
+-- policy version attached to that agreement. The no-op stub is created only while the real function is missing, so the
+-- two files can be applied in any order.
+DO $$
+BEGIN
+  IF to_regprocedure('public.sa_ticket_sla(uuid)') IS NULL THEN
+    CREATE FUNCTION public.sa_ticket_sla(_ticket uuid) RETURNS TABLE (policy_id uuid, version integer)
+      LANGUAGE sql STABLE SET search_path = public AS 'SELECT NULL::uuid, NULL::integer WHERE false';
+  END IF;
+END $$;
+
+-- Agreement policy first, then the most specific active client policy of the ticket owner (module > SAP area > all;
+-- newest effective first), else the platform default. Draft and archived policies never apply; effective_from in the
+-- future does not apply yet.
 CREATE OR REPLACE FUNCTION public.sla_effective_policy(_ticket uuid)
 RETURNS TABLE (policy_id uuid, version integer, name text)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
@@ -735,11 +747,15 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
          OR (p.applies_to ->> 'kind' = 'module' AND (t.sap_module = ANY (ARRAY(SELECT jsonb_array_elements_text(p.applies_to -> 'values')))
                OR COALESCE(t.sap_modules, '{}') && ARRAY(SELECT jsonb_array_elements_text(p.applies_to -> 'values')))))
   )
-  SELECT * FROM (
-    (SELECT c.id, c.active_version, c.name FROM c ORDER BY c.rank, c.effective_from DESC LIMIT 1)
+  SELECT q.id, q.v, q.n FROM (
+    (SELECT 0 AS ord, p.id, h.version AS v, p.name AS n FROM public.sa_ticket_sla(_ticket) h
+       JOIN public.sla_policies p ON p.id = h.policy_id
+       JOIN public.sla_policy_versions pv ON pv.policy_id = h.policy_id AND pv.version = h.version LIMIT 1)
     UNION ALL
-    (SELECT p.id, p.active_version, p.name FROM public.sla_policies p WHERE p.is_default AND p.active_version IS NOT NULL LIMIT 1)
-  ) q LIMIT 1
+    (SELECT 1, c.id, c.active_version, c.name FROM c ORDER BY c.rank, c.effective_from DESC LIMIT 1)
+    UNION ALL
+    (SELECT 2, p.id, p.active_version, p.name FROM public.sla_policies p WHERE p.is_default AND p.active_version IS NOT NULL LIMIT 1)
+  ) q ORDER BY q.ord LIMIT 1
 $$;
 
 CREATE OR REPLACE FUNCTION public.sla_snapshot_data(_policy uuid, _version integer, _severity text, _ticket uuid)
