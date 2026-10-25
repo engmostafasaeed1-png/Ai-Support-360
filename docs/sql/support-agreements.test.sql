@@ -304,7 +304,7 @@ BEGIN
   PERFORM pg_temp.as_user(oa);
   IF pg_temp.err(format($q$SELECT public.sa_create(%L, '{}'::jsonb, pg_temp.terms(current_date) || jsonb_build_object('name', 'Crew X', 'team', jsonb_build_array(jsonb_build_object('consultant_id', %L, 'role', 'technical'))))$q$, ta, xc))
      NOT LIKE '%crew_member%' THEN RAISE EXCEPTION 'SA30 unverified'; END IF;
-  INSERT INTO public.client_consultant_blocks (tenant_id, owner_user_id, consultant_id, created_by) VALUES (ta, oa, uc, oa);
+  INSERT INTO public.client_consultant_blocks (tenant_id, consultant_id, created_by) VALUES (ta, uc, oa);
   IF pg_temp.err(format($q$SELECT public.sa_create(%L, '{}'::jsonb, pg_temp.terms(current_date) || jsonb_build_object('name', 'Crew B', 'team', jsonb_build_array(jsonb_build_object('consultant_id', %L, 'role', 'technical'))))$q$, ta, uc))
      NOT LIKE '%crew_blocked%' THEN RAISE EXCEPTION 'SA30 blocked'; END IF;
   DELETE FROM public.client_consultant_blocks WHERE tenant_id = ta AND consultant_id = uc;
