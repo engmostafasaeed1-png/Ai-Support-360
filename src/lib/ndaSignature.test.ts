@@ -224,7 +224,7 @@ describe('NDA e-mails', () => {
     const r = renderNdaEmail({ lang: 'en', kind: 'needs_signature', signer: '<b>M. S****</b>', path: '/client/contracts?nda=1' });
     expect(r.subject).toBe('<b>M. S****</b> signed the NDA, your signature is needed');
     expect(r.html).toContain('&lt;b&gt;M. S****&lt;/b&gt;');
-    expect(r.html).toContain('https://www.aisupport360.com/client/contracts?nda=1');
+    expect(r.text).toContain('https://www.aisupport360.com/client/contracts?nda=1');
     const ar = renderNdaEmail({ lang: 'ar', kind: 'reminder', signer: 'Acme', path: '//evil.example' });
     expect(ar.html).toContain('dir="rtl"');
     expect(ar.html).not.toContain('evil.example');
