@@ -234,8 +234,9 @@ Deno.serve(async (req) => {
   const memberIds = [...new Set([...uniqueConsultants.map((id) => consultantUsers.get(id)!), ...uniqueColleagues])].filter((id) => id !== caller.id);
   let membersMailed = 0;
   if (memberIds.length) {
-    const { data: users } = await admin.from('profiles').select('user_id, email').in('user_id', memberIds);
-    for (const u of (users ?? []) as { user_id: string; email: string | null }[]) {
+    for (const userId of memberIds) {
+      const { data: au } = await admin.auth.admin.getUserById(userId);
+      const u = { user_id: userId, email: au?.user?.email ?? null };
       if (!u.email) continue;
       try {
         const r = await sendTemplateEmail('meeting-invitation', u.email, {
