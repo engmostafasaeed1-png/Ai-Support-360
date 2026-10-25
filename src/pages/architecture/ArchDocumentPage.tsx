@@ -71,7 +71,7 @@ export default function ArchDocumentPage({ back }: { back: string }) {
         {doc.status === 'archived' && <p role="note" className="rounded-xl bg-muted p-2 text-sm">{t('arch.doc.archived')}</p>}
         {!state.enabled && editor && state.role !== 'admin' && <p role="note" className="rounded-xl bg-muted p-2 text-sm">{t('arch.unavailable.off')}</p>}
       </header>
-      {editor && doc.draft ? <ArchEditor key={doc.id + (doc.draft_rev ?? 0)} state={state} onReload={reload} /> : <ArchReader state={state} onReload={reload} />}
+      {editor && doc.draft ? <ArchEditor key={doc.id} state={state} onReload={reload} /> : <ArchReader state={state} onReload={reload} />}
     </div>
   );
 }
