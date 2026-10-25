@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import PartnerCompaniesCard from '@/components/admin/users/PartnerCompaniesCard';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -149,10 +150,12 @@ export default function UsersPage() {
         <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
           <TabsTrigger value="users">{t('um.tab_people', 'People')}</TabsTrigger>
           {perms.includes('users.roles') && <TabsTrigger value="access">{t('um.access_review', 'Access review')}</TabsTrigger>}
+          {perms.includes('users.roles') && <TabsTrigger value="partners">{t('partner.admin_tab', 'Partner companies')}</TabsTrigger>}
           <TabsTrigger value="permissions">{t('um.tab_permissions', 'Roles & permissions')}</TabsTrigger>
           {perms.includes('audit.read') && <TabsTrigger value="history">{t('um.tab_history', 'Admin history')}</TabsTrigger>}
         </TabsList>
 
+        <TabsContent value="partners"><PartnerCompaniesCard /></TabsContent>
         <TabsContent value="users" className="space-y-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
             {statCards.map(([label, n, preset]) => (

@@ -26,6 +26,7 @@ import PayoutDetailsNudge from '@/components/consultant/PayoutDetailsNudge';
 import ReferralBanner from '@/components/referral/ReferralBanner';
 import { ReferEarnLaterCard } from '@/components/referral/ReferEarnStepHost';
 import GettingStartedCard from '@/components/consultant/GettingStartedCard';
+import PartnerInviteCard from '@/components/partner/PartnerInviteCard';
 import LocationBanner from '@/components/consultant/LocationBanner';
 import AvailabilityUrgentBanner from '@/components/consultant/AvailabilityUrgent';
 import PolicyBanner from '@/components/consultant/policy/PolicyBanner';
@@ -219,6 +220,7 @@ export default function ConsultantDashboard() {
     <div className="space-y-6">
       <LocationBanner />
       <AvailabilityUrgentBanner />
+      <PartnerInviteCard />
       <PolicyBanner />
       <PayoutDetailsNudge />
       <CriticalDashboardNotice />
