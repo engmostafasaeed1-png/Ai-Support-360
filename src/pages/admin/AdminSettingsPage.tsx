@@ -48,7 +48,16 @@ const GENERAL = [
     label: 'Show Solution Architecture to clients',
     hint: 'Off (default): the page is hidden from client menus and search, and its address leads to the client dashboard. Administrators can still open it by address for review; it shows example data only.',
   },
+  {
+    key: 'meeting_external_invites',
+    labelKey: 'admin.settings_meeting_external',
+    label: 'Allow external e-mail attendees in meetings',
+    hint: 'On (default): clients, assigned consultants and administrators may invite up to 10 people without a portal account to a meeting; each gets one platform invitation with the join page and a calendar file. Off: only assigned consultants and colleagues of the company can be invited.',
+  },
 ] as const;
+
+/** Switches that count as ON while they were never saved. */
+const DEFAULT_ON = new Set<string>(['open_registration', 'meeting_external_invites']);
 
 export default function AdminSettingsPage() {
   const { t } = useTranslation();
@@ -111,7 +120,7 @@ export default function AdminSettingsPage() {
                   <Switch
                     id={item.key}
                     className="shrink-0"
-                    checked={item.key === 'open_registration' ? settings.open_registration !== false : !!settings[item.key]}
+                    checked={DEFAULT_ON.has(item.key) ? settings[item.key] !== false : !!settings[item.key]}
                     onCheckedChange={(val) => {
                       if (item.key === 'maintenance_mode' && val) {
                         setConfirmMaintenance(true);
