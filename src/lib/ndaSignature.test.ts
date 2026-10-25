@@ -204,9 +204,13 @@ describe('signed NDA PDF', () => {
     const font = (f: string) => readFileSync(resolve(__dirname, `../../public/fonts/brd/${f}`)).toString('base64');
     const texts: string[] = [];
     let images = 0;
-    class Spy extends jsPDF {
-      text(...a: Parameters<jsPDF['text']>) { texts.push(String(Array.isArray(a[0]) ? a[0].join(' ') : a[0])); return super.text(...a); }
-      addImage(...a: Parameters<jsPDF['addImage']>) { images++; return super.addImage(...(a as [any, any, any, any, any, any])); }
+    // jsPDF returns its own API object from the constructor, so the spy wraps the methods of each new document
+    function Spy(this: unknown, opts: unknown) {
+      const d = new jsPDF(opts as never) as unknown as Record<string, (...a: unknown[]) => unknown>;
+      const text = d.text.bind(d), addImage = d.addImage.bind(d);
+      d.text = (...a: unknown[]) => { texts.push(String(Array.isArray(a[0]) ? (a[0] as string[]).join(' ') : a[0])); return text(...a); };
+      d.addImage = (...a: unknown[]) => { images++; return addImage(...a); };
+      return d;
     }
     const doc = buildNdaPdf(Spy as never, input, 'en', { regular: font('IBMPlexSansArabic-Regular.ttf'), bold: font('IBMPlexSansArabic-Bold.ttf') });
     const all = texts.join(' ');
