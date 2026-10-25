@@ -75,7 +75,7 @@ BEGIN
 
   -- SA05 applications: SLA acceptance required, rate bounds enforced server-side.
   PERFORM pg_temp.as_user(k);
-  r := to_jsonb(pg_temp.err(format($q$SELECT public.sa_apply(%L, 100, 'USD', 'hours_bank', NULL, '', false, 'hi')$q$, aid))); IF r::text NOT LIKE '%sa_sla_acceptance_required%' THEN RAISE EXCEPTION 'SA05 sla %', r; END IF;
+  IF pg_temp.err(format($q$SELECT public.sa_apply(%L, 100, 'USD', 'hours_bank', NULL, '', false, 'hi')$q$, aid)) NOT LIKE '%sa_sla_acceptance_required%' THEN RAISE EXCEPTION 'SA05 sla'; END IF;
   IF pg_temp.err(format($q$SELECT public.sa_apply(%L, 5, 'USD', 'hours_bank', NULL, '', true, 'hi')$q$, aid)) NOT LIKE '%sa_rate_out_of_bounds%' THEN RAISE EXCEPTION 'SA05 bounds'; END IF;
   IF pg_temp.err(format($q$SELECT public.sa_apply(%L, 100, 'USD', 'hours_bank', NULL, '', true, 'call +966 55 123 4567')$q$, aid)) NOT LIKE '%sa_contact_details%' THEN RAISE EXCEPTION 'SA05 M60'; END IF;
   app_k := public.sa_apply(aid, 100, 'USD', 'hours_bank', NULL, 'Mornings', true, 'Happy to support FI');
@@ -133,7 +133,8 @@ BEGIN
   IF (SELECT status FROM public.sa_agreements WHERE id = aid) <> 'agreed' THEN RAISE EXCEPTION 'SA11 needs NDA'; END IF;
   PERFORM pg_temp.as_user(NULL);
   INSERT INTO public.nda_agreements (consultant_id, client_id, signature_data, nda_content, signed_at, client_signed_at) VALUES (kc, oa, 'sig', 'nda', now(), now());
-  IF NOT public.sa_try_activate(aid) OR (SELECT status FROM public.sa_agreements WHERE id = aid) <> 'active' THEN RAISE EXCEPTION 'SA11 active % % % %', (SELECT status||'/'||admin_review||'/'||start_date FROM public.sa_agreements WHERE id = aid), (SELECT count(*) FROM public.nda_agreements WHERE consultant_id = kc), (SELECT public.sa_nda_ok(q) FROM public.sa_agreements q WHERE q.id = aid), (SELECT string_agg(signed_at::text||'|'||coalesce(client_signed_at::text,'-')||'|'||coalesce(revoked_at::text,'-'),';') FROM public.nda_agreements WHERE consultant_id = kc); END IF;
+  IF NOT public.sa_try_activate(aid) THEN RAISE EXCEPTION 'SA11 activate'; END IF;
+  IF (SELECT status FROM public.sa_agreements WHERE id = aid) <> 'active' THEN RAISE EXCEPTION 'SA11 active'; END IF;
 
   -- SA12 a ticket under the agreement gets the agreed rate and a direct request to the lead (no bidding);
   --      a module outside the scope stays a normal ticket.
