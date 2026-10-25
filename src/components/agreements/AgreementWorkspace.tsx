@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Download, FileSignature, Handshake, History, Loader2, MessageSquare, PauseCircle, PlayCircle, Repeat, Scale, Users, Wallet } from 'lucide-react';
+import { Download, FileSignature, FolderOpen, Handshake, History, Loader2, MessageSquare, PauseCircle, PlayCircle, Repeat, Scale, ShieldCheck, Users, Wallet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,8 @@ import { feeExample, offerPatch, rateChangeEffectiveOk, saErrorCode, type SaSett
 import { agreementPdfBlob } from '@/lib/agreements/pdf';
 import { AgreementStatusBadge, AgreementSteps, fmtDate, LegalDraftBanner, money, ProtectionBox, TermsSummary } from './AgreementBits';
 import ApplyDialog from './ApplyDialog';
+import AgreementDocuments from './AgreementDocuments';
+import { CrewPanel, TeamConfirmation } from './AgreementCrew';
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
@@ -72,13 +74,14 @@ export default function AgreementWorkspace({ a, settings, portal }: { a: api.SaD
     setPdfBusy(true);
     try {
       const blob = await agreementPdfBlob({
-        name: a.name, status: t(`agreements.status.${a.status}`), version: a.version, hash: a.content_hash ?? null,
+        name: a.name, reference: a.reference, status: t(`agreements.status.${a.status}`), version: a.version, hash: a.content_hash ?? null,
+        crew: (a.confirmation?.members ?? []).map((m) => ({ name: m.name ?? '—', role: t(`agreements.memberRole.${m.role}`, { defaultValue: m.role }), capacity: m.capacity_hours_per_week, required: m.required, status: m.status, slaAt: m.sla_accepted_at, ndaAt: m.nda_signed_at })),
         clientName: tenant?.name ?? t('agreements.role.client'), consultantName: a.consultant_name ?? null, terms,
         acceptances: a.acceptances ?? [], legalDraft: a.legal_draft, fees: a.fees ?? null,
       }, lang);
       const url = URL.createObjectURL(blob);
       const el = document.createElement('a');
-      el.href = url; el.download = `agreement-${a.name.replace(/[^\w-]+/g, '-').slice(0, 40)}-v${a.version}.pdf`; el.click();
+      el.href = url; el.download = `agreement-${a.name.replace(/[^\w-]+/g, '-').slice(0, 40)}-${a.reference ?? ''}-v${a.version}.pdf`; el.click();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch { toast.error(t('agreements.err.pdf')); } finally { setPdfBusy(false); }
   };
@@ -122,16 +125,7 @@ export default function AgreementWorkspace({ a, settings, portal }: { a: api.SaD
       <Header a={a} />
       {a.legal_draft && a.status !== 'draft' && <LegalDraftBanner />}
       {a.admin_review === 'pending' && <p className="rounded-xl border border-info/40 bg-info/10 p-3 text-sm">{t('agreements.detail.adminReview')}</p>}
-      {a.status === 'agreed' && (
-        <div className="rounded-xl border border-info/40 bg-info/10 p-3 text-sm">
-          <p className="font-medium">{t('agreements.detail.waitingStart')}</p>
-          <ul className="mt-1 space-y-0.5 text-muted-foreground">
-            {terms?.nda_required && <li>• {a.nda_ok ? t('agreements.detail.ndaOk') : t('agreements.detail.ndaMissing')}</li>}
-            <li>• {t('agreements.detail.startOn', { date: fmtDate(a.start_date ?? terms?.term.start_date, lang) })}</li>
-            {a.admin_review === 'pending' && <li>• {t('agreements.detail.adminPending')}</li>}
-          </ul>
-        </div>
-      )}
+      {a.status === 'agreed' && <TeamConfirmation a={a} lang={lang} />}
       {a.termination && (
         <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm">
           <p className="font-medium">{t('agreements.detail.ending', { date: fmtDate(a.termination.end, lang) })}</p>
@@ -148,13 +142,15 @@ export default function AgreementWorkspace({ a, settings, portal }: { a: api.SaD
         </div>
       )}
 
-      <Tabs defaultValue={a.status === 'open' && isClient ? 'applications' : a.status === 'negotiating' ? 'negotiation' : live ? 'usage' : 'overview'}>
+      <Tabs defaultValue={a.my_member?.status === 'invited' ? 'crew' : a.status === 'open' && isClient ? 'applications' : a.status === 'negotiating' ? 'negotiation' : live ? 'usage' : 'overview'}>
         <TabsList className="flex h-auto flex-wrap justify-start">
           <TabsTrigger value="overview"><FileSignature className="me-1 h-4 w-4" />{t('agreements.tab.overview')}</TabsTrigger>
           {a.applications && <TabsTrigger value="applications"><Users className="me-1 h-4 w-4" />{t('agreements.tab.applications')} ({a.applications.length})</TabsTrigger>}
           {['negotiating', 'agreed'].includes(a.status) && <TabsTrigger value="negotiation"><Scale className="me-1 h-4 w-4" />{t('agreements.tab.negotiation')}</TabsTrigger>}
           {a.usage && <TabsTrigger value="usage"><Wallet className="me-1 h-4 w-4" />{t('agreements.tab.usage')}</TabsTrigger>}
           {(a.rates?.length ?? 0) > 0 && <TabsTrigger value="rates"><Repeat className="me-1 h-4 w-4" />{t('agreements.tab.rates')}</TabsTrigger>}
+          {(a.confirmation?.members.length ?? 0) > 0 && <TabsTrigger value="crew"><ShieldCheck className="me-1 h-4 w-4" />{t('agreements.tab.crew')}</TabsTrigger>}
+          <TabsTrigger value="documents"><FolderOpen className="me-1 h-4 w-4" />{t('agreements.tab.documents')}</TabsTrigger>
           <TabsTrigger value="messages"><MessageSquare className="me-1 h-4 w-4" />{t('agreements.tab.messages')}</TabsTrigger>
           <TabsTrigger value="history"><History className="me-1 h-4 w-4" />{t('agreements.tab.history')}</TabsTrigger>
         </TabsList>
@@ -171,15 +167,13 @@ export default function AgreementWorkspace({ a, settings, portal }: { a: api.SaD
               <ProtectionBox compact />
             </CardContent></Card>
 
-          {(a.members?.length ?? 0) > 0 && (
-            <Card className="rounded-2xl"><CardHeader><CardTitle className="text-base">{t('agreements.detail.team')}</CardTitle></CardHeader>
-              <CardContent className="space-y-1 text-sm">{a.members!.map((m) => <p key={m.consultant_id}>{m.name ?? '—'} · {t(`agreements.memberRole.${m.role}`, { defaultValue: m.role })} · <Badge variant="outline">{t(`agreements.memberStatus.${m.status}`, { defaultValue: m.status })}</Badge></p>)}
-                {a.role === 'team' && a.members!.some((m) => m.status === 'invited') && (
-                  <div className="flex gap-2 pt-2"><Button size="sm" onClick={() => run('mem', () => api.memberRespond(a.id, true), t('agreements.saved'))}>{t('agreements.accept')}</Button>
-                    <Button size="sm" variant="ghost" onClick={() => run('mem', () => api.memberRespond(a.id, false))}>{t('agreements.decline')}</Button></div>
-                )}
-              </CardContent></Card>
+          {a.my_member?.status === 'invited' && (
+            <p className="rounded-xl border border-primary/40 bg-primary/5 p-3 text-sm">{t('agreements.crew.invitedBanner')}</p>
           )}
+          {!terms?.team?.length && a.status !== 'draft' ? null : terms?.team?.length && ['draft', 'open', 'negotiating'].includes(a.status) ? (
+            <Card className="rounded-2xl"><CardHeader><CardTitle className="text-base">{t('agreements.crew.planned')}</CardTitle></CardHeader>
+              <CardContent className="text-sm text-muted-foreground">{t('agreements.crew.plannedText', { count: terms.team.filter((e) => e.role !== 'lead').length })}</CardContent></Card>
+          ) : null}
 
           {(isClient || isLead) && (
             <Card className="rounded-2xl"><CardHeader><CardTitle className="text-base">{t('agreements.detail.actions')}</CardTitle></CardHeader>
@@ -298,6 +292,15 @@ export default function AgreementWorkspace({ a, settings, portal }: { a: api.SaD
           </TabsContent>
         )}
 
+        {(a.confirmation?.members.length ?? 0) > 0 && (
+          <TabsContent value="crew" className="space-y-4">
+            {a.status !== 'agreed' && <TeamConfirmation a={a} lang={lang} />}
+            <CrewPanel a={a} settings={settings} />
+          </TabsContent>
+        )}
+
+        <TabsContent value="documents"><AgreementDocuments a={a} settings={settings} /></TabsContent>
+
         <TabsContent value="messages">
           <Messages a={a} msg={msg} setMsg={setMsg} to={msgTo} setTo={isClient ? setMsgTo : undefined}
             send={() => run('msg', () => api.postMessage(a.id, isClient ? (msgTo ?? a.consultant_id ?? null) : null, msg), t('agreements.msg.sent')).then((ok) => ok && setMsg(''))} busy={busy === 'msg'} />
@@ -356,7 +359,8 @@ function Header({ a }: { a: api.SaDetail }) {
   const { t } = useTranslation();
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2"><h1 className="text-2xl font-bold">{a.name}</h1><AgreementStatusBadge status={a.status} />
+      <div className="flex flex-wrap items-center gap-2"><h1 className="text-2xl font-bold">{a.name}</h1>
+        {a.reference && <Badge variant="secondary" className="font-mono">{a.reference}</Badge>}<AgreementStatusBadge status={a.status} />
         <Badge variant="outline">{t(`agreements.role.${a.role}`)}</Badge></div>
       <AgreementSteps status={a.status} />
     </div>
