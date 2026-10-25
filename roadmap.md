@@ -139,4 +139,5 @@
 
 - [x] Solution Architecture build CANCELLED by owner (Oct 25); page hidden behind owner switch solution_architecture_visible (default off, admins can open by address)
 - [ ] Solution Architecture switch: owner applies docs/sql/solution-architecture-flag.sql so clients can read the switch when it is turned on
-- [ ] Partner portal MVP: partner flag on company, partner_resources invites, /partner page (Resources/Availability/Assignments + drawer), docs/sql/partner-portal-mvp.sql (unapplied) + tests
+- [x] Partner portal MVP: partner flag on company, partner_resources invites, /partner page (Resources/Availability/Assignments + drawer), docs/sql/partner-portal-mvp.sql (unapplied) + tests
+- [ ] Partner portal: owner applies docs/sql/partner-portal-mvp.sql, then switches partner_portal on
