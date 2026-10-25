@@ -71,7 +71,7 @@ export default function VoiceInput({ onTranscript, value, disabled, className, s
             variant="ghost"
             size="icon"
             className={cn(btnSize, 'shrink-0 text-muted-foreground hover:text-foreground text-[10px] font-semibold')}
-            reason={[disabled && 'feature_not_ready', voice.listening && 'recording_in_progress']}
+            reason={[disabled && 'another_action_running', voice.listening && 'recording_in_progress']}
             title={t('voice.language', 'Voice language')}
             aria-label={`${t('voice.language', 'Voice language')}: ${current.label}`}
           >
