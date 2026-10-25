@@ -48,7 +48,7 @@ describe('invoice payment actions', () => {
   });
   it('replaces the client action with a disabled reported pill', async () => {
     show({ client_reported_at: '2026-10-16T12:00:00Z' });
-    expect(await screen.findByRole('button', { name: 'Payment reported on Oct 16, 2026 - waiting for confirmation' })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Payment reported on Oct 16, 2026 - waiting for confirmation' })).toBeBlocked();
     expect(screen.queryByRole('button', { name: 'I have paid - confirm payment' })).not.toBeInTheDocument();
   });
   it('lets an administrator confirm a pending invoice exactly once with the existing billing handler', () => {

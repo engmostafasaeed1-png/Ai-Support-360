@@ -127,7 +127,7 @@ describe('ConsultantOnboarding embedded: unsaved typing', () => {
     expect(mounts.skills).toBe(1);
     fireEvent.change(screen.getByLabelText('Bio'), { target: { value: 'Updated bio' } });
     await act(async () => { fireEvent.click(screen.getAllByRole('button', { name: 'Save' })[0]); });
-    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Save' })[0]).toBeDisabled());
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Save' })[0]).toBeBlocked());
     expect(mounts.skills).toBe(1);
     expect(mounts.experience).toBe(1);
   });

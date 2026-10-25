@@ -41,7 +41,7 @@ describe('NDA sign form', () => {
     await i18n.changeLanguage('en');
     wrap(<NdaSignForm party="client" action="sign" ndaId="n1" defaultName="Omar" allowTyped={false} onDone={() => undefined} />);
     const sign = screen.getByRole('button', { name: /Sign NDA/ });
-    expect(sign).toBeDisabled();
+    expect(sign).toBeBlocked();
     expect(screen.getByText(/Still needed before you can sign/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Full legal name/)).toHaveValue('Omar');
     expect(screen.getByLabelText(/Your job title/)).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe('NDA box', () => {
     expect(screen.getByText(/You signed on/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /View \/ download my signed NDA/ })).toBeInTheDocument();
     expect(screen.getByText(/Waiting for the client/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Send a reminder/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /Send a reminder/ })).toBeUnblocked();
   });
   it('the party who still has to sign gets a prominent Review and sign', async () => {
     await i18n.changeLanguage('en');

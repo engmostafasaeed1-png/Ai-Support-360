@@ -39,7 +39,7 @@ describe('agreement settings form', () => {
     for (const s of ['Basics', 'Term', 'Rates', 'Commitment', 'SLA', 'Crew', 'Reporting', 'Escalation contacts', 'Documents', 'Review & accept']) {
       expect(nav).toHaveTextContent(s);
     }
-    expect(screen.getByRole('button', { name: /Publish/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Publish/ })).toBeBlocked();
     expect(screen.getAllByRole('button', { name: /Save draft/ }).length).toBeGreaterThan(0);
     fireEvent.change(screen.getByLabelText('Agreement name'), { target: { value: 'FI support' } });
     expect(screen.getByText(/unique in your company/)).toBeInTheDocument();
@@ -47,7 +47,7 @@ describe('agreement settings form', () => {
   it('locks the name once the agreement is published', async () => {
     await i18n.changeLanguage('en');
     wrap(<AgreementRequestForm settings={settings} agreementId="a1" status="open" reference="SA-2026-000012" onSaved={() => undefined} onCancel={() => undefined} />);
-    expect(screen.getByLabelText('Agreement name')).toBeDisabled();
+    expect(screen.getByLabelText('Agreement name')).toBeBlocked();
     expect(screen.getByText('SA-2026-000012')).toBeInTheDocument();
   });
 });
@@ -93,6 +93,6 @@ describe('agreement documents', () => {
       versions: [{ version: 2, file_name: 'SOW v2.pdf', mime_type: 'application/pdf', size_bytes: 2000, note: '', by_role: 'lead', by: 'K. A****', at: '2026-10-25T10:00:00Z' }, { version: 1, file_name: 'SOW v1.pdf', mime_type: 'application/pdf', size_bytes: 1000, note: '', by_role: 'client', by: 'Olivia', at: '2026-10-24T10:00:00Z' }] }] })} settings={settings} />);
     expect(screen.getAllByText('Statement of work').length).toBeGreaterThan(0);
     expect(screen.getByText('Version history (2)')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Upload a file/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /Upload a file/ })).toBeUnblocked();
   });
 });

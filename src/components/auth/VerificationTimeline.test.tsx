@@ -218,7 +218,7 @@ describe('<VerificationTimeline />', () => {
         onResend={() => {}}
       />,
     );
-    expect(screen.getByRole('button', { name: /resend verification email/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /resend verification email/i })).toBeUnblocked();
   });
 
   it('disables the Resend CTA during cooldown', () => {
@@ -233,7 +233,7 @@ describe('<VerificationTimeline />', () => {
       />,
     );
     const btn = screen.getByRole('button', { name: /resend available in 42s/i });
-    expect(btn).toBeDisabled();
+    expect(btn).toBeBlocked();
   });
 });
 

@@ -50,7 +50,7 @@ describe('ScheduleMeetingDialog', () => {
     setup();
     expect(screen.getByRole('heading', { name: /Schedule Meeting/ })).toBeInTheDocument();
     expect(screen.getByTestId('meeting-timezone')).toHaveTextContent('Times are in your time zone');
-    expect(submit()).toBeDisabled();
+    expect(submit()).toBeBlocked();
     const missing = screen.getByTestId('schedule-meeting-missing');
     expect(missing).toHaveTextContent('Pick a date.');
     expect(missing).toHaveTextContent('Choose at least one participant.');
@@ -62,7 +62,7 @@ describe('ScheduleMeetingDialog', () => {
     setup('k1');
     await screen.findByText('Sara Consultant');
     fireEvent.click(screen.getByText('pick date'));
-    await waitFor(() => expect(submit()).toBeEnabled());
+    await waitFor(() => expect(submit()).toBeUnblocked());
     fireEvent.click(submit());
     await waitFor(() => expect(scheduleMeeting).toHaveBeenCalledTimes(1));
     const body = scheduleMeeting.mock.calls[0][0];
@@ -81,7 +81,7 @@ describe('ScheduleMeetingDialog', () => {
     await screen.findByText('Sara Consultant');
     fireEvent.click(screen.getByText('pick date'));
     expect(await screen.findByTestId('meeting-conflict')).toHaveTextContent('Sara Consultant already has a meeting at this time');
-    expect(submit()).toBeDisabled();
+    expect(submit()).toBeBlocked();
   });
 
   it('shows a readable message when the server refuses (never "Failed to schedule meeting")', async () => {
@@ -90,7 +90,7 @@ describe('ScheduleMeetingDialog', () => {
     fireEvent.change(screen.getByTestId('external-email-input'), { target: { value: 'guest@partner.sa' } });
     fireEvent.keyDown(screen.getByTestId('external-email-input'), { key: 'Enter' });
     fireEvent.click(screen.getByText('pick date'));
-    await waitFor(() => expect(submit()).toBeEnabled());
+    await waitFor(() => expect(submit()).toBeUnblocked());
     fireEvent.click(submit());
     await waitFor(() => expect(screen.getByTestId('schedule-meeting-error')).toHaveTextContent('Only the client of this request, an assigned consultant or an administrator'));
     expect(toastError).not.toHaveBeenCalledWith('Failed to schedule meeting');
@@ -120,7 +120,7 @@ describe('ScheduleMeetingDialog', () => {
     fireEvent.change(screen.getByTestId('external-email-input'), { target: { value: 'a@x.com b@y.com' } });
     fireEvent.keyDown(screen.getByTestId('external-email-input'), { key: 'Enter' });
     fireEvent.click(screen.getByText('pick date'));
-    await waitFor(() => expect(submit()).toBeEnabled());
+    await waitFor(() => expect(submit()).toBeUnblocked());
     fireEvent.click(submit());
     await waitFor(() => expect(screen.getAllByTestId('invitation-status')).toHaveLength(2));
     const rows = screen.getAllByTestId('invitation-status');
