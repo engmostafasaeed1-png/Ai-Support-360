@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
         }
         const p = row.payload ?? {};
         const r = await sendTemplateEmail('agreement-notice', row.email, {
-          templateData: { lang: p.lang === 'ar' ? 'ar' : 'en', title: str(p.title, 160), body: str(p.body, 1000), name: str(p.name, 120), path: str(p.path, 200),
+          templateData: { lang: p.lang === 'ar' ? 'ar' : 'en', title: str(p.title, 160), body: str(p.body, 1000), name: str(p.name, 120), reference: str(p.reference, 24), path: str(p.path, 200),
             role: str(p.role, 20), siteUrl: SITE_URL, contactEmail: sender.contactEmail },
           idempotencyKey: `sa-${row.id}`,
           displayName: sender.displayName, fromLocal: sender.fromLocal, replyTo: sender.replyTo,

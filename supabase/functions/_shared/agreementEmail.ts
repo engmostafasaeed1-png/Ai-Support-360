@@ -4,7 +4,7 @@
 import { esc, safeUrl } from './referralEmail.ts';
 
 type Lang = 'en' | 'ar';
-export interface AgreementEmailInput { lang?: Lang; title?: string; body?: string; name?: string; path?: string; role?: string; siteUrl?: string; contactEmail?: string; test?: boolean }
+export interface AgreementEmailInput { lang?: Lang; title?: string; body?: string; name?: string; reference?: string; path?: string; role?: string; siteUrl?: string; contactEmail?: string; test?: boolean }
 
 const SITE = 'https://www.aisupport360.com';
 const COPY = {
@@ -38,7 +38,7 @@ export function renderAgreementEmail(input: AgreementEmailInput) {
 <tr><td style="background:#1B2559;padding:20px 28px;color:#ffffff;font-size:16px;font-weight:bold;text-align:${align};">AI Support 360</td></tr>
 ${input.test ? `<tr><td style="background:#FEF3C7;color:#92400E;padding:10px 28px;font-size:13px;text-align:${align};">${esc(c.test)}</td></tr>` : ''}
 <tr><td style="padding:28px;text-align:${align};" dir="${dir}">
-${input.name ? `<span style="display:inline-block;background:#DBEAFE;color:#1E40AF;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold;">${esc(String(input.name).slice(0, 120))}</span>` : ''}
+${input.name ? `<span style="display:inline-block;background:#DBEAFE;color:#1E40AF;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:bold;">${esc(String(input.name).slice(0, 120))}${input.reference ? ` &middot; ${esc(String(input.reference).slice(0, 24))}` : ''}</span>` : ''}
 <h1 style="margin:16px 0 8px;font-size:22px;line-height:1.3;color:#1B2559;">${esc(subject)}</h1>
 <p style="margin:0 0 6px;font-size:15px;color:#334155;">${esc(c.hello)}</p>
 <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#334155;">${esc(body)}</p>
@@ -50,13 +50,13 @@ ${input.name ? `<span style="display:inline-block;background:#DBEAFE;color:#1E40
 <tr><td style="background:#F8FAFC;padding:18px 28px;font-size:12px;line-height:1.6;color:#64748B;text-align:${align};" dir="${dir}">
 ${esc(c.why)}<br>${esc(c.contact)} <a href="mailto:${esc(contact)}" style="color:#3B82F6;">${esc(contact)}</a><br>${esc(c.company)}
 </td></tr></table></td></tr></table></body></html>`;
-  const text = [input.test ? c.test : '', input.name ?? '', subject, '', c.hello, body, '', `${c.cta}: ${url}`, '', `${c.protect}:`, ...c.points.map((x) => `- ${x}`), '', c.why, `${c.contact} ${contact}`, c.company]
+  const text = [input.test ? c.test : '', [input.name, input.reference].filter(Boolean).join(' · '), subject, '', c.hello, body, '', `${c.cta}: ${url}`, '', `${c.protect}:`, ...c.points.map((x) => `- ${x}`), '', c.why, `${c.contact} ${contact}`, c.company]
     .filter((l, i) => i > 1 || l).join('\n');
   return { subject, html, text, preheader: body, lang };
 }
 
 export function sampleAgreementEmail(lang: Lang): AgreementEmailInput {
   return lang === 'ar'
-    ? { lang, name: 'دعم FI 2027', title: 'تم الاتفاق على اتفاقية الدعم: دعم FI 2027', body: 'قبل الطرفان الإصدار 2. تبدأ في تاريخ البدء بعد توقيع اتفاقية عدم الإفصاح من الطرفين.', path: '/client/agreements' }
-    : { lang, name: 'FI support 2027', title: 'Support agreement agreed: FI support 2027', body: 'Both parties accepted version 2. It starts on the start date once the NDA is signed by both.', path: '/client/agreements' };
+    ? { lang, name: 'دعم FI 2027', reference: 'SA-2026-000012', title: 'تم الاتفاق على اتفاقية الدعم: دعم FI 2027', body: 'قبل الطرفان الإصدار 2. تبدأ في تاريخ البدء بعد توقيع اتفاقية عدم الإفصاح من الطرفين.', path: '/client/agreements' }
+    : { lang, name: 'FI support 2027', reference: 'SA-2026-000012', title: 'Support agreement agreed: FI support 2027', body: 'Both parties accepted version 2. It starts on the start date once the NDA is signed by both.', path: '/client/agreements' };
 }
