@@ -277,18 +277,11 @@ REVOKE EXECUTE ON FUNCTION public.client_sign_nda(uuid, text, text, text) FROM P
 CREATE OR REPLACE FUNCTION public.guard_nda_insert()
 RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
 BEGIN
+  -- signed-in users (also admins), anonymous callers and backend code never create an NDA row directly; the signing
+  -- function (owner context) validates its own values before it inserts
   IF current_user IN ('authenticated', 'anon', 'service_role') THEN
     RAISE EXCEPTION 'nda_sign_in_portal' USING ERRCODE = '42501',
       HINT = 'An NDA is signed only through the signing step (drawn signature, full legal name, ID document, authorisation).';
-  END IF;
-  IF NEW.signature_data IS NULL OR length(btrim(NEW.signature_data)) < 2 OR length(NEW.signature_data) > 400000 THEN
-    RAISE EXCEPTION 'A signature is required (and must be smaller than 400 KB)' USING ERRCODE = '22023';
-  END IF;
-  IF NEW.signature_type IS NULL OR NEW.signature_type NOT IN ('type', 'draw') THEN
-    RAISE EXCEPTION 'Unknown signature type' USING ERRCODE = '22023';
-  END IF;
-  IF NEW.nda_content IS NULL OR length(btrim(NEW.nda_content)) < 20 OR length(NEW.nda_content) > 200000 THEN
-    RAISE EXCEPTION 'The NDA text is missing or too long' USING ERRCODE = '22023';
   END IF;
   RETURN NEW;
 END $$;
