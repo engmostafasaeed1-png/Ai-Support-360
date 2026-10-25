@@ -21,6 +21,7 @@ import RequestInfoDialog from '@/components/consultant/assignment/RequestInfoDia
 import DeclineReasonDialog from '@/components/consultant/assignment/DeclineReasonDialog';
 import InfoThread from '@/components/consultant/assignment/InfoThread';
 import { infoRequestBlock } from '../../../supabase/functions/_shared/assignmentInfo';
+import SlaAcceptanceBox from '@/components/sla/SlaAcceptanceBox';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
@@ -51,6 +52,9 @@ export default function RequestsPage() {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [askId, setAskId] = useState<string | null>(null);
   const [declineId, setDeclineId] = useState<string | null>(null);
+  // SLA acceptance per request: the database refuses the accept until the consultant ticked the SLA box.
+  const [slaReady, setSlaReady] = useState<Record<string, boolean>>({});
+  const slaOk = (id: string) => slaReady[id] !== false;
   const pendingIds = (requests || []).filter((r: any) => r.status === 'pending' || r.info_requests_count > 0).map((r: any) => r.id as string);
   const { data: infoRows = [] } = useInfoRequests({ requestIds: pendingIds }, infoReady);
   const infoFor = (id: string) => infoRows.filter((r) => r.request_id === id);
@@ -128,7 +132,10 @@ export default function RequestsPage() {
   const doAccept = (requestId: string) => {
     respond.mutate({ requestId, status: 'accepted' }, {
       onSuccess: () => toast.success('Match accepted!'),
-      onError: (e) => toastWithLocationFix(e, 'Failed to respond. Please try again.', { useMessage: false }),
+      onError: (e) => {
+        if (/sla_acceptance_required/.test((e as Error)?.message ?? '')) { toast.error(t('sla.err.sla_acceptance_required')); return; }
+        toastWithLocationFix(e, 'Failed to respond. Please try again.', { useMessage: false });
+      },
     });
   };
 
@@ -285,6 +292,12 @@ export default function RequestsPage() {
                         </div>
                       )}
                       {infoReady && <InfoThread rows={thread} />}
+                      {req.status === 'pending' && !paused && (
+                        <div className="mt-2">
+                          <SlaAcceptanceBox ticketId={req.ticket_id} context="assignment"
+                            onReadyChange={(ready) => setSlaReady((m) => (m[req.id] === ready ? m : { ...m, [req.id]: ready }))} />
+                        </div>
+                      )}
                       {/* NDA status indicator */}
                       {hasNda && (
                         <div className="flex items-center gap-1 mt-1.5 text-xs text-green-600">
@@ -348,7 +361,8 @@ export default function RequestsPage() {
                             size="sm"
                             className="h-8 text-xs gradient-primary border-0"
                             onClick={() => handleAccept(req.id, req.ticket_id)}
-                            disabled={respond.isPending}
+                            disabled={respond.isPending || !slaOk(req.id)}
+                            title={slaOk(req.id) ? undefined : t('sla.err.sla_acceptance_required')}
                           >
                             {hasNda ? <Check className="w-3.5 h-3.5 me-1" /> : <FileSignature className="w-3.5 h-3.5 me-1" />}
                             {hasNda ? 'Accept' : 'Sign NDA & Accept'}
@@ -376,7 +390,7 @@ export default function RequestsPage() {
             <Button variant="outline" disabled={!!blocked} onClick={() => { setPreviewId(null); setAskId(req.id); }}>
               {t('assignment_info.ask_button', 'Request more information')}
             </Button>
-            <Button className="gradient-primary border-0" disabled={respond.isPending} onClick={() => { setPreviewId(null); handleAccept(req.id, req.ticket_id); }}>
+            <Button className="gradient-primary border-0" disabled={respond.isPending || !slaOk(req.id)} onClick={() => { setPreviewId(null); handleAccept(req.id, req.ticket_id); }}>
               {t('assignment_policy.accept', 'Accept')}
             </Button>
           </>
