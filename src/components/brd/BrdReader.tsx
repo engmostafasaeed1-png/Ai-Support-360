@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Download, Loader2 } from 'lucide-react';
@@ -10,6 +10,7 @@ import { downloadAttachedBrd, getBrdVersion, type BrdState } from '@/lib/brd/api
 import BrdDocumentView from './BrdDocumentView';
 import BrdComments from './BrdComments';
 import { normalizeContent, type BrdContent } from '../../../supabase/functions/_shared/brdModel';
+import { markSectionOpened, onGoto, registerSections, requiredSectionKeys, sectionAnchorId } from '@/lib/brdSectionsRead';
 
 /** Read-only view for assigned consultants (and company colleagues): attached versions only, PDF download, comments. */
 export default function BrdReader({ state, refresh }: { state: BrdState; refresh: () => void }) {
@@ -32,6 +33,37 @@ export default function BrdReader({ state, refresh }: { state: BrdState; refresh
     });
     return () => { live = false; };
   }, [ticketId, version, t]);
+
+  // "Opened every section" for Approve BRD: a section counts once its end has been on screen (src/lib/brdSectionsRead.ts).
+  const docRef = useRef<HTMLDivElement>(null);
+  const pendingGoto = useRef<string | null>(null);
+  useEffect(() => {
+    if (!content || !version || loading) return;
+    registerSections(ticketId, version, requiredSectionKeys(content.sections));
+    const root = docRef.current;
+    if (!root) return;
+    const marks = Array.from(root.querySelectorAll<HTMLElement>('[data-brd-read-mark]'));
+    if (typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        const key = (e.target as HTMLElement).dataset.brdReadMark;
+        if (key) { markSectionOpened(ticketId, version, key); io.unobserve(e.target); }
+      }
+    });
+    marks.forEach((m) => io.observe(m));
+    if (pendingGoto.current) {
+      const k = pendingGoto.current; pendingGoto.current = null;
+      document.getElementById(sectionAnchorId(k))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    return () => io.disconnect();
+  }, [content, version, loading, ticketId]);
+  useEffect(() => onGoto((d) => {
+    if (d.ticketId !== ticketId) return;
+    if (d.version !== version) { pendingGoto.current = d.key; setVersion(d.version); return; }
+    const target = d.key ? document.getElementById(sectionAnchorId(d.key)) : docRef.current;
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }), [ticketId, version]);
 
   const file = (state.attachments ?? []).find((a) => a.version === version && !a.unattached_at);
   const dir = content?.language === 'ar' ? 'rtl' : 'ltr';
@@ -62,11 +94,12 @@ export default function BrdReader({ state, refresh }: { state: BrdState; refresh
         </CardContent>
       </Card>
       {loading || !content ? <p className="flex items-center gap-2 text-sm"><Loader2 className="h-4 w-4 animate-spin" /> {t('brd.loading')}</p> : (
-        <Card className="rounded-2xl border-border/50"><CardContent className="p-4 sm:p-6">
+        <Card className="rounded-2xl border-border/50"><CardContent className="p-4 sm:p-6" ref={docRef}>
           <BrdDocumentView content={content} version={version} versions={versions}
-            renderSectionFooter={(key) => key === 'change_log' ? null : (
+            renderSectionFooter={(key) => key === 'change_log' ? null : (<>
+              <span aria-hidden data-brd-read-mark={key} className="block h-px w-full" />
               <BrdComments ticketId={ticketId} version={version!} section={key} comments={state.comments ?? []} canSuggest canDecide={false} onChanged={refresh} dir={dir} />
-            )} />
+            </>)} />
         </CardContent></Card>
       )}
     </div>
