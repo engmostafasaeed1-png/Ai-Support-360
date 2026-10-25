@@ -707,31 +707,34 @@ RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
   INSERT INTO public.sa_audit (actor_id, action, agreement_id, detail) VALUES (_actor, _action, _id, COALESCE(_detail, '{}'::jsonb))
 $$;
 
--- In-app notice (+ optional e-mail through agreement-run) once per dedupe key.
+-- In-app notice (+ optional e-mail through agreement-run) once per dedupe key. The agreement reference number is
+-- added to every title ("... · SA-2026-000012") and to the e-mail payload.
 CREATE OR REPLACE FUNCTION public.sa_notify(_id uuid, _user uuid, _title_en text, _title_ar text, _body_en text, _body_ar text, _role text, _email boolean, _dedupe text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE lang text := public.sa_lang(_user); n int; link text;
+DECLARE lang text := public.sa_lang(_user); n int; link text; ref text; title text;
 BEGIN
   IF _user IS NULL THEN RETURN; END IF;
   INSERT INTO public.sa_notices (dedupe_key) VALUES (left(_dedupe, 300)) ON CONFLICT DO NOTHING;
   GET DIAGNOSTICS n = ROW_COUNT;
   IF n = 0 THEN RETURN; END IF;
+  SELECT a.reference INTO ref FROM public.sa_agreements a WHERE a.id = _id;
+  title := CASE WHEN lang = 'ar' THEN _title_ar ELSE _title_en END;
+  IF ref IS NOT NULL AND position(ref IN title) = 0 THEN title := title || ' · ' || ref; END IF;
   link := CASE _role WHEN 'consultant' THEN '/consultant/agreements/' || _id WHEN 'admin' THEN '/admin/agreements' ELSE '/client/agreements/' || _id END;
-  PERFORM public.safe_insert_notification(_user, left(CASE WHEN lang = 'ar' THEN _title_ar ELSE _title_en END, 200),
-    left(CASE WHEN lang = 'ar' THEN _body_ar ELSE _body_en END, 1000), 'agreement', link);
+  PERFORM public.safe_insert_notification(_user, left(title, 200), left(CASE WHEN lang = 'ar' THEN _body_ar ELSE _body_en END, 1000), 'agreement', link);
   IF _email THEN
     INSERT INTO public.sa_email_queue (user_id, agreement_id, kind, payload, dedupe_key)
-    VALUES (_user, _id, 'event', jsonb_build_object('lang', lang, 'title', CASE WHEN lang = 'ar' THEN _title_ar ELSE _title_en END,
-      'body', CASE WHEN lang = 'ar' THEN _body_ar ELSE _body_en END, 'path', link, 'role', _role,
+    VALUES (_user, _id, 'event', jsonb_build_object('lang', lang, 'title', title,
+      'body', CASE WHEN lang = 'ar' THEN _body_ar ELSE _body_en END, 'path', link, 'role', _role, 'reference', ref,
       'name', (SELECT a.name FROM public.sa_agreements a WHERE a.id = _id)), left('sa:' || _dedupe, 300))
     ON CONFLICT (dedupe_key) DO NOTHING;
   END IF;
 END $$;
 
--- Notify both parties (client + company managers, lead consultant).
+-- Notify the parties: client + company managers, the lead consultant and the crew members who accepted their place.
 CREATE OR REPLACE FUNCTION public.sa_notify_parties(_id uuid, _title_en text, _title_ar text, _body_en text, _body_ar text, _email boolean, _key text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE a public.sa_agreements; u uuid;
+DECLARE a public.sa_agreements; u uuid; c uuid;
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
   FOR u IN SELECT a.client_id UNION SELECT m.user_id FROM public.tenant_members m WHERE m.tenant_id = a.tenant_id AND m.accepted_at IS NOT NULL
@@ -741,6 +744,9 @@ BEGIN
   IF a.consultant_id IS NOT NULL AND a.status NOT IN ('draft', 'open') THEN
     PERFORM public.sa_notify(_id, public.sa_user_of(a.consultant_id), _title_en, _title_ar, _body_en, _body_ar, 'consultant', _email, _key || ':lead');
   END IF;
+  FOR c IN SELECT m.consultant_id FROM public.sa_members m WHERE m.agreement_id = _id AND m.status = 'active' AND m.consultant_id IS DISTINCT FROM a.consultant_id LOOP
+    PERFORM public.sa_notify(_id, public.sa_user_of(c), _title_en, _title_ar, _body_en, _body_ar, 'consultant', _email, _key || ':m:' || c);
+  END LOOP;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_notify_admins(_id uuid, _title text, _body text, _key text)
