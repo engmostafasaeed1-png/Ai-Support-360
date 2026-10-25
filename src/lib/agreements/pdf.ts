@@ -9,6 +9,8 @@ type Lang = 'en' | 'ar';
 
 export interface AgreementPdfInput {
   name: string;
+  reference?: string | null;
+  crew?: Array<{ name: string; role: string; capacity: number | null; required: boolean; status: string; slaAt: string | null; ndaAt: string | null }>;
   status: string;
   version: number;
   hash: string | null;
@@ -41,6 +43,11 @@ const L = {
       'Rate changes need the other party\'s approval and apply from a future effective date only, never retroactively.',
       'Either party may end the agreement with the notice period above and a stated reason; a handover period applies.',
     ],
+    reference: 'Reference', crew: 'Support crew', member: 'Member', role: 'Role', hoursWeek: 'Hours / week', slaAccepted: 'SLA accepted', ndaSigned: 'NDA signed', optional: 'optional',
+    slaTitle: 'SLA snapshot', slaNote: 'Exact SLA version agreed with this support agreement. It applies to tickets under the agreement only while the agreement is active (crew confirmed).',
+    sev: 'Severity', response: 'Response', workaround: 'Workaround', resolution: 'Resolution', coverage: 'Coverage', policy: 'Policy',
+    statementTitle: 'Monthly statement', month: 'Month', used: 'Approved hours', committed: 'Committed hours', expired: 'Expired hours', charged: 'Hours invoiced', amount: 'Amount (before fees and VAT)',
+    tickets: 'Tickets', slaCompliance: 'SLA compliance', spend: 'Spend to date (paid)',
     acceptance: 'Electronic acceptance', party: 'Party', name: 'Name typed', at: 'Accepted at', noAcc: 'Not accepted yet.',
     footer: 'Generated on AI Support 360. This summary reflects the version shown above.', page: (a: number, b: number) => `Page ${a} of ${b}`,
   },
@@ -63,6 +70,11 @@ const L = {
       'يتطلب تغيير السعر موافقة الطرف الآخر ويسري من تاريخ مستقبلي فقط، ولا يسري بأثر رجعي.',
       'يجوز لأي طرف إنهاء الاتفاقية بفترة الإشعار المذكورة مع ذكر السبب، وتنطبق فترة تسليم.',
     ],
+    reference: 'الرقم المرجعي', crew: 'فريق الدعم', member: 'العضو', role: 'الدور', hoursWeek: 'ساعات / أسبوع', slaAccepted: 'قبول اتفاقية الخدمة', ndaSigned: 'توقيع عدم الإفصاح', optional: 'اختياري',
+    slaTitle: 'نسخة اتفاقية مستوى الخدمة', slaNote: 'الإصدار المحدد من اتفاقية مستوى الخدمة المتفق عليه مع اتفاقية الدعم هذه. يسري على تذاكر الاتفاقية فقط طالما كانت الاتفاقية نشطة (بعد تأكيد الفريق).',
+    sev: 'الخطورة', response: 'الاستجابة', workaround: 'الحل المؤقت', resolution: 'الحل', coverage: 'التغطية', policy: 'السياسة',
+    statementTitle: 'الكشف الشهري', month: 'الشهر', used: 'الساعات المعتمدة', committed: 'الساعات الملتزم بها', expired: 'الساعات المنتهية', charged: 'الساعات المفوترة', amount: 'المبلغ (قبل الرسوم والضريبة)',
+    tickets: 'التذاكر', slaCompliance: 'الالتزام باتفاقية الخدمة', spend: 'الإنفاق حتى الآن (مدفوع)',
     acceptance: 'القبول الإلكتروني', party: 'الطرف', name: 'الاسم المكتوب', at: 'وقت القبول', noAcc: 'لم يتم القبول بعد.',
     footer: 'أُنشئ على AI Support 360. يعكس هذا الملخص الإصدار المبيّن أعلاه.', page: (a: number, b: number) => `صفحة ${a} من ${b}`,
   },
@@ -90,7 +102,7 @@ export function buildAgreementPdf(JsPDF: JsPdfCtor, a: AgreementPdfInput, lang: 
   w.paragraph(plain(a.name), { base, size: 13, color: C.accent, gapAfter: 8 });
   if (a.legalDraft) w.paragraph(plain(t.draft, { mark: true }), { base, size: 11, bold: true, gapAfter: 8 });
   w.table([0.34, 0.66], null, [
-    row(t.version, String(a.version)), row(t.hash, a.hash ?? '—'), row(t.status, a.status),
+    row(t.reference, a.reference ?? '—'), row(t.version, String(a.version)), row(t.hash, a.hash ?? '—'), row(t.status, a.status),
   ], base);
 
   w.heading(t.parties, base, 2);
@@ -127,6 +139,12 @@ export function buildAgreementPdf(JsPDF: JsPdfCtor, a: AgreementPdfInput, lang: 
   w.paragraph(plain(tr.sla.summary || t.slaDefault), { base });
   w.paragraph(plain(`${t.nda}: ${tr.nda_required ? t.yes : t.no}`), { base, size: 9.5, color: C.muted });
 
+  if (a.crew?.length) {
+    w.heading(t.crew, base, 2);
+    w.table([0.26, 0.18, 0.12, 0.22, 0.22], [plain(t.member), plain(t.role), plain(t.hoursWeek), plain(t.slaAccepted), plain(t.ndaSigned)],
+      a.crew.map((m) => [plain(m.required ? m.name : `${m.name} (${t.optional})`), plain(m.role), plain(m.capacity != null ? String(m.capacity) : '—'), plain(fmt(m.slaAt, lang)), plain(fmt(m.ndaAt, lang))]), base, 8.5);
+  }
+
   w.heading(t.terms, base, 2);
   t.clauses.forEach((c, i) => w.paragraph(plain(c), { base, indent: 18, bullet: `${i + 1}.`, gapAfter: 3 }));
 
@@ -144,6 +162,84 @@ export function buildAgreementPdf(JsPDF: JsPdfCtor, a: AgreementPdfInput, lang: 
     fw.paragraph(plain(`${footer}  ·  ${t.page(p, pages)}`), { base, size: 8, color: C.muted, x: ML, width: CW, gapAfter: 0 });
   }
   return doc;
+}
+
+function setup(JsPDF: JsPdfCtor, fonts: BrdPdfFonts) {
+  const doc = new JsPDF({ unit: 'pt', format: 'a4', compress: true });
+  doc.addFileToVFS(`${FONT}-Regular.ttf`, fonts.regular);
+  doc.addFont(`${FONT}-Regular.ttf`, FONT, 'normal');
+  doc.addFileToVFS(`${FONT}-Bold.ttf`, fonts.bold);
+  doc.addFont(`${FONT}-Bold.ttf`, FONT, 'bold');
+  return doc;
+}
+function footer(doc: jsPDF, lang: Lang, at: Date) {
+  const t = L[lang]; const base = lang === 'ar' ? 'rtl' : 'ltr';
+  const pages = doc.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p);
+    const fw = new Writer(doc);
+    fw.y = H - 46;
+    fw.paragraph(plain(`${t.footer} ${fmt(at.toISOString(), lang)}  ·  ${t.page(p, pages)}`), { base, size: 8, color: C.muted, x: ML, width: CW, gapAfter: 0 });
+  }
+}
+const mins = (m: unknown) => {
+  const n = Number(m);
+  if (!Number.isFinite(n) || n <= 0) return '—';
+  if (n < 60) return `${n} min`;
+  if (n % 1440 === 0) return `${n / 1440} d`;
+  return n % 60 === 0 ? `${n / 60} h` : `${Math.floor(n / 60)} h ${n % 60} min`;
+};
+
+/** The SLA version the agreement was agreed with (immutable snapshot in the terms). */
+export interface SlaSnapshotPdfInput { name: string; reference?: string | null; sla: SaTerms['sla']; legalDraft: boolean }
+export function buildSlaSnapshotPdf(JsPDF: JsPdfCtor, a: SlaSnapshotPdfInput, lang: Lang, fonts: BrdPdfFonts): jsPDF {
+  const doc = setup(JsPDF, fonts); const t = L[lang]; const base = lang === 'ar' ? 'rtl' : 'ltr'; const w = new Writer(doc);
+  const row = (k: string, v: string) => [plain(k, { bold: true }), plain(v || '—')];
+  w.paragraph(plain(t.slaTitle), { base, size: 20, bold: true, color: C.brand, gapAfter: 2 });
+  w.paragraph(plain(`${a.name}${a.reference ? ` · ${a.reference}` : ''}`), { base, size: 13, color: C.accent, gapAfter: 8 });
+  if (a.legalDraft) w.paragraph(plain(t.draft, { mark: true }), { base, size: 11, bold: true, gapAfter: 8 });
+  w.table([0.34, 0.66], null, [row(t.policy, a.sla.name ?? t.slaDefault), row(t.version, a.sla.version ? String(a.sla.version) : '—'), row(t.hash, a.sla.hash ?? '—')], base);
+  w.paragraph(plain(t.slaNote), { base, size: 9.5, color: C.muted });
+  const body = (a.sla.body ?? null) as { severities?: Record<string, { response_min?: number; workaround_min?: number | null; resolution_min?: number }>; coverage?: { mode?: string } } | null;
+  if (body?.severities) {
+    w.table([0.16, 0.28, 0.28, 0.28], [plain(t.sev), plain(t.response), plain(t.workaround), plain(t.resolution)],
+      ['S1', 'S2', 'S3', 'S4'].filter((k) => body.severities?.[k]).map((k) => [plain(k), plain(mins(body.severities![k].response_min)), plain(mins(body.severities![k].workaround_min)), plain(mins(body.severities![k].resolution_min))]), base, 9);
+    if (body.coverage?.mode) w.paragraph(plain(`${t.coverage}: ${body.coverage.mode}`), { base, size: 9.5, color: C.muted });
+  } else {
+    w.paragraph(plain(a.sla.summary || t.slaDefault), { base });
+  }
+  footer(doc, lang, new Date());
+  return doc;
+}
+
+/** Monthly statement (usage dashboard figures; invoices themselves stay the platform invoices). */
+export interface StatementPdfInput {
+  name: string; reference?: string | null; clientName: string; consultantName: string | null; currency: string; legalDraft: boolean;
+  months: Array<{ month: string; used_hours: number; committed?: number | null; expired_hours?: number | null; charge_hours?: number | null; amount?: number | null }>;
+  tickets: number; slaPct: number | null; spend: number;
+}
+export function buildStatementPdf(JsPDF: JsPdfCtor, a: StatementPdfInput, lang: Lang, fonts: BrdPdfFonts): jsPDF {
+  const doc = setup(JsPDF, fonts); const t = L[lang]; const base = lang === 'ar' ? 'rtl' : 'ltr'; const w = new Writer(doc);
+  const row = (k: string, v: string) => [plain(k, { bold: true }), plain(v || '—')];
+  w.paragraph(plain(t.statementTitle), { base, size: 20, bold: true, color: C.brand, gapAfter: 2 });
+  w.paragraph(plain(`${a.name}${a.reference ? ` · ${a.reference}` : ''}`), { base, size: 13, color: C.accent, gapAfter: 8 });
+  w.table([0.34, 0.66], null, [row(t.client, a.clientName), row(t.consultant, a.consultantName ?? '—'), row(t.tickets, String(a.tickets)),
+    row(t.slaCompliance, a.slaPct == null ? '—' : `${a.slaPct} %`), row(t.spend, `${a.spend} ${a.currency}`)], base);
+  w.table([0.2, 0.16, 0.16, 0.16, 0.16, 0.16], [plain(t.month), plain(t.used), plain(t.committed), plain(t.expired), plain(t.charged), plain(t.amount)],
+    a.months.map((m) => [plain(m.month.slice(0, 7)), plain(String(m.used_hours)), plain(m.committed != null ? String(m.committed) : '—'), plain(m.expired_hours != null ? String(m.expired_hours) : '—'),
+      plain(m.charge_hours != null ? String(m.charge_hours) : '—'), plain(m.amount ? `${m.amount} ${a.currency}` : '—')]), base, 8.5);
+  w.paragraph(plain(t.fees(10, 5, 15).split(':')[0]), { base, size: 9, color: C.muted });
+  footer(doc, lang, new Date());
+  return doc;
+}
+
+export async function slaSnapshotPdfBlob(a: SlaSnapshotPdfInput, lang: Lang): Promise<Blob> {
+  const [{ jsPDF }, fonts] = await Promise.all([import('jspdf'), loadBrdFonts()]);
+  return buildSlaSnapshotPdf(jsPDF as unknown as JsPdfCtor, a, lang, fonts).output('blob');
+}
+export async function statementPdfBlob(a: StatementPdfInput, lang: Lang): Promise<Blob> {
+  const [{ jsPDF }, fonts] = await Promise.all([import('jspdf'), loadBrdFonts()]);
+  return buildStatementPdf(jsPDF as unknown as JsPdfCtor, a, lang, fonts).output('blob');
 }
 
 export async function agreementPdfBlob(a: AgreementPdfInput, lang: Lang): Promise<Blob> {
