@@ -1,4 +1,6 @@
 import { format } from 'date-fns';
+import { downloadNdaPdf, type NdaPdfParty } from '@/lib/nda/pdf';
+import { fetchNdaEvidence, logNdaDownload, sha256Hex, type NdaEvidence } from '@/lib/nda/api';
 
 interface NDAExportData {
   ndaContent: string;
@@ -13,119 +15,44 @@ interface NDAExportData {
   clientSignatureType?: string | null;
   clientSignerName?: string | null;
   clientSignedAt?: string | null;
+  lang?: 'en' | 'ar';
 }
 
+const isImage = (s: string | null | undefined) => !!s && s.startsWith('data:image');
+
 /**
- * Builds the NDA PDF with an official signature block: the consultant's
- * signature (drawn image or typed name in script), printed full name, role,
- * date and agreement reference. Unsigned previews show empty signature lines.
+ * Builds the NDA PDF: the NDA text, then each party's signature block (free-hand signature image or legacy typed
+ * signature, printed name, masked ID with type and country, date/time, role, company), the document version hash and
+ * the "not a qualified electronic signature" footer on every page. Evidence rows are read when the stricter signing is
+ * installed (docs/sql/nda-signature-identity.sql); without them a signed party shows as a legacy signature.
+ * Unsigned previews show empty signature boxes.
  */
 export async function exportNDAAsPDF(data: NDAExportData) {
-  const { jsPDF } = await import('jspdf');
-  const doc = new jsPDF();
+  const lang = data.lang ?? (typeof document !== 'undefined' && document.documentElement.lang?.startsWith('ar') ? 'ar' : 'en');
   const signed = !!data.signatureData;
-  let y = 20;
-
-  doc.setFontSize(18);
-  doc.setTextColor(27, 37, 89);
-  doc.text('Non-Disclosure Agreement', 105, y, { align: 'center' });
-  y += 8;
-  doc.setFontSize(9);
-  doc.setTextColor(128);
-  doc.text(
-    signed ? `Signed on ${format(new Date(data.signedAt), 'PPP')}` : 'Draft — not yet signed',
-    105, y, { align: 'center' },
-  );
-  y += 5;
-  doc.text(`${data.consultantName || 'Consultant'}  and  ${data.clientName || 'Client'}`, 105, y, { align: 'center' });
-  y += 8;
-  doc.setDrawColor(200);
-  doc.line(14, y, 196, y);
-  y += 8;
-
-  doc.setFontSize(10);
-  doc.setTextColor(30);
-  for (const line of doc.splitTextToSize(data.ndaContent || '', 180)) {
-    if (y > 270) { doc.addPage(); y = 20; }
-    doc.text(line, 14, y);
-    y += 5;
+  let ev: Partial<Record<'consultant' | 'client', NdaEvidence>> = {};
+  if (data.agreementId && signed) {
+    ev = (await fetchNdaEvidence([data.agreementId])).get(data.agreementId) ?? {};
+    void logNdaDownload(data.agreementId);
   }
-
-  // Signature block (kept together on one page)
-  y += 10;
-  if (y > 200) { doc.addPage(); y = 20; }
-  doc.setDrawColor(27, 37, 89);
-  doc.setLineWidth(0.4);
-  doc.line(14, y, 196, y);
-  y += 8;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(27, 37, 89);
-  doc.text('SIGNATURES', 14, y);
-  y += 8;
-
-  const colL = 14;
-  const colR = 110;
-  doc.setFontSize(9);
-  doc.text('CONSULTANT (Receiving Party)', colL, y);
-  doc.text('CLIENT (Disclosing Party)', colR, y);
-  y += 4;
-
-  // Signature area
-  const sigTop = y;
-  if (signed && data.signatureType === 'draw' && data.signatureData.startsWith('data:image')) {
-    try { doc.addImage(data.signatureData, 'PNG', colL, sigTop, 70, 21); } catch { /* ignore */ }
-  } else if (signed) {
-    doc.setFont('times', 'bolditalic');
-    doc.setFontSize(22);
-    doc.setTextColor(20, 30, 80);
-    doc.text(data.signatureData, colL + 2, sigTop + 15);
-  }
-  const cSigned = !!data.clientSignatureData;
-  if (cSigned && data.clientSignatureType === 'draw' && data.clientSignatureData!.startsWith('data:image')) {
-    try { doc.addImage(data.clientSignatureData!, 'PNG', colR, sigTop, 70, 21); } catch { /* ignore */ }
-  } else if (cSigned) {
-    doc.setFont('times', 'bolditalic');
-    doc.setFontSize(22);
-    doc.setTextColor(20, 30, 80);
-    doc.text(data.clientSignatureData!, colR + 2, sigTop + 15);
-  }
-  y = sigTop + 24;
-  doc.setDrawColor(120);
-  doc.setLineWidth(0.3);
-  doc.line(colL, y, colL + 80, y);
-  doc.line(colR, y, colR + 80, y);
-  y += 5;
-
-  const row = (label: string, left: string, right: string) => {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(120);
-    doc.text(label, colL, y);
-    doc.text(label, colR, y);
-    doc.setFontSize(10);
-    doc.setTextColor(30);
-    doc.text(left, colL + 18, y);
-    doc.text(right, colR + 18, y);
-    y += 6;
-  };
-  row('Name:', data.consultantName || '________________', data.clientSignerName || data.clientName || '________________');
-  row('Role:', 'Consultant', data.clientName && data.clientSignerName ? `Client — ${data.clientName}` : 'Client');
-  row('Date:', signed ? format(new Date(data.signedAt), 'PPP p') : '________________',
-    cSigned && data.clientSignedAt ? format(new Date(data.clientSignedAt), 'PPP p') : 'Awaiting client signature');
-  row('Method:', signed ? (data.signatureType === 'draw' ? 'Hand-drawn e-signature' : 'Typed e-signature') : '—',
-    cSigned ? (data.clientSignatureType === 'draw' ? 'Hand-drawn e-signature' : 'Typed e-signature') : '—');
-
-  y += 4;
-  doc.setFontSize(7.5);
-  doc.setTextColor(128);
-  const footer = [
-    data.agreementId ? `Agreement ID: ${data.agreementId}` : null,
-    signed ? `Electronically signed on AI Support 360 by ${cSigned ? 'both parties' : 'the consultant'}. Each signer agreed to the terms above before signing.` : null,
-    data.revokedAt ? `Revoked on ${format(new Date(data.revokedAt), 'PPP')}` : null,
-  ].filter(Boolean) as string[];
-  for (const f of footer) { doc.text(f, colL, y); y += 4; }
-
-  const filename = `NDA_${(data.consultantName || 'Consultant').replace(/\s+/g, '_')}_${format(new Date(data.signedAt), 'yyyy-MM-dd')}.pdf`;
-  doc.save(filename);
+  const party = (sig: string | null | undefined, at: string | null | undefined, name: string, company: string | null, e: NdaEvidence | undefined): NdaPdfParty => ({
+    signedAt: sig ? at ?? null : null,
+    image: isImage(sig) ? sig! : null,
+    typed: sig && !isImage(sig) ? sig : null,
+    name,
+    company,
+    evidence: e ?? null,
+    legacy: !!sig && !e,
+  });
+  const documentHash = ev.consultant?.document_hash ?? ev.client?.document_hash ?? (signed ? await sha256Hex(data.ndaContent || '') : null);
+  await downloadNdaPdf({
+    ndaId: data.agreementId ?? null,
+    content: data.ndaContent || '',
+    consultantName: data.consultantName || 'Consultant',
+    clientName: data.clientName || 'Client',
+    consultant: party(data.signatureData, data.signedAt, data.consultantName || '', null, ev.consultant),
+    client: party(data.clientSignatureData, data.clientSignedAt, data.clientSignerName || data.clientName || '', data.clientName || null, ev.client),
+    documentHash,
+    revokedAt: data.revokedAt ?? null,
+  }, lang, `NDA_${(data.consultantName || 'Consultant').replace(/\s+/g, '_')}_${format(new Date(data.signedAt || Date.now()), 'yyyy-MM-dd')}.pdf`);
 }

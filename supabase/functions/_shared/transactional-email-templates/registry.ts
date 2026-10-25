@@ -42,6 +42,7 @@ import { template as ticketTracking } from './ticket-tracking.tsx'
 import { template as brdApproval } from './brd-approval.tsx'
 import { template as slaNotice } from './sla-notice.tsx'
 import { template as agreementNotice } from './agreement-notice.tsx'
+import { template as ndaNotice } from './nda-notice.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'admin-notification': adminNotification,
@@ -74,4 +75,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'brd-approval': brdApproval,
   'sla-notice': slaNotice,
   'agreement-notice': agreementNotice,
+  'nda-notice': ndaNotice,
 }
