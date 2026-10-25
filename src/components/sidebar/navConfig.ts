@@ -237,6 +237,7 @@ export const adminNavGroups: NavGroup[] = [
       { key: 'client_ratings', icon: StarHalf, path: '/admin/client-reviews', fallback: 'Client ratings' },
       { key: 'responsiveness_admin', icon: Gauge, path: '/admin/responsiveness', fallback: 'Consultant responsiveness' },
       { key: 'referrals_admin', icon: Gift, path: '/admin/referrals', fallback: 'Referrals' },
+      { key: 'partners_admin', icon: Building, path: '/admin/partners', labelKey: 'partner.admin_tab', fallback: 'Partner companies' },
       { key: 'interview_training', icon: Brain, path: '/admin/interview-training' },
       { key: 'question_library', icon: BookMarked, path: '/admin/question-library', fallback: 'Question library' },
       { key: 'interview_templates', icon: LayoutTemplate, path: '/admin/interview-templates', fallback: 'Interview templates' },

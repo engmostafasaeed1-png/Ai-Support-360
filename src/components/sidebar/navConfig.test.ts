@@ -8,9 +8,9 @@ import type { NavGroup, NavItem } from './navTypes';
 const CROSS_PORTAL = ['/admin', '/super-admin'];
 
 const portals: Array<[string, NavGroup[], string, NavItem[], number]> = [
-  ['client', clientNavGroups, '/client', [clientPrimaryAction], 39],  // +1: Support agreements
+  ['client', clientNavGroups, '/client', [clientPrimaryAction], 40],  // +1: Support agreements, +1: Partner portal
   ['consultant', consultantNavGroups, '/consultant', [], 26],  // +1: Support agreements, +1: NDA agreements
-  ['admin', adminNavGroups, '/admin', [], 29],  // +1: SLA policies, +1: Support agreements
+  ['admin', adminNavGroups, '/admin', [], 30],  // +1: SLA policies, +1: Support agreements, +1: Partner companies
   ['super-admin', superAdminNavGroups, '/super-admin', [], 10],
 ];
 
