@@ -282,8 +282,9 @@ describe('<VerificationTimeline /> accessibility', () => {
       />,
     );
     const btn = screen.getByRole('button', { name: /resend verification email/i });
-    expect(btn).toHaveAttribute('aria-busy', 'false');
-    expect(btn).toHaveAttribute('aria-disabled', 'false');
+    expect(btn).not.toHaveAttribute('aria-busy');
+    expect(btn).not.toHaveAttribute('aria-disabled', 'true');
+    expect(btn).toBeUnblocked();
   });
 
   it('Resend button reflects cooldown via aria-disabled and aria-label', () => {
