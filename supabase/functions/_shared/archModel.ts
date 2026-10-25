@@ -419,3 +419,6 @@ export function archFileName(type: ArchType, ref: string, version: number, date:
   const safe = String(ref || 'DOC').replace(/[^A-Za-z0-9]/g, '').slice(0, 20) || 'DOC';
   return `ARCH_${TYPE_TITLES[type].short.replace(/[^A-Za-z]/g, '')}_${safe}_v${Math.max(1, Math.floor(version))}_${d}.pdf`;
 }
+
+/** True when a section's HTML has no visible text. */
+export const htmlIsEmpty = (html: string): boolean => textLength(html ?? '') === 0;
