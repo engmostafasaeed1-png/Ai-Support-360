@@ -24,7 +24,7 @@ async function loadChoices(role: 'client' | 'consultant'): Promise<TicketChoice[
   if (!user) return [];
   if (role === 'client') {
     const { data: tickets } = await supabase.from('tickets').select('id, title, status, client_id, consultant_id')
-      .eq('client_id', user.id).not('status', 'in', '(closed,cancelled)').order('updated_at', { ascending: false }).limit(50);
+      .eq('client_id', user.id).neq('status', 'closed').order('updated_at', { ascending: false }).limit(50);
     const list = tickets ?? [];
     const ids = list.map(t => t.id);
     const counts = new Map<string, number>();
@@ -39,10 +39,10 @@ async function loadChoices(role: 'client' | 'consultant'): Promise<TicketChoice[
   const { data: assigns } = await supabase.from('ticket_assignments').select('ticket_id').eq('consultant_id', me.id).eq('status', 'active');
   const assigned = new Set((assigns ?? []).map(a => a.ticket_id));
   const { data: own } = await supabase.from('tickets').select('id, title, status, client_id, consultant_id').eq('consultant_id', me.id)
-    .not('status', 'in', '(closed,cancelled)').order('updated_at', { ascending: false }).limit(50);
+    .neq('status', 'closed').order('updated_at', { ascending: false }).limit(50);
   const extraIds = [...assigned].filter(id => !(own ?? []).some(t => t.id === id));
   const { data: extra } = extraIds.length
-    ? await supabase.from('tickets').select('id, title, status, client_id, consultant_id').in('id', extraIds).not('status', 'in', '(closed,cancelled)')
+    ? await supabase.from('tickets').select('id, title, status, client_id, consultant_id').in('id', extraIds).neq('status', 'closed')
     : { data: [] as TicketChoice[] };
   return [...(own ?? []), ...(extra ?? [])].map(t => ({ ...t, block: scheduleBlock({ role: 'consultant', hasConsultant: true, activeAssignments: 1, status: t.status, isAssigned: true }) }));
 }
