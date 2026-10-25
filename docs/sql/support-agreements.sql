@@ -53,6 +53,11 @@ $$;
 
 INSERT INTO public.platform_settings (key, value) VALUES ('support_agreements', jsonb_build_object('enabled', false))
 ON CONFLICT (key) DO NOTHING;
+INSERT INTO public.platform_settings (key, value) VALUES ('support_agreements_visible', 'false'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+DROP POLICY IF EXISTS "Signed-in users can read support_agreements_visible" ON public.platform_settings;
+CREATE POLICY "Signed-in users can read support_agreements_visible" ON public.platform_settings
+  FOR SELECT TO authenticated USING (key = 'support_agreements_visible');
 
 -- Portal (service) fee for agreement invoices: the admin value, else the platform fee of every other invoice.
 CREATE OR REPLACE FUNCTION public.sa_service_fee_percent()
@@ -1236,7 +1241,7 @@ BEGIN
   END IF;
   RETURN base || jsonb_build_object(
     'terms', a.terms, 'version', a.version, 'content_hash', (SELECT v.content_hash FROM public.sa_versions v WHERE v.agreement_id = _id AND v.version = a.version),
-    'consultant_id', a.consultant_id, 'admin_review', a.admin_review, 'agreed_at', a.agreed_at, 'started_at', a.started_at, 'start_date', a.start_date, 'end_date', a.end_date,
+    'consultant_id', a.consultant_id, 'consultant_name', CASE WHEN a.consultant_id IS NOT NULL THEN public.consultant_public_name(a.consultant_id) END, 'admin_review', a.admin_review, 'agreed_at', a.agreed_at, 'started_at', a.started_at, 'start_date', a.start_date, 'end_date', a.end_date,
     'auto_renew', jsonb_build_object('client', a.auto_renew_client_at IS NOT NULL, 'consultant', a.auto_renew_consultant_at IS NOT NULL),
     'termination', CASE WHEN a.termination_end IS NOT NULL THEN jsonb_build_object('by', a.termination_requested_by, 'reason', a.termination_reason, 'end', a.termination_end,
                      'handover_until', a.handover_until, 'handover_note', a.handover_note) END,
@@ -1248,8 +1253,8 @@ BEGIN
     'rate_changes', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', c.id, 'by', c.proposed_role, 'hourly_rate', c.hourly_rate, 's1_multiplier', c.s1_multiplier, 'overage_rate', c.overage_rate,
                      'effective_from', c.effective_from, 'reason', c.reason, 'status', c.status, 'at', c.created_at) ORDER BY c.created_at DESC) FROM public.sa_rate_changes c WHERE c.agreement_id = _id), '[]'::jsonb),
     'offers', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', o.id, 'by', o.by_role, 'patch', o.patch, 'note', o.note, 'status', o.status, 'at', o.created_at) ORDER BY o.created_at DESC) FROM public.sa_offers o WHERE o.agreement_id = _id), '[]'::jsonb),
-    'applications', CASE WHEN r IN ('admin', 'client', 'client_member') THEN COALESCE((SELECT jsonb_agg(to_jsonb(p) - 'user_id' ORDER BY p.created_at) FROM public.sa_applications p WHERE p.agreement_id = _id), '[]'::jsonb) END,
-    'members', COALESCE((SELECT jsonb_agg(jsonb_build_object('consultant_id', m.consultant_id, 'role', m.member_role, 'status', m.status)) FROM public.sa_members m WHERE m.agreement_id = _id), '[]'::jsonb),
+    'applications', CASE WHEN r IN ('admin', 'client', 'client_member') THEN COALESCE((SELECT jsonb_agg((to_jsonb(p) - 'user_id') || jsonb_build_object('name', public.consultant_public_name(p.consultant_id)) ORDER BY p.created_at) FROM public.sa_applications p WHERE p.agreement_id = _id), '[]'::jsonb) END,
+    'members', COALESCE((SELECT jsonb_agg(jsonb_build_object('consultant_id', m.consultant_id, 'name', public.consultant_public_name(m.consultant_id), 'role', m.member_role, 'status', m.status)) FROM public.sa_members m WHERE m.agreement_id = _id), '[]'::jsonb),
     'replacement', (SELECT jsonb_build_object('id', x.id, 'status', x.status, 'to', x.to_consultant, 'reason', x.reason) FROM public.sa_replacements x WHERE x.agreement_id = _id AND x.status IN ('pending_admin', 'pending_consultant') LIMIT 1),
     'events', COALESCE((SELECT jsonb_agg(jsonb_build_object('kind', e.kind, 'role', e.actor_role, 'data', e.data, 'at', e.created_at) ORDER BY e.created_at DESC) FROM (SELECT * FROM public.sa_events WHERE agreement_id = _id ORDER BY created_at DESC LIMIT 100) e), '[]'::jsonb),
     'messages', COALESCE((SELECT jsonb_agg(jsonb_build_object('consultant_id', m.consultant_id, 'role', m.sender_role, 'body', m.body, 'at', m.created_at) ORDER BY m.created_at)
@@ -1297,6 +1302,9 @@ BEGIN
   END IF;
   INSERT INTO public.platform_settings (key, value) VALUES ('support_agreements', v)
   ON CONFLICT (key) DO UPDATE SET value = public.platform_settings.value || EXCLUDED.value, updated_at = now();
+  -- Boolean mirror for the menu switch (src/lib/pageVisibility.ts reads boolean rows only).
+  INSERT INTO public.platform_settings (key, value) VALUES ('support_agreements_visible', to_jsonb(public.sa_enabled()))
+  ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
   PERFORM public.sa_audit_log(uid, 'settings', NULL, jsonb_build_object('before', before, 'after', public.sa_settings(), 'reason', left(_reason, 300)));
   RETURN public.sa_settings();
 END $$;
