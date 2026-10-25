@@ -140,7 +140,7 @@ export default function CompanySelectorPage() {
 
               <Button
                 onClick={handleCreate}
-                disabled={creating || !newCompanyName.trim()}
+                busy={creating} disabled={!newCompanyName.trim()}
                 className="w-full gradient-primary border-0 h-12 text-base font-semibold rounded-xl"
               >
                 {creating ? t('common.loading') : t('company_selector.get_started')}
@@ -262,7 +262,7 @@ export default function CompanySelectorPage() {
               </div>
               <Button
                 onClick={handleCreate}
-                disabled={creating || !newCompanyName.trim()}
+                busy={creating} disabled={!newCompanyName.trim()}
                 className="w-full gradient-primary border-0 h-11"
               >
                 {creating ? t('common.loading') : t('company_selector.create_company')}

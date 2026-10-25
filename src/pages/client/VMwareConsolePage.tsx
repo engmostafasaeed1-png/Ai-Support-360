@@ -102,7 +102,7 @@ export default function VMwareConsolePage() {
                     variant="outline"
                     size="sm"
                     className="flex-col h-16 gap-1 text-xs"
-                    disabled={vmAction.isPending}
+                    busy={vmAction.isPending}
                     onClick={() => vmAction.mutate({ environment_id: selectedEnvId, action: ctrl.action })}
                   >
                     <ctrl.icon className={`w-4 h-4 ${ctrl.color}`} />
@@ -160,7 +160,7 @@ export default function VMwareConsolePage() {
                 <Button
                   size="sm"
                   className="h-8 text-xs"
-                  disabled={!snapshotName.trim() || createSnapshot.isPending}
+                  busy={createSnapshot.isPending} disabled={!snapshotName.trim()}
                   onClick={() => {
                     createSnapshot.mutate({ environment_id: selectedEnvId, name: snapshotName });
                     setSnapshotName('');

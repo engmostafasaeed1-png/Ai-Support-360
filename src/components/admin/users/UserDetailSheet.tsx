@@ -129,8 +129,8 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
           <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 p-2 text-xs text-foreground" data-testid="um-unconfirmed">
             <Mail className="h-4 w-4 shrink-0 text-warning" aria-hidden />
             <span className="flex-1">{t('um.unconfirmed_note', 'E-mail not confirmed yet: this person cannot sign in until they confirm.')}</span>
-            {can('users.edit') && <Button size="sm" variant="outline" disabled={!idReady || busy} onClick={() => setDialog('resend_verification')}>{t('um.resend_confirmation', 'Resend confirmation e-mail')}</Button>}
-            {isSuperMe && !self && <Button size="sm" variant="outline" disabled={!idReady || busy} onClick={() => setDialog('confirm_email')}><MailCheck className="me-1 h-4 w-4" aria-hidden />{t('um.confirm_email', 'Mark e-mail as confirmed')}</Button>}
+            {can('users.edit') && <Button size="sm" variant="outline" busy={busy} disabled={!idReady} onClick={() => setDialog('resend_verification')}>{t('um.resend_confirmation', 'Resend confirmation e-mail')}</Button>}
+            {isSuperMe && !self && <Button size="sm" variant="outline" busy={busy} disabled={!idReady} onClick={() => setDialog('confirm_email')}><MailCheck className="me-1 h-4 w-4" aria-hidden />{t('um.confirm_email', 'Mark e-mail as confirmed')}</Button>}
           </div>
         )}
         {/* Actions */}
@@ -194,7 +194,7 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
                   <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); const v = tagInput.trim().toLowerCase(); if (v && !tags.includes(v)) { saveTags([...tags, v]); setTagInput(''); } }}>
                     <Label htmlFor="um-tag" className="sr-only">{t('um.add_tag', 'Add tag')}</Label>
                     <Input id="um-tag" value={tagInput} maxLength={30} placeholder={t('um.add_tag', 'Add tag')} onChange={(e) => setTagInput(e.target.value)} className="h-8 max-w-48" />
-                    <Button type="submit" size="sm" variant="outline" disabled={busy || !/^[a-z0-9][a-z0-9 _-]{0,29}$/i.test(tagInput.trim())}>{t('um.add', 'Add')}</Button>
+                    <Button type="submit" size="sm" variant="outline" busy={busy} disabled={!/^[a-z0-9][a-z0-9 _-]{0,29}$/i.test(tagInput.trim())}>{t('um.add', 'Add')}</Button>
                   </form>
                 </section>
               )}
@@ -249,7 +249,7 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
                 <form className="space-y-2" onSubmit={async (e) => { e.preventDefault(); if (!note.trim()) return; if (await run('add_note', u.id, { payload: { body: note.trim() }, ok: t('um.note_saved', 'Note saved') })) { setNote(''); refetch(); } }}>
                   <Label htmlFor="um-note">{t('um.internal_note', 'Internal note (admins only)')}</Label>
                   <Textarea id="um-note" rows={3} maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} />
-                  <Button type="submit" size="sm" disabled={busy || !note.trim()}>{t('um.add_note', 'Add note')}</Button>
+                  <Button type="submit" size="sm" busy={busy} disabled={!note.trim()}>{t('um.add_note', 'Add note')}</Button>
                 </form>
                 {(data.notes ?? []).map((n: { id: string; body: string; created_at: string; author_name: string; author_id: string }) => (
                   <div key={n.id} className="rounded-xl border border-border p-3">

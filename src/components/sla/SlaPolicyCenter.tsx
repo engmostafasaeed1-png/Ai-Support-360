@@ -77,9 +77,9 @@ export default function SlaPolicyCenter() {
           <CardHeader className="pb-2"><CardTitle className="text-sm">{t('sla.center.startFrom')}</CardTitle></CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             {(settings?.templates ?? []).map((tp) => (
-              <Button key={tp.id} variant="outline" size="sm" disabled={busy} onClick={() => start(tp.id, tp.name)} title={tp.description}>{t(`sla.templateName.${tp.key}`, { defaultValue: tp.name })}</Button>
+              <Button key={tp.id} variant="outline" size="sm" busy={busy} onClick={() => start(tp.id, tp.name)} title={tp.description}>{t(`sla.templateName.${tp.key}`, { defaultValue: tp.name })}</Button>
             ))}
-            {def && <Button variant="ghost" size="sm" disabled={busy} onClick={() => start(def.id, t('sla.center.myPolicy'))}>{t('sla.center.fromDefault')}</Button>}
+            {def && <Button variant="ghost" size="sm" busy={busy} onClick={() => start(def.id, t('sla.center.myPolicy'))}>{t('sla.center.fromDefault')}</Button>}
           </CardContent>
         </Card>
       )}

@@ -99,7 +99,7 @@ export default function VoiceInput({ onTranscript, value, disabled, className, s
         size="icon"
         className={cn(btnSize, 'relative shrink-0 transition-all', voice.listening ? 'text-destructive bg-destructive/10 hover:bg-destructive/20' : 'text-muted-foreground hover:text-foreground')}
         onClick={() => void toggle()}
-        disabled={disabled || voice.status === 'starting' || busy}
+        busy={busy} disabled={disabled || voice.status === 'starting'}
         title={voice.listening ? t('voice.stop', 'Stop recording') : t('voice.start', 'Start voice input')}
         aria-label={voice.listening ? t('voice.stop', 'Stop recording') : t('voice.start', 'Start voice input')}
         aria-pressed={voice.listening}

@@ -244,7 +244,7 @@ export default function ProfileEditDialog({ open, onOpenChange, role }: Props) {
               </div>
             )}
 
-            <Button onClick={handleSave} disabled={saving} className="w-full">
+            <Button onClick={handleSave} busy={saving} className="w-full">
               {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : 'Save Changes'}
             </Button>
           </div>

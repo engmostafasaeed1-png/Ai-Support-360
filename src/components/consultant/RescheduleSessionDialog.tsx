@@ -72,8 +72,8 @@ export default function RescheduleSessionDialog({ open, onOpenChange, sessionId,
           </div>
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-          <Button onClick={save} disabled={saving} className="gradient-primary border-0">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} busy={saving}>Cancel</Button>
+          <Button onClick={save} busy={saving} className="gradient-primary border-0">
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Move the session
           </Button>

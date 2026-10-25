@@ -57,10 +57,10 @@ export default function CompanyInvitations({ onAccepted }: { onAccepted?: () => 
                 Invited as {inv.org_role} · {formatDistanceToNow(new Date(inv.invited_at), { addSuffix: true })}
               </p>
             </div>
-            <Button size="sm" className="gap-1" disabled={busy === inv.tenant_id} onClick={() => answer(inv.tenant_id, true)}>
+            <Button size="sm" className="gap-1" busy={busy === inv.tenant_id} onClick={() => answer(inv.tenant_id, true)}>
               {busy === inv.tenant_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Accept
             </Button>
-            <Button size="sm" variant="outline" className="gap-1" disabled={busy === inv.tenant_id} onClick={() => answer(inv.tenant_id, false)}>
+            <Button size="sm" variant="outline" className="gap-1" busy={busy === inv.tenant_id} onClick={() => answer(inv.tenant_id, false)}>
               <X className="w-3.5 h-3.5" /> Decline
             </Button>
           </CardContent>

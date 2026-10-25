@@ -217,7 +217,7 @@ function AddLinkDialog({ ticketId, open, onOpenChange }: { ticketId: string; ope
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleAdd} disabled={saving || !selectedId} className="gradient-primary border-0 gap-1.5">
+          <Button onClick={handleAdd} busy={saving} disabled={!selectedId} className="gradient-primary border-0 gap-1.5">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
             Link
           </Button>

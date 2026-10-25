@@ -231,14 +231,14 @@ export default function VoiceLearningPanel() {
                       <td className="py-2 whitespace-nowrap text-end">
                         {r.status === 'pending' && (editing?.id === r.id ? (
                           <>
-                            <Button size="sm" disabled={busy} onClick={() => void run('admin_voice_learning_decide', { _id: r.id, _action: 'edit', _term: editing.term, _module: editing.module }, t('voice.learnadmin.approved', 'Approved: it will be tested before use')).then((ok) => ok && setEditing(null))}><Check className="h-4 w-4" /></Button>
+                            <Button size="sm" busy={busy} onClick={() => void run('admin_voice_learning_decide', { _id: r.id, _action: 'edit', _term: editing.term, _module: editing.module }, t('voice.learnadmin.approved', 'Approved: it will be tested before use')).then((ok) => ok && setEditing(null))}><Check className="h-4 w-4" /></Button>
                             <Button size="sm" variant="ghost" onClick={() => setEditing(null)} aria-label={t('common.cancel', 'Cancel')}><X className="h-4 w-4" /></Button>
                           </>
                         ) : (
                           <>
-                            <Button size="sm" variant="outline" disabled={busy} onClick={() => void run('admin_voice_learning_decide', { _id: r.id, _action: 'approve', _term: null, _module: null }, t('voice.learnadmin.approved', 'Approved: it will be tested before use'))}>{t('voice.learnadmin.approve', 'Approve')}</Button>
+                            <Button size="sm" variant="outline" busy={busy} onClick={() => void run('admin_voice_learning_decide', { _id: r.id, _action: 'approve', _term: null, _module: null }, t('voice.learnadmin.approved', 'Approved: it will be tested before use'))}>{t('voice.learnadmin.approve', 'Approve')}</Button>
                             <Button size="sm" variant="ghost" onClick={() => setEditing({ id: r.id, term: r.final_term, module: r.module ?? '' })} aria-label={t('voice.learnadmin.edit', 'Edit')}><Pencil className="h-4 w-4" /></Button>
-                            <Button size="sm" variant="ghost" disabled={busy} onClick={() => void run('admin_voice_learning_decide', { _id: r.id, _action: 'reject', _term: null, _module: null }, t('voice.learnadmin.rejected', 'Rejected: it will never be suggested again'))}>{t('voice.learnadmin.reject', 'Reject')}</Button>
+                            <Button size="sm" variant="ghost" busy={busy} onClick={() => void run('admin_voice_learning_decide', { _id: r.id, _action: 'reject', _term: null, _module: null }, t('voice.learnadmin.rejected', 'Rejected: it will never be suggested again'))}>{t('voice.learnadmin.reject', 'Reject')}</Button>
                           </>
                         ))}
                       </td>
@@ -260,7 +260,7 @@ export default function VoiceLearningPanel() {
                 ? t('voice.learnadmin.cand_wait', 'Version {{v}} is waiting: not enough test sentences yet to prove it is not worse ({{n}} of {{min}}).', { v: candidate.version, n: candidate.eval?.items ?? 0, min: s.min_eval_items })
                 : t('voice.learnadmin.cand_test', 'Version {{v}} is being tested.', { v: candidate.version })}
               {candidate.eval?.passed !== false && (
-                <Button size="sm" variant="outline" className="ms-2" disabled={busy} onClick={() => void run('admin_voice_vocab_activate', { _version: candidate.version }, t('voice.learnadmin.activated', 'Activated'))}>
+                <Button size="sm" variant="outline" className="ms-2" busy={busy} onClick={() => void run('admin_voice_vocab_activate', { _version: candidate.version }, t('voice.learnadmin.activated', 'Activated'))}>
                   {t('voice.learnadmin.activate', 'Activate anyway')}
                 </Button>
               )}
@@ -283,7 +283,7 @@ export default function VoiceLearningPanel() {
                     <td className="py-2 pe-3 text-xs text-muted-foreground max-w-xs">{v.reason}</td>
                     <td className="py-2 text-end">
                       {v.status !== 'active' && v.activated_at && (
-                        <Button size="sm" variant="outline" disabled={busy} onClick={() => void run('admin_voice_vocab_rollback', { _version: v.version }, t('voice.learnadmin.rolled_back', 'Restored version {{v}}', { v: v.version }))}>
+                        <Button size="sm" variant="outline" busy={busy} onClick={() => void run('admin_voice_vocab_rollback', { _version: v.version }, t('voice.learnadmin.rolled_back', 'Restored version {{v}}', { v: v.version }))}>
                           <RotateCcw className="h-4 w-4 me-1" />{t('voice.learnadmin.rollback', 'Restore')}
                         </Button>
                       )}
@@ -300,7 +300,7 @@ export default function VoiceLearningPanel() {
                 {o.active_terms.map((term) => (
                   <span key={term.heard} className="inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-xs">
                     <span className="text-muted-foreground" dir="auto">{term.heard}</span>→<span className="font-medium" dir="auto">{term.term}</span>
-                    <button type="button" className="ms-1 text-muted-foreground hover:text-destructive" disabled={busy}
+                    <button type="button" className="ms-1 text-muted-foreground hover:text-destructive" /* disabled-ok: busy */ disabled={busy} aria-busy={busy}
                       onClick={() => void run('admin_voice_vocab_remove_term', { _heard: term.heard }, t('voice.learnadmin.removed', 'Removed and blocked'))}
                       aria-label={t('voice.learnadmin.remove', 'Remove {{term}}', { term: term.term })}><X className="h-3 w-3" /></button>
                   </span>
@@ -361,7 +361,7 @@ export default function VoiceLearningPanel() {
                         <td className="py-2 pe-3">{modelLabel(r.recommended_model)}<div className="text-[11px] text-muted-foreground">{t(`voice.learnadmin.why_${r.reason}`, REASONS[r.reason] ?? r.reason)}</div></td>
                         <td className="py-2 pe-3 text-xs">{r.stats.map((x) => <div key={x.model}>{modelLabel(x.model)}: {pct(x.words ? x.errors / x.words : null)} · {x.answers} · {x.consultants}</div>)}</td>
                         <td className="py-2 text-end">{live && (
-                          <Button size="sm" variant="outline" disabled={busy} onClick={() => void run('admin_voice_route_retire', { _language: r.language, _device: r.device, _accent: r.accent }, t('voice.learnadmin.route_back', 'Route undone'))}>
+                          <Button size="sm" variant="outline" busy={busy} onClick={() => void run('admin_voice_route_retire', { _language: r.language, _device: r.device, _accent: r.accent }, t('voice.learnadmin.route_back', 'Route undone'))}>
                             <RotateCcw className="h-4 w-4 me-1" />{t('voice.learnadmin.rollback', 'Restore')}
                           </Button>
                         )}</td>

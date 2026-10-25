@@ -221,7 +221,7 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={addOrUpdate} disabled={busy || isLoading} variant="outline" className="flex-1">
+          <Button onClick={addOrUpdate} busy={busy || isLoading} variant="outline" className="flex-1">
             <Plus className="w-4 h-4 mr-2" />
             {editingId ? 'Update slot' : 'Add time slot'}
           </Button>
@@ -258,7 +258,7 @@ export default function SetAvailabilityDialog({ trigger, onSaved }: { trigger: R
 
         <div className="flex gap-2 pt-1">
           <SectionSaveControls state={state} disabled={isLoading} />
-          <Button variant="outline" onClick={() => void close()} disabled={state.saving}>Close</Button>
+          <Button variant="outline" onClick={() => void close()} busy={state.saving}>Close</Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -83,7 +83,7 @@ export default function ReferralInviteSettingsCard() {
               <Switch id="rinv-draft" checked={draft.terms_draft} disabled={ro} onCheckedChange={(v) => setDraft({ ...draft, terms_draft: v })} />
             </div>
             {ro ? <p className="text-xs text-muted-foreground">{t('rinv.super_only', 'Only super admins can change these settings.')}</p>
-              : <Button onClick={() => void save()} disabled={busy}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('rinv.save', 'Save settings')}</Button>}
+              : <Button onClick={() => void save()} busy={busy}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('rinv.save', 'Save settings')}</Button>}
           </>
         )}
         <div className="space-y-2">

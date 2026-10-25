@@ -16,9 +16,9 @@ function Question({ question: q, readOnly }: { question: ClientQuestion; readOnl
       <Textarea aria-label="Answer" maxLength={1000} value={answer} onChange={e => setAnswer(e.target.value)} />
       <p className="text-xs text-muted-foreground">{contactHelp}</p>
       <p className="text-xs text-muted-foreground">Your answer is shown to all consultants who can bid, without your name.</p>
-      <Button size="sm" type="submit" disabled={respond.isPending || !answer.trim()}>Answer</Button>
+      <Button size="sm" type="submit" busy={respond.isPending} disabled={!answer.trim()}>Answer</Button>
     </form>}
-    {!readOnly && <Button variant="link" size="sm" disabled={hide.isPending} onClick={() => hide.mutate({ id: q.id, hidden: !q.hidden }, { onError: (e: any) => toast.error(e.message) })}>{q.hidden ? 'Show' : 'Hide'}</Button>}
+    {!readOnly && <Button variant="link" size="sm" busy={hide.isPending} onClick={() => hide.mutate({ id: q.id, hidden: !q.hidden }, { onError: (e: any) => toast.error(e.message) })}>{q.hidden ? 'Show' : 'Hide'}</Button>}
   </article>;
 }
 export default function BidQuestions({ questions, readOnly = false }: { questions: ClientQuestion[]; readOnly?: boolean }) {

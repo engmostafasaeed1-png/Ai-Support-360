@@ -297,7 +297,7 @@ export default function PreJoinChecklist({
             </ul>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={() => runChecks(true)} disabled={running}>
+              <Button size="sm" variant="outline" onClick={() => runChecks(true)} busy={running}>
                 {running ? (
                   <Loader2 className="w-4 h-4 mr-1.5 animate-spin" aria-hidden="true" />
                 ) : (

@@ -535,7 +535,7 @@ function AddProcessDialog({
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button onClick={handleAddManual} disabled={saving} className="gradient-primary border-0">
+              <Button onClick={handleAddManual} busy={saving} className="gradient-primary border-0">
                 {saving ? 'Adding...' : `Add ${LEVEL_LABELS[newLevel - 1]} Process`}
               </Button>
             </DialogFooter>
@@ -555,7 +555,7 @@ function AddProcessDialog({
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button onClick={handleBulkAdd} disabled={saving} className="gradient-primary border-0">
+              <Button onClick={handleBulkAdd} busy={saving} className="gradient-primary border-0">
                 {saving ? 'Adding...' : 'Add All'}
               </Button>
             </DialogFooter>
@@ -567,7 +567,7 @@ function AddProcessDialog({
             {file && <p className="text-xs text-muted-foreground">Selected: {file.name}</p>}
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button onClick={handleUpload} disabled={uploading || !file} className="gradient-primary border-0 gap-1.5">
+              <Button onClick={handleUpload} busy={uploading} disabled={!file} className="gradient-primary border-0 gap-1.5">
                 <Upload className="w-4 h-4" /> {uploading ? 'Importing...' : 'Import'}
               </Button>
             </DialogFooter>

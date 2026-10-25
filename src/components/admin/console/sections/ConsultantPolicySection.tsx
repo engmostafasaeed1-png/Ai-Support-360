@@ -163,7 +163,7 @@ const ConsultantPolicySection = () => {
             <Label htmlFor="policy-grace-days">{t('admin.policy.graceDays', 'Days from first display before restrictions')}</Label>
             <Input id="policy-grace-days" type="number" min={0} max={MAX_POLICY_GRACE_DAYS} value={days} onChange={e => setDays(e.target.value)} className="w-28" disabled={!ready} />
           </div>
-          <Button onClick={() => saveGrace.mutate()} disabled={!ready || saveGrace.isPending}>{t('common.save', 'Save')}</Button>
+          <Button onClick={() => saveGrace.mutate()} busy={saveGrace.isPending} disabled={!ready}>{t('common.save', 'Save')}</Button>
         </CardContent>
       </Card>
 
@@ -208,7 +208,7 @@ const ConsultantPolicySection = () => {
                         <TableCell className="text-xs">{r.last_reminder_at ? format(new Date(r.last_reminder_at), 'PP p') : '-'}</TableCell>
                         <TableCell>
                           {r.state !== 'accepted' && (
-                            <Button size="sm" variant="outline" className="gap-1" disabled={!ready || remind.isPending} onClick={() => remind.mutate(r.consultant_id)}>
+                            <Button size="sm" variant="outline" className="gap-1" busy={remind.isPending} disabled={!ready} onClick={() => remind.mutate(r.consultant_id)}>
                               <Send className="h-3.5 w-3.5" />{t('admin.policy.sendReminder', 'Send reminder')}
                             </Button>
                           )}
@@ -244,7 +244,7 @@ const ConsultantPolicySection = () => {
                 <Input id="policy-effective" type="datetime-local" className="w-64" value={draft.effective} onChange={e => setDraft(d => d && { ...d, effective: e.target.value })} />
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button onClick={() => setConfirmOpen(true)} disabled={publish.isPending}>{t('admin.policy.publish', 'Publish version {{v}}', { v: (current.data?.policy.version ?? 0) + 1 })}</Button>
+                <Button onClick={() => setConfirmOpen(true)} busy={publish.isPending}>{t('admin.policy.publish', 'Publish version {{v}}', { v: (current.data?.policy.version ?? 0) + 1 })}</Button>
                 <Button variant="ghost" onClick={() => setDraft(null)}>{t('common.cancel', 'Cancel')}</Button>
               </div>
             </>

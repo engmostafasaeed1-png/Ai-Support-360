@@ -183,7 +183,7 @@ function CSATDialog({ open, onOpenChange, ticketId, clientId, consultantId, onCo
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Skip</Button>
-          <Button onClick={handleSubmit} disabled={saving || !rating} className="gradient-primary border-0 gap-1.5">
+          <Button onClick={handleSubmit} busy={saving} disabled={!rating} className="gradient-primary border-0 gap-1.5">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             Submit
           </Button>

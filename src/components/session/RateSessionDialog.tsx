@@ -383,12 +383,12 @@ export default function RateSessionDialog({
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submit.isPending}>
+              <Button variant="ghost" onClick={() => onOpenChange(false)} busy={submit.isPending}>
                 Cancel
               </Button>
               <Button
                 onClick={() => submit.mutate()}
-                disabled={submit.isPending || score === 0}
+                busy={submit.isPending} disabled={score === 0}
               >
                 {submit.isPending ? 'Submitting...' : 'Submit Rating'}
               </Button>

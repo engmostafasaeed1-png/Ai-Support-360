@@ -14,6 +14,6 @@ export default function BidDeclineDialog({ id, open, onOpenChange }: { id: strin
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent aria-describedby={undefined}><DialogHeader><DialogTitle>Decline</DialogTitle></DialogHeader>
     <Select value={reason} onValueChange={setReason}><SelectTrigger aria-label="Decline reason"><SelectValue /></SelectTrigger><SelectContent>{declineReasons.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent></Select>
     <Label htmlFor="decline-text">Reason (optional)</Label><Textarea id="decline-text" maxLength={300} value={text} onChange={e => setText(e.target.value)} /><p className="text-xs text-muted-foreground">{contactHelp}</p>
-    <Button variant="destructive" disabled={decline.isPending} onClick={() => decline.mutate({ id, reason, text }, { onSuccess: () => { toast.success('Bid declined.'); onOpenChange(false); }, onError: (e: any) => toast.error(e.message) })}>Decline</Button>
+    <Button variant="destructive" busy={decline.isPending} onClick={() => decline.mutate({ id, reason, text }, { onSuccess: () => { toast.success('Bid declined.'); onOpenChange(false); }, onError: (e: any) => toast.error(e.message) })}>Decline</Button>
   </DialogContent></Dialog>;
 }

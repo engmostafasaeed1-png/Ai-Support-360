@@ -271,7 +271,7 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
           <LocationBlockedNotice />
           <PolicyBlockedNotice />
           <div className="mb-2"><SlaAcceptanceBox ticketId={ticketId} context="bid" onReadyChange={setSlaReady} /></div>
-          <Button onClick={handleSubmit} disabled={submit.isPending || locationBlocked || policyBlocked || !slaReady} className="w-full gradient-primary border-0 h-10">
+          <Button onClick={handleSubmit} busy={submit.isPending} disabled={locationBlocked || policyBlocked || !slaReady} className="w-full gradient-primary border-0 h-10">
             {submit.isPending ? 'Sending...' : isRevision ? `Send revised bid (v${nextVersion})` : 'Send bid'}
           </Button>
         </div>

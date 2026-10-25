@@ -94,21 +94,21 @@ export default function SlaTicketPanel({ ticketId }: { ticketId: string }) {
         {data.can.apply_policy && data.newer_policy && (
           <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 p-3 text-xs">
             <span className="flex-1">{t('sla.panel.newer', { name: data.newer_policy.name, version: data.newer_policy.version })}</span>
-            <Button size="sm" variant="outline" disabled={act.isPending} onClick={() => run(() => api.applyNewPolicy(ticketId, ''), t('sla.panel.applied'))}>{t('sla.panel.applyNew')}</Button>
+            <Button size="sm" variant="outline" busy={act.isPending} onClick={() => run(() => api.applyNewPolicy(ticketId, ''), t('sla.panel.applied'))}>{t('sla.panel.applyNew')}</Button>
           </div>
         )}
         {data.can.decide && data.reclass && (
           <div className="flex flex-wrap items-center gap-2 rounded-xl border border-warning/50 bg-warning/10 p-3 text-xs">
             <span className="flex-1">{t('sla.panel.reclassAsk', { from: data.reclass.from, to: data.reclass.to, reason: data.reclass.reason })}</span>
-            <Button size="sm" disabled={act.isPending} onClick={() => run(() => api.decideReclass(data.reclass!.id, true), t('sla.panel.saved'))}>{t('sla.action.accept')}</Button>
-            <Button size="sm" variant="outline" disabled={act.isPending} onClick={() => run(() => api.decideReclass(data.reclass!.id, false), t('sla.panel.saved'))}>{t('sla.action.decline')}</Button>
+            <Button size="sm" busy={act.isPending} onClick={() => run(() => api.decideReclass(data.reclass!.id, true), t('sla.panel.saved'))}>{t('sla.action.accept')}</Button>
+            <Button size="sm" variant="outline" busy={act.isPending} onClick={() => run(() => api.decideReclass(data.reclass!.id, false), t('sla.panel.saved'))}>{t('sla.action.decline')}</Button>
           </div>
         )}
         {data.can.decide && (data.counters ?? []).map((k) => (
           <div key={k.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 p-3 text-xs">
             <span className="flex-1">{t('sla.panel.counterAsk', { response: target(k.targets.response_min), resolution: target(k.targets.resolution_min) })}{k.note ? ` — ${k.note}` : ''}</span>
-            <Button size="sm" disabled={act.isPending} onClick={() => run(() => api.decideCounter(k.id, true, ''), t('sla.panel.saved'))}>{t('sla.action.accept')}</Button>
-            <Button size="sm" variant="outline" disabled={act.isPending} onClick={() => run(() => api.decideCounter(k.id, false, ''), t('sla.panel.saved'))}>{t('sla.action.decline')}</Button>
+            <Button size="sm" busy={act.isPending} onClick={() => run(() => api.decideCounter(k.id, true, ''), t('sla.panel.saved'))}>{t('sla.action.accept')}</Button>
+            <Button size="sm" variant="outline" busy={act.isPending} onClick={() => run(() => api.decideCounter(k.id, false, ''), t('sla.panel.saved'))}>{t('sla.action.decline')}</Button>
           </div>
         ))}
         {data.can.breach_choice && breached.length > 0 && (
@@ -116,8 +116,8 @@ export default function SlaTicketPanel({ ticketId }: { ticketId: string }) {
             <p className="flex items-center gap-1.5 font-medium text-foreground"><AlertTriangle className="h-3.5 w-3.5 text-destructive" aria-hidden /> {t('sla.panel.breachedAsk')}</p>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" onClick={() => { setExtendClock(breached[0].kind); setDlg('extend'); }}>{t('sla.choice.extend')}</Button>
-              <Button size="sm" variant="outline" disabled={act.isPending} onClick={() => run(() => api.breachChoice(ticketId, breached[0].kind, 'reassign', null, ''), t('sla.panel.sentAdmin'))}>{t('sla.choice.reassign')}</Button>
-              <Button size="sm" variant="outline" disabled={act.isPending} onClick={() => run(() => api.breachChoice(ticketId, breached[0].kind, 'admin_help', null, ''), t('sla.panel.sentAdmin'))}>{t('sla.choice.admin_help')}</Button>
+              <Button size="sm" variant="outline" busy={act.isPending} onClick={() => run(() => api.breachChoice(ticketId, breached[0].kind, 'reassign', null, ''), t('sla.panel.sentAdmin'))}>{t('sla.choice.reassign')}</Button>
+              <Button size="sm" variant="outline" busy={act.isPending} onClick={() => run(() => api.breachChoice(ticketId, breached[0].kind, 'admin_help', null, ''), t('sla.panel.sentAdmin'))}>{t('sla.choice.admin_help')}</Button>
             </div>
           </div>
         )}
@@ -175,7 +175,7 @@ export default function SlaTicketPanel({ ticketId }: { ticketId: string }) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDlg(null)}>{t('sla.action.cancel')}</Button>
-            <Button disabled={act.isPending || ((dlg === 'reclass' || dlg === 'propose') && note.trim().length < 3)} onClick={() => {
+            <Button busy={act.isPending} disabled={((dlg === 'reclass' || dlg === 'propose') && note.trim().length < 3)} onClick={() => {
               if (dlg === 'ack') void run(() => api.acknowledgeSla(ticketId, note, eta ? new Date(eta).toISOString() : null), t('sla.panel.acked'));
               if (dlg === 'workaround') void run(() => api.markWorkaround(ticketId, note), t('sla.panel.saved'));
               if (dlg === 'reclass') void run(() => api.reclassify(ticketId, sev, note), t('sla.panel.saved'));

@@ -504,10 +504,10 @@ function RescheduleForm({
       </div>
 
       <div className="flex flex-wrap gap-2 justify-end pt-1">
-        <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
+        <Button type="button" variant="ghost" onClick={onCancel} busy={submitting}>
           Cancel
         </Button>
-        <Button type="button" onClick={handleSubmit} disabled={submitting || slotErrors.some((e) => e !== null)} className="rounded-xl gap-2">
+        <Button type="button" onClick={handleSubmit} busy={submitting} disabled={slotErrors.some((e) => e !== null)} className="rounded-xl gap-2">
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
           Submit reschedule
         </Button>

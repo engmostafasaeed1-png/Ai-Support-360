@@ -119,7 +119,7 @@ export default function MilestonesPage() {
                           variant={action.variant}
                           className={`text-xs gap-1.5 h-8 ${action.variant === 'default' ? 'gradient-primary border-0' : ''}`}
                           onClick={() => handleAction(m.id, action.next)}
-                          disabled={updateStatus.isPending}
+                          busy={updateStatus.isPending}
                         >
                           <Wallet className="w-3.5 h-3.5" /> {action.label}
                           <ArrowRight className="w-3 h-3" />

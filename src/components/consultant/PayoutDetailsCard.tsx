@@ -234,7 +234,7 @@ export default function PayoutDetailsCard() {
 
             <div className="flex justify-end gap-2">
               {d && <Button variant="outline" onClick={() => { setEditing(false); setAck(false); }}>Cancel</Button>}
-              <Button disabled={!valid || !ack || !bankDirty || save.isPending} onClick={submit}>Save bank details</Button>
+              <Button busy={save.isPending} disabled={!valid || !ack || !bankDirty} onClick={submit}>Save bank details</Button>
             </div>
           </>
         )}

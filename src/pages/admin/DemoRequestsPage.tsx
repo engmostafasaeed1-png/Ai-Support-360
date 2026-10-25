@@ -186,8 +186,8 @@ function DemoRequestDialog({ row, onClose, onSaved }: { row: DemoRow; onClose: (
               Page of the requester <ExternalLink className="w-3.5 h-3.5 ms-1.5" />
             </a>
           </Button>
-          <Button variant="outline" onClick={onClose} disabled={saving}>Close</Button>
-          <Button onClick={save} disabled={saving || (status === row.status && (note.trim() || null) === (row.status_note ?? null))}>
+          <Button variant="outline" onClick={onClose} busy={saving}>Close</Button>
+          <Button onClick={save} busy={saving} disabled={(status === row.status && (note.trim() || null) === (row.status_note ?? null))}>
             {saving && <Loader2 className="w-4 h-4 me-1.5 animate-spin" />}
             Save
           </Button>

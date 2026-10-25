@@ -184,7 +184,7 @@ export default function VerificationTimeline({
           <Button
             type="button"
             onClick={() => { void onResend(); }}
-            disabled={resending || resendCooldown > 0}
+            busy={resending} disabled={resendCooldown > 0}
             aria-busy={resending}
             aria-disabled={resending || resendCooldown > 0}
             aria-label={

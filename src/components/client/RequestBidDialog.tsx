@@ -463,7 +463,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
               <Label>Bidding deadline</Label>
               <Select value={deadline} onValueChange={v => setDeadline(v as DeadlineOption)}><SelectTrigger aria-label="Bidding deadline"><SelectValue /></SelectTrigger><SelectContent>{deadlineOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select>
               <p className="text-xs text-muted-foreground">Matching consultants are notified. You review the bids in the 'Bids' tab.</p>
-              <Button className="w-full gradient-primary border-0 gap-2" onClick={handleOpenForBids} disabled={saving}>
+              <Button className="w-full gradient-primary border-0 gap-2" onClick={handleOpenForBids} busy={saving}>
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
                 Open for Public Bids
               </Button>
@@ -505,7 +505,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
                     onChange={e => setBidMessage(e.target.value)}
                     className="min-h-[60px] text-xs"
                   />
-                  <Button className="w-full gradient-primary border-0 gap-2" onClick={() => void handleSendPrivateBids()} disabled={saving}>
+                  <Button className="w-full gradient-primary border-0 gap-2" onClick={() => void handleSendPrivateBids()} busy={saving}>
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     Send Private Bid Invitations
                   </Button>
@@ -565,7 +565,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
                     onChange={e => setBidMessage(e.target.value)}
                     className="min-h-[60px] text-xs"
                   />
-                  <Button className="w-full gradient-primary border-0 gap-2" onClick={() => void handleSendPrivateBids()} disabled={saving}>
+                  <Button className="w-full gradient-primary border-0 gap-2" onClick={() => void handleSendPrivateBids()} busy={saving}>
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     Send Private Bid Invitations
                   </Button>

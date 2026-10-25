@@ -120,8 +120,8 @@ export default function RequestInfoDialog({ requestId, used, onClose, onSent }: 
         </p>
 
         <DialogFooter className="flex-col gap-2 sm:flex-row">
-          <Button variant="ghost" onClick={onClose} disabled={ask.isPending}>{t('assignment_info.cancel', 'Cancel')}</Button>
-          <Button onClick={send} disabled={ask.isPending || (tried && problems.length > 0)} className="gradient-primary border-0 gap-1">
+          <Button variant="ghost" onClick={onClose} busy={ask.isPending}>{t('assignment_info.cancel', 'Cancel')}</Button>
+          <Button onClick={send} busy={ask.isPending} disabled={(tried && problems.length > 0)} className="gradient-primary border-0 gap-1">
             {ask.isPending && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
             {t('assignment_info.send', 'Send question')}
           </Button>

@@ -88,8 +88,8 @@ export default function SubmitTimesheetDialog({ open, onOpenChange, ticketId, en
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>Cancel</Button>
-          <Button onClick={() => void submit()} disabled={busy || !!blockReason} className="gap-1.5">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} busy={busy}>Cancel</Button>
+          <Button onClick={() => void submit()} busy={busy} disabled={!!blockReason} className="gap-1.5">
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
             {resubmit ? 'Submit again' : 'Submit for approval'}
           </Button>

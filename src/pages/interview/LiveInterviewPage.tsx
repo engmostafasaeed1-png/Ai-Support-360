@@ -251,7 +251,7 @@ export default function LiveInterviewPage() {
                   aria-label="Message"
                 />
                 <VoiceInput value={input} onTranscript={(t) => setInput(t.slice(0, 4000))} />
-                <Button size="icon" onClick={send} disabled={sending || !input.trim()} aria-label="Send"><Send className="w-4 h-4" /></Button>
+                <Button size="icon" onClick={send} busy={sending} disabled={!input.trim()} aria-label="Send"><Send className="w-4 h-4" /></Button>
               </div>
             )}
           </Card>

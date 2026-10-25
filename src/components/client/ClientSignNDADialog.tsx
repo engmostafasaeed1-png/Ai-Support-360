@@ -152,7 +152,7 @@ function LegacyClientSignNDADialog({ open, onOpenChange, ndaId, ndaContent, cons
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={sign} disabled={!canSign || busy}>{busy ? 'Signing...' : 'Sign NDA'}</Button>
+          <Button onClick={sign} busy={busy} disabled={!canSign}>{busy ? 'Signing...' : 'Sign NDA'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

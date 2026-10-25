@@ -147,7 +147,7 @@ export default function LogoCropDialog({ imageSrc, open, onCancel, onConfirm }: 
         />
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onCancel} disabled={busy}>
+          <Button variant="outline" onClick={onCancel} busy={busy}>
             Cancel
           </Button>
           <Button onClick={handleConfirm} disabled={!canConfirm}>

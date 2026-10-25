@@ -48,11 +48,11 @@ export default function PushAdminCard() {
 
             <div className="flex flex-wrap gap-2">
               {!s.configured && (
-                <Button size="sm" onClick={() => generate.mutate()} disabled={generate.isPending} className="gap-1.5">
+                <Button size="sm" onClick={() => generate.mutate()} busy={generate.isPending} className="gap-1.5">
                   {generate.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Create the keys for phone alerts
                 </Button>
               )}
-              <Button size="sm" variant="ghost" onClick={() => statusQ.refetch()} disabled={statusQ.isFetching} className="gap-1.5">
+              <Button size="sm" variant="ghost" onClick={() => statusQ.refetch()} busy={statusQ.isFetching} className="gap-1.5">
                 <RefreshCw className="h-3.5 w-3.5" /> Refresh
               </Button>
             </div>

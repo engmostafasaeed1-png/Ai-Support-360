@@ -150,7 +150,7 @@ export default function KnowledgeArticleDialog({ open, onOpenChange }: Props) {
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={() => close(false)}>Cancel</Button>
-          <Button className="gradient-primary border-0" disabled={!!problemText || submit.isPending} onClick={send}>
+          <Button className="gradient-primary border-0" busy={submit.isPending} disabled={!!problemText} onClick={send}>
             {submit.isPending ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <Send className="me-2 h-4 w-4" />}
             Send for review
           </Button>

@@ -56,7 +56,7 @@ export function QuestionForm({ ticketId }: { ticketId: string }) {
         <span dir="ltr">{text.length}/{QUESTION_MAX}</span>
       </div>
       {problem && <p role="alert" className="text-xs text-destructive">{problem}</p>}
-      <Button type="button" size="sm" onClick={send} disabled={ask.isPending}>Send question</Button>
+      <Button type="button" size="sm" onClick={send} busy={ask.isPending}>Send question</Button>
     </div>
   );
 }

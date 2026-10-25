@@ -216,7 +216,7 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
                   </div>
                   <Badge variant="secondary" className={`text-[10px] capitalize ${statusStyles[r.status] || ''}`}>{statusLabel(r.status)}</Badge>
                   {isOwner && r.status === 'pending' && (
-                    <Button size="sm" variant="outline" className="gap-1 text-xs" disabled={busyId === r.id} onClick={() => withdraw(r.id)}>
+                    <Button size="sm" variant="outline" className="gap-1 text-xs" busy={busyId === r.id} onClick={() => withdraw(r.id)}>
                       {busyId === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />} Withdraw
                     </Button>
                   )}
@@ -260,7 +260,7 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
                           </Button>
                         )}
                         {view.canExtend && (
-                          <Button size="sm" variant="outline" className="gap-1 text-xs" disabled={busyId === r.id} onClick={() => setConfirmWait(r)}>
+                          <Button size="sm" variant="outline" className="gap-1 text-xs" busy={busyId === r.id} onClick={() => setConfirmWait(r)}>
                             {busyId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Hourglass className="h-3.5 w-3.5" aria-hidden="true" />}
                             {t('assignment_client.wait_longer', 'Wait longer ({{time}}, once)', { time: durationLabel(policy.extend, lang, false) })}
                           </Button>
@@ -295,7 +295,7 @@ export default function TicketMatchRequests({ ticketId, clientId, ticketClosed =
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={(e) => { e.preventDefault(); if (confirmWait) void waitLonger(confirmWait); }} disabled={!!busyId}>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); if (confirmWait) void waitLonger(confirmWait); }} /* disabled-ok: busy */ disabled={!!busyId} aria-busy={!!busyId}>
               {t('assignment_client.wait_confirm', 'Give more time')}
             </AlertDialogAction>
           </AlertDialogFooter>

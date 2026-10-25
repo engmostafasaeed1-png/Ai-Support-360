@@ -313,7 +313,7 @@ export default function FeedbackDialog({ open, onOpenChange, signedIn }: Props) 
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{String(t('common.cancel', { defaultValue: 'Cancel' }))}</Button>
-        <Button type="submit" disabled={sending}>
+        <Button type="submit" busy={sending}>
           {sending && <Loader2 aria-hidden="true" className="me-1.5 h-4 w-4 animate-spin" />}
           {String(t('feedback.send', { defaultValue: 'Send' }))}
         </Button>

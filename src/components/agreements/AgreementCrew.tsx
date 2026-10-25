@@ -253,9 +253,9 @@ export function CrewPanel({ a, settings }: { a: api.SaDetail; settings: SaSettin
             <label className="flex items-start gap-2"><Checkbox checked={slaOk} onCheckedChange={(v) => setSlaOk(!!v)} className="mt-0.5" /> {t('agreements.crew.acceptCheck')}</label>
             <div className="max-w-sm space-y-1.5"><Label htmlFor="crew-name">{t('agreements.acc.name')}</Label><Input id="crew-name" value={typed} maxLength={120} autoComplete="name" onChange={(e) => setTyped(e.target.value)} /></div>
             <div className="flex flex-wrap gap-2">
-              <Button disabled={busy || !slaOk || typed.trim().length < 2} onClick={() => run(() => api.memberRespond(a.id, true, true, typed.trim()), t('agreements.crew.accepted'))}>
+              <Button busy={busy} disabled={!slaOk || typed.trim().length < 2} onClick={() => run(() => api.memberRespond(a.id, true, true, typed.trim()), t('agreements.crew.accepted'))}>
                 {busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('agreements.crew.acceptCta')}</Button>
-              <Button variant="ghost" disabled={busy} onClick={() => run(() => api.memberRespond(a.id, false, false, ''), t('agreements.crew.declined'))}>{t('agreements.decline')}</Button>
+              <Button variant="ghost" busy={busy} onClick={() => run(() => api.memberRespond(a.id, false, false, ''), t('agreements.crew.declined'))}>{t('agreements.decline')}</Button>
             </div>
             {a.terms?.nda_required && <p className="text-xs text-muted-foreground">{t('agreements.crew.ndaAfter')}</p>}
           </CardContent></Card>
@@ -301,7 +301,7 @@ export function CrewPanel({ a, settings }: { a: api.SaDetail; settings: SaSettin
             </div>
           )}
           <DialogFooter><Button variant="ghost" onClick={() => setEdit(null)}>{t('agreements.cancel')}</Button>
-            <Button disabled={busy || !edit?.entry.consultant_id} onClick={async () => {
+            <Button busy={busy} disabled={!edit?.entry.consultant_id} onClick={async () => {
               if (!edit) return;
               const ok = await run(() => (edit.isNew ? api.inviteMember(a.id, edit.entry.consultant_id, details(edit.entry)) : api.updateMember(a.id, edit.entry.consultant_id, details(edit.entry))),
                 edit.isNew ? t('agreements.crew.invited') : t('agreements.saved'));
@@ -315,7 +315,7 @@ export function CrewPanel({ a, settings }: { a: api.SaDetail; settings: SaSettin
           <DialogHeader><DialogTitle>{removeId === 'self' ? t('agreements.crew.leave') : t('agreements.crew.remove')}</DialogTitle><DialogDescription>{t('agreements.crew.removeText')}</DialogDescription></DialogHeader>
           <div className="space-y-1.5"><Label htmlFor="crew-reason">{t('agreements.dlg.reason')}</Label><Textarea id="crew-reason" rows={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} /></div>
           <DialogFooter><Button variant="ghost" onClick={() => setRemoveId(null)}>{t('agreements.cancel')}</Button>
-            <Button variant="destructive" disabled={busy || reason.trim().length < 5} onClick={async () => {
+            <Button variant="destructive" busy={busy} disabled={reason.trim().length < 5} onClick={async () => {
               const target = removeId === 'self' ? (a.my_member?.consultant_id ?? '') : removeId!;
               const ok = await run(() => api.removeMember(a.id, target, reason.trim()), t('agreements.saved'));
               if (ok) { setRemoveId(null); setReason(''); }

@@ -279,7 +279,7 @@ export default function SettingsPage() {
 
       {/* Save */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving} className="gap-2 px-6">
+        <Button onClick={handleSave} busy={saving} className="gap-2 px-6">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {t('settings_page.save', 'Save Changes')}
         </Button>

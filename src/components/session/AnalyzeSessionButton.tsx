@@ -36,7 +36,7 @@ export default function AnalyzeSessionButton({ sessionId, variant = 'outline', s
   };
 
   return (
-    <Button variant={variant} size={size} onClick={analyze} disabled={loading} className="gap-1.5">
+    <Button variant={variant} size={size} onClick={analyze} busy={loading} className="gap-1.5">
       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
       {loading ? 'Analyzing...' : 'AI Analysis'}
     </Button>

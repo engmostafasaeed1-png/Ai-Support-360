@@ -728,7 +728,7 @@ export default function InvoicesPage() {
               </div>
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditing(false)}>Cancel</Button>
-                <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={handleSaveEdit} disabled={saving}>
+                <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={handleSaveEdit} busy={saving}>
                   {saving ? <Clock className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   {saving ? 'Saving...' : 'Save Changes'}
                 </Button>
@@ -846,7 +846,7 @@ export default function InvoicesPage() {
               </div>
             )}
 
-            <Button className="w-full gap-1.5 gradient-primary border-0" onClick={handleCreateInvoice} disabled={creating}>
+            <Button className="w-full gap-1.5 gradient-primary border-0" onClick={handleCreateInvoice} busy={creating}>
               {creating ? <Clock className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               {creating ? 'Creating...' : 'Create Invoice'}
             </Button>

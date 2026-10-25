@@ -153,7 +153,7 @@ export default function SlaPolicyEditor({ policyId, tenantId, onClose }: { polic
         <div className="ms-auto flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}><History className="me-1 h-4 w-4" aria-hidden /> {t('sla.editor.history')}</Button>
           {p.scope === 'client' && p.can_manage && (
-            <Button variant="outline" size="sm" disabled={busy} onClick={async () => {
+            <Button variant="outline" size="sm" busy={busy} onClick={async () => {
               try { await api.duplicatePolicy(p.id, p.tenant_id ?? tenantId, null); invalidate(); toast.success(t('sla.editor.duplicated')); } catch (e) { toast.error(slaErrorText(t, e)); }
             }}><Copy className="me-1 h-4 w-4" aria-hidden /> {t('sla.editor.duplicate')}</Button>
           )}
@@ -368,10 +368,10 @@ export default function SlaPolicyEditor({ policyId, tenantId, onClose }: { polic
       {!readOnly && (
         <div className="sticky bottom-0 z-10 flex flex-wrap items-end gap-2 rounded-2xl border border-border/60 bg-background/95 p-3 backdrop-blur">
           <div className="min-w-[200px] flex-1"><Label htmlFor="sla-note" className="text-xs">{t('sla.editor.changeNote')}</Label><Input id="sla-note" className="h-8" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} /></div>
-          <Button variant="outline" disabled={busy || !dirty} onClick={save}><Save className="me-1 h-4 w-4" aria-hidden /> {t('sla.editor.saveDraft')}</Button>
-          <Button disabled={busy || dirty || errors} onClick={() => setActivateOpen(true)} title={dirty ? t('sla.editor.saveFirst') : errors ? t('sla.editor.fixFirst') : undefined}>{t('sla.editor.activate')}</Button>
+          <Button variant="outline" busy={busy} disabled={!dirty} onClick={save}><Save className="me-1 h-4 w-4" aria-hidden /> {t('sla.editor.saveDraft')}</Button>
+          <Button busy={busy} disabled={dirty || errors} onClick={() => setActivateOpen(true)} title={dirty ? t('sla.editor.saveFirst') : errors ? t('sla.editor.fixFirst') : undefined}>{t('sla.editor.activate')}</Button>
           {p.scope !== 'platform' && p.status !== 'archived' && (
-            <Button variant="ghost" className="text-destructive" disabled={busy} onClick={async () => {
+            <Button variant="ghost" className="text-destructive" busy={busy} onClick={async () => {
               try { await api.archivePolicy(p.id, ''); invalidate(); toast.success(t('sla.editor.archived')); onClose(); } catch (e) { toast.error(slaErrorText(t, e)); }
             }}>{t('sla.editor.archive')}</Button>
           )}
@@ -389,7 +389,7 @@ export default function SlaPolicyEditor({ policyId, tenantId, onClose }: { polic
               <label className="flex items-start gap-2"><Switch checked={applyOpen} disabled={!!effective} onCheckedChange={setApplyOpen} /><span className="text-xs">{t('sla.editor.applyOpen')}</span></label>
             )}
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setActivateOpen(false)}>{t('sla.action.cancel')}</Button><Button disabled={busy} onClick={activate}>{t('sla.editor.activateConfirm')}</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setActivateOpen(false)}>{t('sla.action.cancel')}</Button><Button busy={busy} onClick={activate}>{t('sla.editor.activateConfirm')}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

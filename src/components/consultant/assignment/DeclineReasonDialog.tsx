@@ -77,7 +77,7 @@ export default function DeclineReasonDialog({ requestId, ready, onClose, onDecli
         )}
         <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
           <AlertDialogCancel disabled={decline.isPending}>{t('assignment_info.cancel', 'Cancel')}</AlertDialogCancel>
-          <Button variant="outline" className="gap-1 text-destructive hover:bg-destructive/10" onClick={confirm} disabled={decline.isPending}>
+          <Button variant="outline" className="gap-1 text-destructive hover:bg-destructive/10" onClick={confirm} busy={decline.isPending}>
             {decline.isPending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <X className="h-4 w-4" aria-hidden="true" />}
             {t('assignment_info.decline_confirm', 'Decline')}
           </Button>

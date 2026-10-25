@@ -129,30 +129,30 @@ export default function AssignmentRequestDialog({
             {children}
 
             {infoReady && onPreview && (
-              <Button variant="secondary" className="w-full" onClick={onPreview} disabled={busy}>
+              <Button variant="secondary" className="w-full" onClick={onPreview} busy={busy}>
                 <FileText className="me-1 h-4 w-4" aria-hidden="true" /> {t('assignment_info.preview_button', 'Open ticket description')}
               </Button>
             )}
             <DialogFooter className="flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-2">
-              <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={onDecline} disabled={busy}>
+              <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={onDecline} busy={busy}>
                 <X className="me-1 h-4 w-4" aria-hidden="true" /> {t('assignment_policy.decline', 'Decline')}
               </Button>
               {infoReady && onAskInfo ? (
                 <Button
                   variant="outline"
                   onClick={onAskInfo}
-                  disabled={busy || !!askBlockedText}
+                  busy={busy} disabled={!!askBlockedText}
                   title={askBlockedText ?? undefined}
                   aria-describedby={askBlockedText ? 'assignment-ask-blocked' : undefined}
                 >
                   <HelpCircle className="me-1 h-4 w-4" aria-hidden="true" /> {t('assignment_info.ask_button', 'Request more information')}
                 </Button>
               ) : (
-                <Button variant="outline" onClick={onView} disabled={busy}>
+                <Button variant="outline" onClick={onView} busy={busy}>
                   <Eye className="me-1 h-4 w-4" aria-hidden="true" /> {t('assignment_policy.view', 'View details')}
                 </Button>
               )}
-              <Button className="gradient-primary border-0" onClick={onAccept} disabled={busy || acceptDisabled}>
+              <Button className="gradient-primary border-0" onClick={onAccept} busy={busy} disabled={acceptDisabled}>
                 <Check className="me-1 h-4 w-4" aria-hidden="true" /> {t('assignment_policy.accept', 'Accept')}
               </Button>
             </DialogFooter>

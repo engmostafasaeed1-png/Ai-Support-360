@@ -99,7 +99,7 @@ export default function ContactSection() {
               <Button
                 type="submit"
                 size="lg"
-                disabled={sending}
+                busy={sending}
                 className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-95 border-0 h-14 rounded-2xl font-semibold text-base shadow-lg motion-safe:transition-opacity"
               >
                 {t('contact.submit')}

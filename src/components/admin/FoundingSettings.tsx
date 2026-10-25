@@ -28,6 +28,6 @@ export default function FoundingSettings() {
     <div className="flex items-center justify-between gap-3"><Label htmlFor="founding-enabled">{t('founding.enabled','Award Founding Consultant badges')}</Label><Switch id="founding-enabled" checked={enabled} onCheckedChange={setEnabled} disabled={!q.data || busy} /></div>
     <div><Label htmlFor="founding-limit">{t('founding.limit','Founding Consultant limit')}</Label><Input id="founding-limit" type="number" min={1} max={100000} value={limit} onChange={e=>setLimit(e.target.value)} disabled={!q.data || busy} /></div>
     <div><Label htmlFor="founding-boost">{t('founding.boost','Directory tie-break boost (months; 0 = off)')}</Label><Input id="founding-boost" type="number" min={0} max={120} placeholder="3" value={boost} onChange={e=>setBoost(e.target.value)} disabled={!q.data || busy} /></div>
-    <Button onClick={save} disabled={!q.data || busy || !Number.isInteger(Number(limit)) || Number(limit)<1 || Number(limit)>100000 || !Number.isInteger(Number(boost)) || Number(boost)<0 || Number(boost)>120}>{t('common.save','Save')}</Button>
+    <Button onClick={save} busy={busy} disabled={!q.data || !Number.isInteger(Number(limit)) || Number(limit)<1 || Number(limit)>100000 || !Number.isInteger(Number(boost)) || Number(boost)<0 || Number(boost)>120}>{t('common.save','Save')}</Button>
   </CardContent></Card>;
 }

@@ -43,7 +43,7 @@ export default function BrdQuestions({ questions, onChange, onUseAnswers, busy, 
         ))}
       </ol>
       {onUseAnswers && !readOnly && (
-        <Button type="button" size="sm" className="gap-1.5" disabled={busy || answered === 0} onClick={onUseAnswers}>
+        <Button type="button" size="sm" className="gap-1.5" busy={busy} disabled={answered === 0} onClick={onUseAnswers}>
           <Sparkles className="h-3.5 w-3.5" /> {t('brd.questions.update')}
         </Button>
       )}

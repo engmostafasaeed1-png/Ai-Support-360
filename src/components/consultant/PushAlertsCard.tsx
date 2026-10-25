@@ -113,10 +113,10 @@ export default function PushAlertsCard() {
                   <span className="text-xs text-muted-foreground">{d.devices === 1 ? '1 device in total' : `${d.devices} devices in total`}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={sendTest} disabled={test.isPending}>
+                  <Button size="sm" variant="outline" onClick={sendTest} busy={test.isPending}>
                     {test.isPending && <Loader2 className="me-1 h-3.5 w-3.5 animate-spin" />} Send me a test alert
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => disable.mutate()} disabled={disable.isPending}>Turn off on this device</Button>
+                  <Button size="sm" variant="ghost" onClick={() => disable.mutate()} busy={disable.isPending}>Turn off on this device</Button>
                 </div>
                 <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
                   <p className="mb-1 font-medium text-foreground">So that the alert reaches you:</p>
@@ -135,7 +135,7 @@ export default function PushAlertsCard() {
                 {(d.subscribed && !d.registered) || d.keyMismatch ? (
                   <p className="text-xs text-muted-foreground" data-testid="push-repair">Phone alerts need to be turned on again for this device.</p>
                 ) : null}
-                <Button size="sm" onClick={turnOn} disabled={busy} className="gap-1.5">
+                <Button size="sm" onClick={turnOn} busy={busy} className="gap-1.5">
                   {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BellRing className="h-3.5 w-3.5" />} Enable phone alerts
                 </Button>
               </div>

@@ -102,10 +102,10 @@ export default function TelegramAlertsCard() {
                   {statusQ.data?.username && <span className="text-sm font-medium">{statusQ.data.username}</span>}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={sendTest} disabled={test.isPending}>
+                  <Button size="sm" variant="outline" onClick={sendTest} busy={test.isPending}>
                     {test.isPending && <Loader2 className="me-1 h-3.5 w-3.5 animate-spin" />} Send a test message
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => disconnect.mutate()} disabled={disconnect.isPending}>Disconnect</Button>
+                  <Button size="sm" variant="ghost" onClick={() => disconnect.mutate()} busy={disconnect.isPending}>Disconnect</Button>
                 </div>
                 <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
                   <p className="mb-1 font-medium text-foreground">A Telegram message is a normal notification, not a phone call. So that you notice it:</p>
@@ -125,7 +125,7 @@ export default function TelegramAlertsCard() {
                   <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <span>{pausedMessage(statusQ.data?.paused_reason)}</span>
                 </div>
-                <Button size="sm" variant="ghost" onClick={() => disconnect.mutate()} disabled={disconnect.isPending}>Disconnect</Button>
+                <Button size="sm" variant="ghost" onClick={() => disconnect.mutate()} busy={disconnect.isPending}>Disconnect</Button>
               </div>
             )}
 
@@ -140,7 +140,7 @@ export default function TelegramAlertsCard() {
             )}
 
             {view !== 'connected' && waitingSince === null && (
-              <Button size="sm" onClick={start} disabled={connect.isPending} className="gap-1.5">
+              <Button size="sm" onClick={start} busy={connect.isPending} className="gap-1.5">
                 {connect.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                 {view === 'paused' ? 'Reconnect Telegram' : 'Connect Telegram'}
               </Button>

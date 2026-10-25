@@ -192,7 +192,7 @@ export default function ExperienceCvCard({ onProfileChanged, onImported }: { onP
           {reading && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Reading CV…</span>}
           {cvPath && <Button variant="outline" size="sm" onClick={viewCv}><Download className="h-4 w-4 me-1" /> View</Button>}
           <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCv(e.target.files[0])} />
-          <Button size="sm" variant={cvPath ? 'outline' : 'default'} disabled={uploading || !userId} onClick={() => fileRef.current?.click()}>
+          <Button size="sm" variant={cvPath ? 'outline' : 'default'} busy={uploading} disabled={!userId} onClick={() => fileRef.current?.click()}>
             {uploading ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Upload className="h-4 w-4 me-1" />}
             {cvPath ? 'Replace CV' : 'Attach CV'}
           </Button>
@@ -251,7 +251,7 @@ export default function ExperienceCvCard({ onProfileChanged, onImported }: { onP
             </div>
           )}
           <DialogFooter>
-            {jobState.dirty && <Button variant="ghost" onClick={discardJob} disabled={jobState.saving}>Discard changes</Button>}
+            {jobState.dirty && <Button variant="ghost" onClick={discardJob} busy={jobState.saving}>Discard changes</Button>}
             <Button variant="outline" onClick={() => void closeJob()}>Close</Button>
             <SectionSaveControls state={jobState} />
           </DialogFooter>

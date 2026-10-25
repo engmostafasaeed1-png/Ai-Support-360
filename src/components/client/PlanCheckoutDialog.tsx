@@ -98,7 +98,7 @@ export function PlanCheckoutDialog() {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={subscribe} disabled={busy || !quote || !!quoteErr || (!!applied && !!quote?.voucher_error)}>
+          <Button onClick={subscribe} busy={busy} disabled={!quote || !!quoteErr || (!!applied && !!quote?.voucher_error)}>
             {busy ? 'Submitting…' : 'Subscribe'}
           </Button>
         </DialogFooter>

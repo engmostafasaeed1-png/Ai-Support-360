@@ -1155,7 +1155,7 @@ export default function NewRequestPage() {
               </div>
             </div>
             {form.description.length > 15 && (!aiCategorization || triageIsStale) && (
-              <Button variant="outline" size="sm" onClick={runAiCategorize} disabled={aiLoading === 'categorize'} className="gap-1.5">
+              <Button variant="outline" size="sm" onClick={runAiCategorize} busy={aiLoading === 'categorize'} className="gap-1.5">
                 {aiLoading === 'categorize' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
                 {t('ticket_create.ai_analyze')}
               </Button>
@@ -1654,7 +1654,7 @@ export default function NewRequestPage() {
       {/* Navigation */}
       {!submitSteps && (
         <div className="flex justify-between">
-          <Button variant="outline" onClick={() => setStep(step - 1)} disabled={step === 0 || submitting}>
+          <Button variant="outline" onClick={() => setStep(step - 1)} busy={submitting} disabled={step === 0}>
             <ArrowLeft className="w-4 h-4 me-1 rtl:rotate-180" /> {t('onboarding.back')}
           </Button>
           {step < steps.length - 1 ? (
@@ -1662,7 +1662,7 @@ export default function NewRequestPage() {
               {t('onboarding.next')} <ArrowRight className="w-4 h-4 ms-1 rtl:rotate-180" />
             </Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={submitting} aria-busy={submitting} className="gradient-primary border-0">
+            <Button onClick={handleSubmit} busy={submitting} aria-busy={submitting} className="gradient-primary border-0">
               {submitting ? <Loader2 className="w-4 h-4 me-1 animate-spin" /> : <Check className="w-4 h-4 me-1" />} {t('ticket_create.submit_request')}
             </Button>
           )}

@@ -161,7 +161,7 @@ export default function AvailabilityToggle({ variant = 'switch', className }: Pr
       <DropdownMenuTrigger asChild>
         <button
           aria-label="Toggle availability"
-          disabled={saving}
+          /* disabled-ok: busy */ disabled={saving} aria-busy={saving}
           className={cn(
             'group relative inline-flex items-center gap-3 pl-1.5 pr-4 py-1.5 rounded-full border-2 shadow-sm hover:shadow-md transition-all',
             meta.bg,

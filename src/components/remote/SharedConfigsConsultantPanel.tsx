@@ -122,7 +122,7 @@ export default function SharedConfigsConsultantPanel() {
                     {isPending && (
                       <Button size="sm" className="h-7 text-xs gap-1 gradient-primary border-0"
                         onClick={() => accept.mutate(cfg.id)}
-                        disabled={accept.isPending}>
+                        busy={accept.isPending}>
                         <CheckCircle2 className="w-3 h-3" /> Accept
                       </Button>
                     )}

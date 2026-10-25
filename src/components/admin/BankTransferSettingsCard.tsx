@@ -178,7 +178,7 @@ export default function BankTransferSettingsCard() {
           <DialogFooter>
             <Button variant="outline" onClick={close}>Cancel</Button>
             <Button
-              disabled={setCompany.isPending}
+              busy={setCompany.isPending}
               onClick={() => {
                 if (target) setCompany.mutate({ tenantId: target.company.id, allowed: target.allow, note }, { onSuccess: close });
               }}

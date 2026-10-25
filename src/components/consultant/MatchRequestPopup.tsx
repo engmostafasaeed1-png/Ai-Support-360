@@ -210,7 +210,7 @@ export default function MatchRequestPopup() {
       <Button variant="outline" disabled={!!askBlockedText} title={askBlockedText ?? undefined} onClick={() => setSub({ kind: 'ask', id: current.id })}>
         {t('assignment_info.ask_button', 'Request more information')}
       </Button>
-      <Button className="gradient-primary border-0" disabled={respond.isPending || checkingNda || locationBlocked || policyBlocked || !slaReady} onClick={() => { setSub(null); void accept(); }}>
+      <Button className="gradient-primary border-0" busy={respond.isPending || checkingNda} disabled={locationBlocked || policyBlocked || !slaReady} onClick={() => { setSub(null); void accept(); }}>
         {t('assignment_policy.accept', 'Accept')}
       </Button>
     </>

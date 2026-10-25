@@ -78,7 +78,7 @@ export default function BrdSettingsCard() {
               docs: ov.documents ?? 0, versions: ov.versions ?? 0, attached: ov.attached ?? 0, today: ov.ai_today ?? 0, refused: ov.ai_refused_today ?? 0,
               tin: ov.tokens_30d?.input ?? 0, tout: ov.tokens_30d?.output ?? 0,
             })}</p>
-            <Button onClick={saveAll} disabled={busy}>{t('brd.admin.save')}</Button>
+            <Button onClick={saveAll} busy={busy}>{t('brd.admin.save')}</Button>
           </>
         )}
       </CardContent>

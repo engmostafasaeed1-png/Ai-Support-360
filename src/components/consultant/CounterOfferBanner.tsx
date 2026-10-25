@@ -35,8 +35,8 @@ export default function CounterOfferBanner({ counter, bid, newVersion, money = n
       </div>
       {counter.message && <p className="whitespace-pre-wrap text-xs">{counter.message}</p>}
       <div className="flex gap-2">
-        <Button size="sm" onClick={() => answer(true)} disabled={respond.isPending}>Accept counter-offer</Button>
-        <Button size="sm" variant="outline" onClick={() => answer(false)} disabled={respond.isPending}>Decline</Button>
+        <Button size="sm" onClick={() => answer(true)} busy={respond.isPending}>Accept counter-offer</Button>
+        <Button size="sm" variant="outline" onClick={() => answer(false)} busy={respond.isPending}>Decline</Button>
       </div>
     </div>
   );

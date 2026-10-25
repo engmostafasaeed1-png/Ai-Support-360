@@ -121,7 +121,7 @@ export default function TicketTrackingPanel({ ticketId, ticketTitle, fallback = 
             <p className="mt-1 text-xs text-muted-foreground">{t('tracking.confirm.body')}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {allowed.includes('completed') && (
-                <Button size="sm" className="h-8 gap-1 text-xs" onClick={confirmDone} disabled={quick.isPending}><CheckCircle2 className="h-3.5 w-3.5" /> {t('tracking.confirm.yes')}</Button>
+                <Button size="sm" className="h-8 gap-1 text-xs" onClick={confirmDone} busy={quick.isPending}><CheckCircle2 className="h-3.5 w-3.5" /> {t('tracking.confirm.yes')}</Button>
               )}
               {allowed.includes('needs_rework') && (
                 <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => openWith('needs_rework')}><RotateCcw className="h-3.5 w-3.5" /> {t('tracking.confirm.rework')}</Button>

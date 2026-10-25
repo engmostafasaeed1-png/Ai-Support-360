@@ -128,9 +128,9 @@ export default function AgreementDocuments({ a, settings }: { a: api.SaDetail; s
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="flex items-center gap-2 text-sm font-medium"><FileText className="h-4 w-4 text-primary" aria-hidden />{d.title} <Badge variant="outline">{t(`agreements.docs.kind.${d.kind}`)}</Badge> <span className="text-xs font-normal text-muted-foreground">v{d.current_version}</span></p>
                 <div className="flex flex-wrap gap-1">
-                  <Button size="sm" variant="outline" disabled={!!busy} onClick={() => open(d.id, null)}>{busy === `open:${d.id}:null` ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Download className="me-1 h-4 w-4" />}{t('agreements.docs.download')}</Button>
+                  <Button size="sm" variant="outline" busy={!!busy} onClick={() => open(d.id, null)}>{busy === `open:${d.id}:null` ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Download className="me-1 h-4 w-4" />}{t('agreements.docs.download')}</Button>
                   {a.can_upload && <Button size="sm" variant="ghost" onClick={() => setDlg({ documentId: d.id, kind: d.kind, title: d.title })}><Upload className="me-1 h-4 w-4" />{t('agreements.docs.newVersion')}</Button>}
-                  {a.role === 'client' && <Button size="sm" variant="ghost" aria-label={t('agreements.docs.archive')} disabled={!!busy}
+                  {a.role === 'client' && <Button size="sm" variant="ghost" aria-label={t('agreements.docs.archive')} busy={!!busy}
                     onClick={async () => { try { await api.archiveDocument(d.id); refresh(); } catch (e) { toast.error(t(`agreements.err.${saErrorCode((e as Error).message)}`, { defaultValue: t('agreements.err.generic') })); } }}><Archive className="h-4 w-4" /></Button>}
                 </div>
               </div>
@@ -138,7 +138,7 @@ export default function AgreementDocuments({ a, settings }: { a: api.SaDetail; s
                 <ul className="mt-1 space-y-1">{d.versions.map((v) => (
                   <li key={v.version} className="flex flex-wrap items-center justify-between gap-2">
                     <span>v{v.version} · {v.file_name} · {kb(v.size_bytes)} · {v.by} ({t(`agreements.party.${v.by_role}`, { defaultValue: v.by_role })}) · {new Date(v.at).toLocaleString(lang === 'ar' ? 'ar' : 'en-GB')}{v.note ? ` · ${v.note}` : ''}</span>
-                    <Button size="sm" variant="ghost" className="h-7" disabled={!!busy} onClick={() => open(d.id, v.version)}>{t('agreements.docs.download')}</Button>
+                    <Button size="sm" variant="ghost" className="h-7" busy={!!busy} onClick={() => open(d.id, v.version)}>{t('agreements.docs.download')}</Button>
                   </li>))}</ul></details>
             </div>
           ))}
@@ -179,7 +179,7 @@ export default function AgreementDocuments({ a, settings }: { a: api.SaDetail; s
             </div>
           )}
           <DialogFooter><Button variant="ghost" onClick={() => setDlg(null)}>{t('agreements.cancel')}</Button>
-            <Button disabled={busy === 'upload' || !file || !!fileProblem || !!textProblem || !noSecrets || (!dlg?.documentId && !dlg?.title.trim())} onClick={upload}>
+            <Button busy={busy === 'upload'} disabled={!file || !!fileProblem || !!textProblem || !noSecrets || (!dlg?.documentId && !dlg?.title.trim())} onClick={upload}>
               {busy === 'upload' && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('agreements.docs.uploadCta')}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
@@ -191,7 +191,7 @@ function GenTile({ title, text, onClick, disabled, busy, label }: { title: strin
   return (
     <div className="flex flex-col justify-between gap-2 rounded-xl border p-3">
       <div><p className="text-sm font-medium">{title}</p><p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">{text}</p></div>
-      <Button size="sm" variant="outline" disabled={disabled || busy} onClick={onClick}>{busy ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Download className="me-1 h-4 w-4" />}{label}</Button>
+      <Button size="sm" variant="outline" busy={busy} disabled={disabled} onClick={onClick}>{busy ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Download className="me-1 h-4 w-4" />}{label}</Button>
     </div>
   );
 }

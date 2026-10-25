@@ -61,7 +61,7 @@ export default function EmailVerificationBanner() {
           size="sm"
           variant="outline"
           onClick={handleResend}
-          disabled={sending}
+          busy={sending}
           className="mt-2 h-7 text-xs border-yellow-400/50 text-yellow-700 hover:bg-yellow-100 dark:border-yellow-700 dark:text-yellow-300 dark:hover:bg-yellow-900/30 gap-1"
         >
           <Send className="w-3 h-3" />

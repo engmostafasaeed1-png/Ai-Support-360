@@ -76,8 +76,8 @@ function AnnouncementCard() {
             <p className="mt-1 text-xs text-muted-foreground">{((preview.data?.recipients ?? []) as Row[]).map((r) => String(r.name ?? '-')).join(', ')}</p></details>
         )}
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => void send(true)} disabled={busy}>Send test to me</Button>
-          <Button onClick={() => void send(false)} disabled={busy || !tested || !counts.eligible}>{busy && <Loader2 className="w-4 h-4 me-2 animate-spin" />}Send announcement ({counts.eligible ?? 0})</Button>
+          <Button variant="outline" onClick={() => void send(true)} busy={busy}>Send test to me</Button>
+          <Button onClick={() => void send(false)} busy={busy} disabled={!tested || !counts.eligible}>{busy && <Loader2 className="w-4 h-4 me-2 animate-spin" />}Send announcement ({counts.eligible ?? 0})</Button>
         </div>
         {!tested && <p className="text-xs text-muted-foreground">Send the test first; the button unlocks afterwards.</p>}
         <details><summary className="cursor-pointer text-xs">Who received it ({(log.data ?? []).length})</summary>
@@ -117,7 +117,7 @@ function SetReferrerCard() {
         <div className="space-y-1"><Label htmlFor="sr-a">Referred consultant's code</Label><Input id="sr-a" dir="ltr" className="font-mono" value={referredCode} onChange={(e) => setReferredCode(e.target.value.toUpperCase())} /></div>
         <div className="space-y-1"><Label htmlFor="sr-b">Referrer's code</Label><Input id="sr-b" dir="ltr" className="font-mono" value={referrerCode} onChange={(e) => setReferrerCode(e.target.value.toUpperCase())} /></div>
         <div className="space-y-1"><Label htmlFor="sr-r">Reason (required)</Label><Input id="sr-r" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} /></div>
-        <div className="sm:col-span-3"><Button onClick={run} disabled={busy || reason.trim().length < 5 || !referredCode || !referrerCode}>{busy && <Loader2 className="w-4 h-4 me-2 animate-spin" />}Set referrer</Button></div>
+        <div className="sm:col-span-3"><Button onClick={run} busy={busy} disabled={reason.trim().length < 5 || !referredCode || !referrerCode}>{busy && <Loader2 className="w-4 h-4 me-2 animate-spin" />}Set referrer</Button></div>
       </CardContent>
     </Card>
   );
@@ -233,8 +233,8 @@ function AdjustRequestsCard() {
                       <div className="flex flex-col items-end gap-1">
                         <Input aria-label="Reason for the decision" placeholder="Reason (required)" className="h-8 w-48 text-xs" value={note[id] ?? ''} onChange={(e) => setNote((n) => ({ ...n, [id]: e.target.value }))} />
                         <div className="space-x-1">
-                          <Button size="sm" className="h-7 text-xs" disabled={busy === id || (note[id] ?? '').trim().length < 5} onClick={() => decide(id, true)}>Approve</Button>
-                          <Button size="sm" variant="outline" className="h-7 text-xs" disabled={busy === id || (note[id] ?? '').trim().length < 5} onClick={() => decide(id, false)}>Reject</Button>
+                          <Button size="sm" className="h-7 text-xs" busy={busy === id} disabled={(note[id] ?? '').trim().length < 5} onClick={() => decide(id, true)}>Approve</Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs" busy={busy === id} disabled={(note[id] ?? '').trim().length < 5} onClick={() => decide(id, false)}>Reject</Button>
                         </div>
                       </div>
                     ) : r.status === 'pending' ? <span className="text-xs text-muted-foreground">Needs another super administrator</span> : null}
@@ -407,7 +407,7 @@ function ActionDialog({ state, onClose }: { state: ActionState; onClose: () => v
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={run} disabled={busy || reason.trim().length < 5 || !amountOk || (state.needsReferrer && !newCode.trim())}>
+          <Button onClick={run} busy={busy} disabled={reason.trim().length < 5 || !amountOk || (state.needsReferrer && !newCode.trim())}>
             {busy && <Loader2 className="w-4 h-4 me-2 animate-spin" />}Confirm
           </Button>
         </DialogFooter>
@@ -550,7 +550,7 @@ function SettingsCard({ settings }: { settings: Row }) {
           <p className="text-xs text-muted-foreground">Default: 14 days after the launch ({settings.launch_at ? new Date(String(settings.launch_at)).toLocaleDateString('en-GB') : 'not launched yet'}). After it, only an administrator can set a referrer.</p>
         </div>
         <div className="space-y-1"><Label htmlFor="ref-reason">Reason for the change (required)</Label><Input id="ref-reason" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} /></div>
-        <Button onClick={save} disabled={saving || reason.trim().length < 5}>{saving && <Loader2 className="w-4 h-4 me-2 animate-spin" />}Save settings</Button>
+        <Button onClick={save} busy={saving} disabled={reason.trim().length < 5}>{saving && <Loader2 className="w-4 h-4 me-2 animate-spin" />}Save settings</Button>
       </CardContent>
     </Card>
   );

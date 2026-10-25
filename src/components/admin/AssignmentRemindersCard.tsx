@@ -175,7 +175,7 @@ export default function AssignmentRemindersCard() {
           </ul>
         )}
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" onClick={() => void save()} disabled={!dirty || saving || problems.length > 0} className="gap-2">
+          <Button size="sm" onClick={() => void save()} busy={saving} disabled={!dirty || problems.length > 0} className="gap-2">
             {saving && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
             {t('admin.assignment_save', 'Save timings')}
           </Button>

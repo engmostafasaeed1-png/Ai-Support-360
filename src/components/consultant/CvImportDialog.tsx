@@ -127,7 +127,7 @@ export default function CvImportDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={apply} disabled={saving}>{saving && <Loader2 className="h-4 w-4 me-1 animate-spin" />}Add to my profile</Button>
+          <Button onClick={apply} busy={saving}>{saving && <Loader2 className="h-4 w-4 me-1 animate-spin" />}Add to my profile</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -91,7 +91,7 @@ function SettingsCard() {
         </div>
         <p className="text-xs text-muted-foreground">{t('admin.resp_rank_hint', 'The ranking weight is "Responsiveness" in the match weights card under Settings (default 3).')}</p>
         {problems.length > 0 && <p role="alert" className="text-xs text-destructive">{t('admin.resp_problems', 'Please check: {{list}}', { list: problems.join(', ') })}</p>}
-        <Button onClick={save} disabled={saving || problems.length > 0}>{saving && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}{t('common.save', 'Save')}</Button>
+        <Button onClick={save} busy={saving} disabled={problems.length > 0}>{saving && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}{t('common.save', 'Save')}</Button>
       </CardContent>
     </Card>
   );
@@ -133,8 +133,8 @@ function DisputesTab() {
               <Label htmlFor={`note-${d.id}`} className="text-xs">{t('admin.resp_note', 'Note to the consultant (optional, audited)')}</Label>
               <Textarea id={`note-${d.id}`} rows={2} maxLength={500} value={notes[d.id] ?? ''} onChange={(e) => setNotes((n) => ({ ...n, [d.id]: e.target.value }))} />
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" disabled={busy === d.id} onClick={() => act(d.id, true)}>{t('admin.resp_void', 'Void the no-response')}</Button>
-                <Button size="sm" variant="outline" disabled={busy === d.id} onClick={() => act(d.id, false)}>{t('admin.resp_reject', 'Reject dispute')}</Button>
+                <Button size="sm" busy={busy === d.id} onClick={() => act(d.id, true)}>{t('admin.resp_void', 'Void the no-response')}</Button>
+                <Button size="sm" variant="outline" busy={busy === d.id} onClick={() => act(d.id, false)}>{t('admin.resp_reject', 'Reject dispute')}</Button>
               </div>
             </div>
           ) : d.admin_note ? <p className="mt-1 text-xs text-muted-foreground">{d.admin_note}</p> : null}

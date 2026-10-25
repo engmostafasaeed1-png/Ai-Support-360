@@ -91,15 +91,15 @@ export default function QuestionQualityPanel({ reason }: { reason: string }) {
                 <div className="space-y-2">
                   <Textarea value={draft.text} onChange={(e) => setDraft({ ...draft, text: e.target.value })} rows={3} maxLength={2000} dir="auto" aria-label={t('voice.qq.new_text', 'New wording')} />
                   <div className="flex gap-2">
-                    <Button size="sm" disabled={busy} onClick={() => void act(r.question_key, draft.action, draft.text)}>{draft.action === 'edit' ? t('voice.qq.save', 'Save wording') : t('voice.qq.add', 'Add to library')}</Button>
+                    <Button size="sm" busy={busy} onClick={() => void act(r.question_key, draft.action, draft.text)}>{draft.action === 'edit' ? t('voice.qq.save', 'Save wording') : t('voice.qq.add', 'Add to library')}</Button>
                     <Button size="sm" variant="ghost" onClick={() => setDraft(null)}>{t('common.cancel', 'Cancel')}</Button>
                   </div>
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {r.status === 'active'
-                    ? <Button size="sm" variant="outline" disabled={busy} onClick={() => void act(r.question_key, 'retire', null)}>{t('voice.qq.retire', 'Retire')}</Button>
-                    : <Button size="sm" variant="outline" disabled={busy} onClick={() => void act(r.question_key, 'restore', null)}>{t('voice.qq.restore', 'Use again')}</Button>}
+                    ? <Button size="sm" variant="outline" busy={busy} onClick={() => void act(r.question_key, 'retire', null)}>{t('voice.qq.retire', 'Retire')}</Button>
+                    : <Button size="sm" variant="outline" busy={busy} onClick={() => void act(r.question_key, 'restore', null)}>{t('voice.qq.restore', 'Use again')}</Button>}
                   {r.library_id
                     ? <Button size="sm" variant="ghost" onClick={() => setDraft({ key: r.question_key, text: r.question, action: 'edit' })}>{t('voice.qq.edit', 'Edit wording')}</Button>
                     : <Button size="sm" variant="ghost" onClick={() => setDraft({ key: r.question_key, text: r.question, action: 'add_to_library' })}>{r.library_candidate ? t('voice.qq.approve_lib', 'Approve for the library') : t('voice.qq.rewrite_lib', 'Rewrite into the library')}</Button>}

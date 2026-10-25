@@ -215,7 +215,7 @@ function WhoInvited({ onLinked, until }: { onLinked: () => void; until: string |
         <Label htmlFor="refstep-who-code" className="sr-only">{t('refz.signup_label', 'Referral code (optional)')}</Label>
         <Input id="refstep-who-code" dir="ltr" value={value} maxLength={24} onChange={(e) => setValue(e.target.value.toUpperCase())} placeholder="SAP-NAME-7K2"
           className="max-w-xs font-mono rounded-xl" aria-describedby="refstep-who-status" disabled={result === 'ok'} />
-        <Button onClick={link} disabled={check.state !== 'valid' || busy || result === 'ok'} className="rounded-xl">
+        <Button onClick={link} busy={busy} disabled={check.state !== 'valid' || result === 'ok'} className="rounded-xl">
           {busy && <Loader2 className="w-4 h-4 me-2 animate-spin" />}{t('refz.who_link', 'Link this code')}
         </Button>
       </div>

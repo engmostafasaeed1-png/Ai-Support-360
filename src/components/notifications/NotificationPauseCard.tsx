@@ -39,7 +39,7 @@ export default function NotificationPauseCard({ className }: { className?: strin
             <p className="text-sm font-medium">{t('npause.paused_until', 'Paused until {{date}}', { date: formatPauseEnd(pause.paused_until, i18n.language) })}</p>
             <p className="text-xs text-muted-foreground">{channels}{pause.mark_unavailable ? ` · ${t('npause.marked_unavailable', 'Marked unavailable for new requests')}` : ''}</p>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" onClick={doResume} disabled={resume.isPending}>
+              <Button size="sm" onClick={doResume} busy={resume.isPending}>
                 {resume.isPending && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('npause.resume', 'Resume now')}
               </Button>
               <Button size="sm" variant="outline" onClick={() => openWith(pause.duration)}>{t('npause.change', 'Change')}</Button>

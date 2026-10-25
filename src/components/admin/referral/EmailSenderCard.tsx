@@ -88,7 +88,7 @@ export default function EmailSenderCard() {
         {problems.length > 0 && (
           <ul className="space-y-0.5 text-xs text-destructive" role="alert">{problems.map((p) => <li key={p}>{t(`esend.p_${p}`, PROBLEM_EN[p])}</li>)}</ul>
         )}
-        <Button onClick={() => void save()} disabled={!canEdit || busy || problems.length > 0}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('esend.save', 'Save sender settings')}</Button>
+        <Button onClick={() => void save()} busy={busy} disabled={!canEdit || problems.length > 0}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('esend.save', 'Save sender settings')}</Button>
 
         <div className="flex items-start gap-3 rounded-xl border border-dashed p-3">
           <Switch id="esend-nonusers" checked={false} disabled aria-describedby="esend-nonusers-hint" />

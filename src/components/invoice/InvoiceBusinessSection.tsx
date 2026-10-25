@@ -60,7 +60,7 @@ export default function InvoiceBusinessSection({ payment, onEditDetails, hideHea
       hint = 'This invoice already has the current business details of your company.';
     } else {
       action = (
-        <Button size="sm" disabled={reissue.isPending} onClick={() => setConfirmOpen(true)}>
+        <Button size="sm" busy={reissue.isPending} onClick={() => setConfirmOpen(true)}>
           {buyer ? 'Update to my current business details' : 'Issue with my business details'}
         </Button>
       );
@@ -121,7 +121,7 @@ export default function InvoiceBusinessSection({ payment, onEditDetails, hideHea
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmOpen(false)}>Cancel</Button>
             <Button
-              disabled={reissue.isPending}
+              busy={reissue.isPending}
               onClick={() => reissue.mutate(payment.id, { onSettled: () => setConfirmOpen(false) })}
               className="gap-1.5"
             >

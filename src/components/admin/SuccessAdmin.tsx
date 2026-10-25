@@ -93,8 +93,8 @@ export function SuccessBreakdown({ consultantId }: { consultantId: string }) {
                 <Input className="h-8 max-w-xs text-xs" aria-label={ar ? 'السبب' : 'Reason'} placeholder={ar ? 'السبب (إلزامي، مسجل)' : 'Reason (required, audited)'} maxLength={500}
                   value={reason[e.ticket_id] ?? ''} onChange={(ev) => setReason((r) => ({ ...r, [e.ticket_id]: ev.target.value }))} />
                 {e.outcome === 'excluded_voided'
-                  ? <Button size="sm" variant="outline" disabled={busy === e.ticket_id} onClick={() => act(e, 'clear')}>{ar ? 'إعادة إلى الإحصاءات' : 'Restore'}</Button>
-                  : <Button size="sm" variant="outline" disabled={busy === e.ticket_id} onClick={() => act(e, 'void')}>{ar ? 'استبعاد من الإحصاءات' : 'Void from statistics'}</Button>}
+                  ? <Button size="sm" variant="outline" busy={busy === e.ticket_id} onClick={() => act(e, 'clear')}>{ar ? 'إعادة إلى الإحصاءات' : 'Restore'}</Button>
+                  : <Button size="sm" variant="outline" busy={busy === e.ticket_id} onClick={() => act(e, 'void')}>{ar ? 'استبعاد من الإحصاءات' : 'Void from statistics'}</Button>}
               </div>
             )}
           </li>
@@ -186,7 +186,7 @@ export function SuccessAdminTab() {
           </div>
           <p className="text-xs text-muted-foreground">{ar ? `الافتراضي: ${SUCCESS_DEFAULTS.bronze} / ${SUCCESS_DEFAULTS.silver} / ${SUCCESS_DEFAULTS.gold} / ${SUCCESS_DEFAULTS.platinum} ٪، والحد الأدنى ${SUCCESS_DEFAULTS.min_requests} طلبات. يجب أن تتزايد القيم.` : `Defaults: ${SUCCESS_DEFAULTS.bronze} / ${SUCCESS_DEFAULTS.silver} / ${SUCCESS_DEFAULTS.gold} / ${SUCCESS_DEFAULTS.platinum} %, minimum ${SUCCESS_DEFAULTS.min_requests} requests. Each level must be higher than the one before.`}</p>
           {problems.length > 0 && <p role="alert" className="text-xs text-destructive">{ar ? 'يرجى مراجعة القيم.' : 'Please check the values.'}</p>}
-          <Button onClick={save} disabled={saving || problems.length > 0}>{saving && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}{ar ? 'حفظ' : 'Save'}</Button>
+          <Button onClick={save} busy={saving} disabled={problems.length > 0}>{saving && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}{ar ? 'حفظ' : 'Save'}</Button>
         </CardContent>
       </Card>
       <Card>
@@ -208,9 +208,9 @@ export function SuccessAdminTab() {
                       <Label htmlFor={`snote-${d.id}`} className="text-xs">{ar ? 'ملاحظة للمستشار (اختيارية، مسجلة)' : 'Note to the consultant (optional, audited)'}</Label>
                       <Textarea id={`snote-${d.id}`} rows={2} maxLength={500} value={notes[d.id] ?? ''} onChange={(e) => setNotes((n) => ({ ...n, [d.id]: e.target.value }))} />
                       <div className="flex flex-wrap gap-2">
-                        <Button size="sm" disabled={busy === d.id} onClick={() => decide(d.id, 'solved')}>{ar ? 'احتسابه محلولًا' : 'Count as solved'}</Button>
-                        <Button size="sm" variant="outline" disabled={busy === d.id} onClick={() => decide(d.id, 'void')}>{ar ? 'استبعاده من الإحصاءات' : 'Remove from statistics'}</Button>
-                        <Button size="sm" variant="outline" disabled={busy === d.id} onClick={() => decide(d.id, 'reject')}>{ar ? 'إبقاؤه غير محلول' : 'Keep as not solved'}</Button>
+                        <Button size="sm" busy={busy === d.id} onClick={() => decide(d.id, 'solved')}>{ar ? 'احتسابه محلولًا' : 'Count as solved'}</Button>
+                        <Button size="sm" variant="outline" busy={busy === d.id} onClick={() => decide(d.id, 'void')}>{ar ? 'استبعاده من الإحصاءات' : 'Remove from statistics'}</Button>
+                        <Button size="sm" variant="outline" busy={busy === d.id} onClick={() => decide(d.id, 'reject')}>{ar ? 'إبقاؤه غير محلول' : 'Keep as not solved'}</Button>
                       </div>
                     </div>
                   ) : d.admin_note ? <p className="mt-1 text-xs text-muted-foreground">{d.admin_note}</p> : null}

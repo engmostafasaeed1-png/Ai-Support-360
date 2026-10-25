@@ -59,7 +59,7 @@ export default function ReferralAckPanel({ version, rateText, months, passMark, 
           <Link to="/referral-terms" target="_blank" rel="noopener" className="text-primary underline">{t('refz.terms_link', 'referral programme terms')}</Link>.
         </Label>
       </div>
-      <Button onClick={accept} disabled={!agreed || busy} className="rounded-xl">
+      <Button onClick={accept} busy={busy} disabled={!agreed} className="rounded-xl">
         {busy && <Loader2 className="w-4 h-4 me-2 animate-spin" />}{t('refz.terms_continue', 'Accept and continue')}
       </Button>
     </div>

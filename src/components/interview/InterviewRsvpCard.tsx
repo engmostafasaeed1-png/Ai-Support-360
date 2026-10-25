@@ -66,13 +66,13 @@ export default function InterviewRsvpCard({ sessionId, status, organizerName, on
           {organizerName ? `${organizerName} will be told by notification and e-mail.` : 'The organizer will be told by notification and e-mail.'}
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => send('accepted')} disabled={saving || status === 'accepted'}>
+          <Button size="sm" onClick={() => send('accepted')} busy={saving} disabled={status === 'accepted'}>
             {saving && mode === null ? <Loader2 className="w-3.5 h-3.5 animate-spin me-1" /> : <Check className="w-3.5 h-3.5 me-1" />} Accept
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setMode(mode === 'reschedule' ? null : 'reschedule')} disabled={saving}>
+          <Button size="sm" variant="outline" onClick={() => setMode(mode === 'reschedule' ? null : 'reschedule')} busy={saving}>
             <CalendarClock className="w-3.5 h-3.5 me-1" /> Suggest another time
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setMode(mode === 'decline' ? null : 'decline')} disabled={saving}>
+          <Button size="sm" variant="outline" onClick={() => setMode(mode === 'decline' ? null : 'decline')} busy={saving}>
             <X className="w-3.5 h-3.5 me-1" /> Decline
           </Button>
         </div>
@@ -90,7 +90,7 @@ export default function InterviewRsvpCard({ sessionId, status, organizerName, on
               />
             ))}
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} placeholder="Note (optional)" className="min-h-[60px] text-xs" />
-            <Button size="sm" onClick={() => send('reschedule_requested')} disabled={saving}>
+            <Button size="sm" onClick={() => send('reschedule_requested')} busy={saving}>
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin me-1" /> : null} Send suggestions
             </Button>
           </div>
@@ -99,7 +99,7 @@ export default function InterviewRsvpCard({ sessionId, status, organizerName, on
         {mode === 'decline' && (
           <div className="space-y-2 rounded-lg border p-3">
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} placeholder="Reason (optional)" className="min-h-[60px] text-xs" />
-            <Button size="sm" variant="destructive" onClick={() => send('declined')} disabled={saving}>
+            <Button size="sm" variant="destructive" onClick={() => send('declined')} busy={saving}>
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin me-1" /> : null} Confirm decline
             </Button>
           </div>

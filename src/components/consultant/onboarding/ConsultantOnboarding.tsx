@@ -805,7 +805,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
               <ChevronRight className="w-4 h-4 rtl:rotate-180" />
             </Button>
           ) : (
-            <Button onClick={handleSaveAndContinue} disabled={submitting} className="gap-1.5">
+            <Button onClick={handleSaveAndContinue} busy={submitting} className="gap-1.5">
               {submitting ? t('common.loading') : 'Save & Continue to Interview'}
               <ChevronRight className="w-4 h-4 rtl:rotate-180" />
             </Button>

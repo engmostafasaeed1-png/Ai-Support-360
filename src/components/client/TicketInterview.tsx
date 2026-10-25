@@ -455,7 +455,7 @@ export default function TicketInterview({ ticketId, consultantId, clientId, isCl
                 }
                 requestMutation.mutate();
               }}
-              disabled={requestMutation.isPending}
+              busy={requestMutation.isPending}
             >
               {requestMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
               {requestMutation.isPending ? 'Requesting…' : 'Request Interview'}

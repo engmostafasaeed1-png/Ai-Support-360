@@ -136,7 +136,7 @@ export default function UsersPage() {
           <p className="text-sm text-muted-foreground">{t('um.subtitle', 'Manage accounts, roles and access')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => invalidate()} disabled={search.isFetching}><RefreshCw className={`me-1 h-4 w-4 ${search.isFetching ? 'animate-spin' : ''}`} />{t('um.refresh', 'Refresh')}</Button>
+          <Button variant="outline" size="sm" onClick={() => invalidate()} busy={search.isFetching}><RefreshCw className={`me-1 h-4 w-4 ${search.isFetching ? 'animate-spin' : ''}`} />{t('um.refresh', 'Refresh')}</Button>
           {(perms.includes('users.export') || me.isLoading) && <Button variant="outline" size="sm" className={me.isLoading ? 'invisible' : undefined} onClick={() => exportCsv(false)} disabled={!total}><Download className="me-1 h-4 w-4" />{t('um.export_csv', 'Export CSV')}</Button>}
           <Button variant="outline" size="sm" onClick={() => setRefInvite('all_eligible')}><Gift className="me-1 h-4 w-4" />{t('rinv.all_button', 'Refer & earn: all eligible consultants')}</Button>
           {(perms.includes('users.invite') || me.isLoading) && <Button variant="outline" size="sm" className={me.isLoading ? 'invisible' : undefined} onClick={() => setBulkInvite(true)}><Mail className="me-1 h-4 w-4" />{t('um.invite_many', 'Invite people')}</Button>}

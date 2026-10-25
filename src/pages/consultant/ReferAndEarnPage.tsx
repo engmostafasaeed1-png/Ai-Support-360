@@ -121,7 +121,7 @@ function CodeCard({ ov, locked }: { ov: ReferralOverview; locked: boolean }) {
             <div className="flex flex-wrap gap-2">
               <Input id="refz-code" dir="ltr" value={draft} maxLength={24} onChange={(e) => setDraft(e.target.value.toUpperCase())} className="max-w-xs font-mono rounded-xl"
                 aria-invalid={!!problem} aria-describedby="refz-code-help" />
-              <Button onClick={save} disabled={!!problem || saving} className="rounded-xl">{saving && <Loader2 className="w-4 h-4 me-2 animate-spin" />}{t('refz.save', 'Save')}</Button>
+              <Button onClick={save} busy={saving} disabled={!!problem} className="rounded-xl">{saving && <Loader2 className="w-4 h-4 me-2 animate-spin" />}{t('refz.save', 'Save')}</Button>
               <Button variant="ghost" onClick={() => setEditing(false)} className="rounded-xl">{t('refz.cancel', 'Cancel')}</Button>
             </div>
             <p id="refz-code-help" className={cn('text-xs', problem ? 'text-destructive' : 'text-muted-foreground')}>

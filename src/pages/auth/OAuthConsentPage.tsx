@@ -71,8 +71,8 @@ export default function OAuthConsentPage() {
                 {clientName} will be able to view and create support tickets in AI Support 360 as you.
               </p>
               <div className="flex gap-3 justify-center">
-                <Button variant="outline" disabled={busy} onClick={() => decide(false)}>Deny</Button>
-                <Button disabled={busy} onClick={() => decide(true)}>Approve</Button>
+                <Button variant="outline" busy={busy} onClick={() => decide(false)}>Deny</Button>
+                <Button busy={busy} onClick={() => decide(true)}>Approve</Button>
               </div>
             </>
           )}

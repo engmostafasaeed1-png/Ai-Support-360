@@ -488,7 +488,7 @@ export default function NDASigningModal({
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 {t('common.cancel', 'Cancel')}
               </Button>
-              <Button onClick={handleSign} disabled={!canSubmit || submitting}>
+              <Button onClick={handleSign} busy={submitting} disabled={!canSubmit}>
                 {submitting
                   ? t('nda.signing', 'Signing...')
                   : t('nda.sign_button', 'Sign NDA')}

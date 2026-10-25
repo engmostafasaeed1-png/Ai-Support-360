@@ -97,7 +97,7 @@ export default function NotificationPausePage() {
               ) : (
                 <>
                   <p className="text-muted-foreground">{t('npause.stay_available', 'You stay available: new requests still reach you and count in your responsiveness statistics as usual.')}</p>
-                  <Button size="sm" variant="outline" className="mt-2" disabled={busy} onClick={() => call('unavailable')}>
+                  <Button size="sm" variant="outline" className="mt-2" busy={busy} onClick={() => call('unavailable')}>
                     {t('npause.unavailable', 'Also mark me unavailable for new requests during this period (recommended)')}
                   </Button>
                 </>
@@ -106,12 +106,12 @@ export default function NotificationPausePage() {
           )}
           <div className="flex flex-wrap justify-center gap-2">
             {state === 'paused' && (
-              <Button onClick={() => call('resume')} disabled={busy}>
+              <Button onClick={() => call('resume')} busy={busy}>
                 {busy && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden />}{t('npause.resume', 'Resume now')}
               </Button>
             )}
             {state === 'error' && result.error !== 'invalid_link' && result.error !== 'expired_link' && result.error !== 'disabled' && (
-              <Button variant="outline" onClick={() => call('apply')} disabled={busy}>{t('common.retry', 'Try again')}</Button>
+              <Button variant="outline" onClick={() => call('apply')} busy={busy}>{t('common.retry', 'Try again')}</Button>
             )}
             <Button variant="ghost" asChild><Link to="/login">{t('npause.page_settings', 'Sign in to change your settings')}</Link></Button>
           </div>

@@ -34,7 +34,7 @@ export default function PolicyAcceptForm({ version, submitLabel, onAccept, disab
           {t('consultantPolicy.checkbox', 'I have read and accept the Consultant Service Policy')} ({t('consultantPolicy.versionWord', 'version')} {version})
         </label>
       </div>
-      <Button type="button" onClick={submit} disabled={!checked || busy || disabled} className="w-full gap-2 gradient-primary text-primary-foreground sm:w-auto" aria-describedby={!checked ? `${id}-hint` : undefined}>
+      <Button type="button" onClick={submit} busy={busy} disabled={!checked || disabled} className="w-full gap-2 gradient-primary text-primary-foreground sm:w-auto" aria-describedby={!checked ? `${id}-hint` : undefined}>
         {busy ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ShieldCheck className="h-4 w-4" aria-hidden="true" />}
         {submitLabel || t('consultantPolicy.confirm', 'Confirm')}
       </Button>

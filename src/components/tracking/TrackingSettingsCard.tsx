@@ -158,7 +158,7 @@ export default function TrackingSettingsCard() {
             <Label htmlFor="tt-reason" className="text-xs">{t('tracking.admin.reason')}</Label>
             <Input id="tt-reason" value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} />
           </div>
-          <Button onClick={save} disabled={busy}>{busy ? t('tracking.dialog.saving') : t('tracking.admin.save')}</Button>
+          <Button onClick={save} busy={busy}>{busy ? t('tracking.dialog.saving') : t('tracking.admin.save')}</Button>
         </div>
       </CardContent>
     </Card>

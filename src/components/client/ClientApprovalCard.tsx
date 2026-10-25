@@ -153,10 +153,10 @@ export default function ClientApprovalCard() {
             placeholder={t('client_approval.send_placeholder', 'What did you change? (optional)')}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={resubmit.isPending}>
+            <Button variant="outline" onClick={() => setOpen(false)} busy={resubmit.isPending}>
               {t('client_approval.cancel', 'Cancel')}
             </Button>
-            <Button onClick={send} disabled={resubmit.isPending} className="gap-2">
+            <Button onClick={send} busy={resubmit.isPending} className="gap-2">
               {resubmit.isPending ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
               {t('client_approval.send_confirm', 'Send')}
             </Button>

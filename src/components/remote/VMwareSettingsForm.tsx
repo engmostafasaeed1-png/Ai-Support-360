@@ -236,7 +236,7 @@ export default function VMwareSettingsForm({
           </Badge>
         </div>
         {!readOnly && (
-          <Button className="gradient-primary border-0 gap-1.5" onClick={handleSave} disabled={saving}>
+          <Button className="gradient-primary border-0 gap-1.5" onClick={handleSave} busy={saving}>
             <Save className="w-4 h-4" /> {t('common.save', 'Save Settings')}
           </Button>
         )}

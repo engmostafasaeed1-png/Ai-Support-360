@@ -555,7 +555,7 @@ export default function SendMatchRequestDialog({ ticketId, ticketTitle, ticketDe
                               size="sm"
                               className="gradient-primary border-0 text-xs h-8 gap-1"
                               onClick={() => handleSend(c.id, c.name)}
-                              disabled={sending === c.id}
+                              busy={sending === c.id}
                             >
                               {sending === c.id ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

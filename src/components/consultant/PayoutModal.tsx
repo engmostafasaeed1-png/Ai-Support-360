@@ -144,7 +144,7 @@ export default function PayoutModal({ open, onOpenChange, available, consultantI
           <Button variant="ghost" onClick={() => onOpenChange(false)}>{t('payout.cancel')}</Button>
           <Button
             onClick={handleSubmit}
-            disabled={!isValid || isSubmitting}
+            busy={isSubmitting} disabled={!isValid}
             className="gradient-primary border-0"
           >
             {isSubmitting ? t('payout.submitting') : t('payout.submit')}

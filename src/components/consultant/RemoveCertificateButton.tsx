@@ -56,8 +56,8 @@ export default function RemoveCertificateButton({ certificate, onRemoved }: Prop
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
-            <Button variant="destructive" onClick={() => void remove()} disabled={busy} className="gap-1.5">
+            <Button variant="ghost" onClick={() => setOpen(false)} busy={busy}>Cancel</Button>
+            <Button variant="destructive" onClick={() => void remove()} busy={busy} className="gap-1.5">
               {busy && <Loader2 className="h-4 w-4 animate-spin" />} Remove
             </Button>
           </DialogFooter>

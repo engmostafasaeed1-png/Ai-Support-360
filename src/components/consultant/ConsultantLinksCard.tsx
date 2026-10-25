@@ -199,7 +199,7 @@ export default function ConsultantLinksCard() {
             </div>
 
             <div className="flex justify-end">
-              <Button onClick={() => void save()} disabled={saving} className="gap-1.5">
+              <Button onClick={() => void save()} busy={saving} className="gap-1.5">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save place and links
               </Button>
             </div>

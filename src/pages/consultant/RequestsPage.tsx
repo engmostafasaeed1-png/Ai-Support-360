@@ -353,7 +353,7 @@ export default function RequestsPage() {
                             variant="outline"
                             className="h-8 text-xs text-destructive hover:bg-destructive/10"
                             onClick={() => handleDecline(req.id)}
-                            disabled={respond.isPending}
+                            busy={respond.isPending}
                           >
                             <X className="w-3.5 h-3.5 me-1" /> Decline
                           </Button>
@@ -361,7 +361,7 @@ export default function RequestsPage() {
                             size="sm"
                             className="h-8 text-xs gradient-primary border-0"
                             onClick={() => handleAccept(req.id, req.ticket_id)}
-                            disabled={respond.isPending || !slaOk(req.id)}
+                            busy={respond.isPending} disabled={!slaOk(req.id)}
                             title={slaOk(req.id) ? undefined : t('sla.err.sla_acceptance_required')}
                           >
                             {hasNda ? <Check className="w-3.5 h-3.5 me-1" /> : <FileSignature className="w-3.5 h-3.5 me-1" />}
@@ -390,7 +390,7 @@ export default function RequestsPage() {
             <Button variant="outline" disabled={!!blocked} onClick={() => { setPreviewId(null); setAskId(req.id); }}>
               {t('assignment_info.ask_button', 'Request more information')}
             </Button>
-            <Button className="gradient-primary border-0" disabled={respond.isPending || !slaOk(req.id)} onClick={() => { setPreviewId(null); handleAccept(req.id, req.ticket_id); }}>
+            <Button className="gradient-primary border-0" busy={respond.isPending} disabled={!slaOk(req.id)} onClick={() => { setPreviewId(null); handleAccept(req.id, req.ticket_id); }}>
               {t('assignment_policy.accept', 'Accept')}
             </Button>
           </>

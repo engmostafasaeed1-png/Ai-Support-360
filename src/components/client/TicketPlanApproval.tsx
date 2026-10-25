@@ -182,11 +182,11 @@ export default function TicketPlanApproval({ ticket, isClient }: Props) {
         {/* Client approval actions */}
         {isClient && isPendingApproval && !rejecting && (
           <div className="flex gap-2 pt-1">
-            <Button onClick={handleApprove} disabled={saving} className="flex-1 gradient-primary border-0 gap-1.5">
+            <Button onClick={handleApprove} busy={saving} className="flex-1 gradient-primary border-0 gap-1.5">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
               Approve Plan
             </Button>
-            <Button variant="outline" onClick={() => setRejecting(true)} disabled={saving} className="flex-1 gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5">
+            <Button variant="outline" onClick={() => setRejecting(true)} busy={saving} className="flex-1 gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5">
               <XCircle className="w-4 h-4" /> Reject
             </Button>
           </div>
@@ -205,7 +205,7 @@ export default function TicketPlanApproval({ ticket, isClient }: Props) {
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleReject} disabled={saving} variant="destructive" className="flex-1 gap-1.5">
+              <Button onClick={handleReject} busy={saving} variant="destructive" className="flex-1 gap-1.5">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
                 Confirm Rejection
               </Button>

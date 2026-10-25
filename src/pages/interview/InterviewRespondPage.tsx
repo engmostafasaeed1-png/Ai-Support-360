@@ -201,7 +201,7 @@ export default function InterviewRespondPage() {
                       </Label>
                       <Textarea id="rsvp-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} className="min-h-[70px] text-sm" />
                       {formError && <p className="text-xs text-destructive" role="alert">{formError}</p>}
-                      <Button onClick={submit} disabled={saving}>
+                      <Button onClick={submit} busy={saving}>
                         {saving ? <Loader2 className="w-4 h-4 animate-spin me-1" /> : null}
                         {mode === 'accept' ? 'Confirm: I will join' : mode === 'decline' ? 'Confirm: I cannot join' : 'Send my suggestions'}
                       </Button>

@@ -114,7 +114,7 @@ export default function ReferralEmailPreview({ settings }: { settings: Partial<R
         </Tabs>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={() => void sendTest()} disabled={busy}>{busy ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Mail className="me-1 h-4 w-4" />}{t('remail.send_test', 'Send test to me')}</Button>
+          <Button variant="outline" onClick={() => void sendTest()} busy={busy}>{busy ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Mail className="me-1 h-4 w-4" />}{t('remail.send_test', 'Send test to me')}</Button>
           <span className="text-xs text-muted-foreground">{t('remail.send_test_hint', 'Goes only to your own confirmed address, subject starts with [TEST]. 6 per hour.')}</span>
         </div>
       </CardContent>

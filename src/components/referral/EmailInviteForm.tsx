@@ -99,7 +99,7 @@ export default function EmailInviteForm({ referralCode, onClose }: Props) {
       <div className="bg-muted/30 rounded-lg p-2 text-[10px] text-muted-foreground">
         Your referral link will be included: <span className="font-mono text-primary">{getReferralLink(referralCode).slice(0, 50)}...</span>
       </div>
-      <Button className="w-full gradient-primary border-0" disabled={sending} onClick={handleSend}>
+      <Button className="w-full gradient-primary border-0" busy={sending} onClick={handleSend}>
         <Send className="w-4 h-4 me-1" /> {sending ? 'Opening…' : 'Open in my mail app'}
       </Button>
       <p className="text-[10px] text-muted-foreground">The e-mail is sent from your own address. AI Support 360 never e-mails people who have not registered.</p>

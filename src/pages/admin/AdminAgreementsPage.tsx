@@ -162,7 +162,7 @@ export default function AdminAgreementsPage() {
             </CardContent></Card>
           <div className="flex flex-wrap items-end gap-2">
             <div className="min-w-[16rem] flex-1 space-y-1.5"><Label htmlFor="s-reason">{t('agreements.admin.reason')}</Label><Input id="s-reason" value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} /></div>
-            <Button disabled={busy || reason.trim().length < 3} onClick={save}>{t('agreements.save')}</Button>
+            <Button busy={busy} disabled={reason.trim().length < 3} onClick={save}>{t('agreements.save')}</Button>
             <Button variant="outline" onClick={() => api.sendAgreementTestEmail(lang).then((r) => (r.ok ? toast.success(t('agreements.admin.testSent')) : toast.error(r.reason ?? t('agreements.err.generic')))).catch(() => toast.error(t('agreements.err.generic')))}>
               <Mail className="me-1 h-4 w-4" />{t('agreements.admin.testEmail')}</Button>
           </div>

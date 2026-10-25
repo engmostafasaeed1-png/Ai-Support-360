@@ -218,7 +218,7 @@ function Detail({ row, onClose }: { row: AdminFeedbackRow | null; onClose: () =>
                   <Label htmlFor="fb-dup">Duplicate of (report id)</Label>
                   <div className="flex gap-2">
                     <Input id="fb-dup" value={dup} onChange={(e) => setDup(e.target.value.trim())} placeholder="Report id" />
-                    <Button variant="outline" disabled={busy || (dup !== '' && !UUID.test(dup))} onClick={() => void patch({ duplicate_of: dup || null })}>Set</Button>
+                    <Button variant="outline" busy={busy} disabled={(dup !== '' && !UUID.test(dup))} onClick={() => void patch({ duplicate_of: dup || null })}>Set</Button>
                   </div>
                 </div>
               </section>
@@ -226,7 +226,7 @@ function Detail({ row, onClose }: { row: AdminFeedbackRow | null; onClose: () =>
               <section aria-label="Internal notes" className="space-y-1.5">
                 <Label htmlFor="fb-notes">Internal notes (never shown to the person)</Label>
                 <Textarea id="fb-notes" rows={3} maxLength={4000} value={notes} onChange={(e) => setNotes(e.target.value)} />
-                <Button size="sm" variant="outline" disabled={busy || notes === (row.admin_notes ?? '')} onClick={() => void patch({ admin_notes: notes })}>Save notes</Button>
+                <Button size="sm" variant="outline" busy={busy} disabled={notes === (row.admin_notes ?? '')} onClick={() => void patch({ admin_notes: notes })}>Save notes</Button>
               </section>
 
               <section aria-label="Reply" className="space-y-1.5">
@@ -238,7 +238,7 @@ function Detail({ row, onClose }: { row: AdminFeedbackRow | null; onClose: () =>
                     <Checkbox checked={emailReply && row.consent_contact} disabled={!row.consent_contact} onCheckedChange={(v) => setEmailReply(v === true)} />
                     {row.consent_contact ? 'Also send by e-mail' : 'E-mail not allowed by the person'}
                   </label>
-                  <Button size="sm" disabled={busy || reply.trim().length < 2 || (!row.user_id && !(emailReply && row.consent_contact))} onClick={() => void sendReply()}>
+                  <Button size="sm" busy={busy} disabled={reply.trim().length < 2 || (!row.user_id && !(emailReply && row.consent_contact))} onClick={() => void sendReply()}>
                     {busy ? <Loader2 aria-hidden="true" className="me-1.5 h-4 w-4 animate-spin" /> : <Send aria-hidden="true" className="me-1.5 h-4 w-4" />}Send reply
                   </Button>
                 </div>
@@ -393,7 +393,7 @@ export default function FeedbackAdminPage() {
                     </SelectContent>
                   </Select>
                 ))}
-                <Button variant="outline" onClick={() => void exportCsv()} disabled={exporting}>
+                <Button variant="outline" onClick={() => void exportCsv()} busy={exporting}>
                   {exporting ? <Loader2 aria-hidden="true" className="me-1.5 h-4 w-4 animate-spin" /> : <Download aria-hidden="true" className="me-1.5 h-4 w-4" />}CSV
                 </Button>
               </div>

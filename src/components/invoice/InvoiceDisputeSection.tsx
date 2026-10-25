@@ -290,10 +290,10 @@ export function InvoiceDisputeSection({ payment, hideHeading = false, onDisputes
           </div>
 
           <div className="flex gap-2 pt-1">
-            <Button size="sm" variant="outline" className="flex-1" onClick={() => { setShowForm(false); setFiles([]); setReasonCategory(''); setDescription(''); }} disabled={submitting}>
+            <Button size="sm" variant="outline" className="flex-1" onClick={() => { setShowForm(false); setFiles([]); setReasonCategory(''); setDescription(''); }} busy={submitting}>
               Cancel
             </Button>
-            <Button size="sm" className="flex-1 gap-1.5" onClick={handleSubmit} disabled={submitting}>
+            <Button size="sm" className="flex-1 gap-1.5" onClick={handleSubmit} busy={submitting}>
               {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldAlert className="w-3.5 h-3.5" />}
               {submitting ? 'Submitting...' : 'Submit Dispute'}
             </Button>

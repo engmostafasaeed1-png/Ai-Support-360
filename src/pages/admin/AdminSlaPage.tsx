@@ -128,7 +128,7 @@ export default function AdminSlaPage() {
                     </Select></label>
                 ))}
               </div>
-              <Button size="sm" disabled={busy} onClick={() => saveSettings({ severities: draft.severities, urgency_map: draft.urgency_map })}>{t('sla.admin.save')}</Button>
+              <Button size="sm" busy={busy} onClick={() => saveSettings({ severities: draft.severities, urgency_map: draft.urgency_map })}>{t('sla.admin.save')}</Button>
             </CardContent>
           </Card>
 
@@ -174,7 +174,7 @@ export default function AdminSlaPage() {
                 {CHANNELS.map((c) => <label key={c} className="flex items-center gap-1"><Checkbox checked={draft.channels_enabled[c]} onCheckedChange={(v) => setDraft({ ...draft, channels_enabled: { ...draft.channels_enabled, [c]: v === true } })} />{t(`sla.channel.${c}`)}</label>)}
                 <span className="text-muted-foreground">{t('sla.admin.noSms')}</span>
               </div>
-              <Button size="sm" disabled={busy} onClick={() => saveSettings({ bounds: draft.bounds, at_risk_pct: draft.at_risk_pct, compliance_alert_pct: draft.compliance_alert_pct, quiet_hours: draft.quiet_hours, require_acceptance: draft.require_acceptance, unpausable_allowed: draft.unpausable_allowed, channels_enabled: draft.channels_enabled })}>{t('sla.admin.save')}</Button>
+              <Button size="sm" busy={busy} onClick={() => saveSettings({ bounds: draft.bounds, at_risk_pct: draft.at_risk_pct, compliance_alert_pct: draft.compliance_alert_pct, quiet_hours: draft.quiet_hours, require_acceptance: draft.require_acceptance, unpausable_allowed: draft.unpausable_allowed, channels_enabled: draft.channels_enabled })}>{t('sla.admin.save')}</Button>
             </CardContent>
           </Card>
 
@@ -184,7 +184,7 @@ export default function AdminSlaPage() {
               <Select value={testKind} onValueChange={setTestKind}><SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
                 <SelectContent>{['reminder', 'escalation', 'breach', 'after_breach'].map((k) => <SelectItem key={k} value={k}>{t(`sla.template.${k}`)}</SelectItem>)}</SelectContent></Select>
               {(['en', 'ar'] as const).map((l) => (
-                <Button key={l} size="sm" variant="outline" disabled={busy} onClick={async () => {
+                <Button key={l} size="sm" variant="outline" busy={busy} onClick={async () => {
                   try { const r = await api.sendSlaTestEmail(testKind, l); if (r.ok) toast.success(t('sla.admin.testSent')); else toast.error(r.reason ?? t('sla.err.generic')); } catch (e) { toast.error(slaErrorText(t, e)); }
                 }}><Mail className="me-1 h-3.5 w-3.5" aria-hidden /> {t('sla.admin.testSend', { lang: l.toUpperCase() })}</Button>
               ))}

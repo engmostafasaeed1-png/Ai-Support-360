@@ -56,7 +56,7 @@ export default function SocialSignInButtons({ providers, loadingProvider, disabl
             variant="outline"
             className="h-11 rounded-xl hover:-translate-y-0.5"
             onClick={() => onSelect(p)}
-            disabled={disabled || !!loadingProvider}
+            busy={!!loadingProvider} disabled={disabled}
           >
             {loadingProvider === p ? <Loader2 className="w-4 h-4 me-2 animate-spin" /> : ICONS[p]}
             {LABELS[p]}

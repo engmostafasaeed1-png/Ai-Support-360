@@ -122,8 +122,8 @@ export default function AddCertificateDialog({ open, onOpenChange, consultantId,
           {problem && <p className="text-sm text-destructive" role="alert">{problem}</p>}
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-          <Button onClick={() => void submit()} disabled={saving} className="gap-1.5">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} busy={saving}>Cancel</Button>
+          <Button onClick={() => void submit()} busy={saving} className="gap-1.5">
             {saving && <Loader2 className="h-4 w-4 animate-spin" />} Add certificate
           </Button>
         </DialogFooter>

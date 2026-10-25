@@ -359,7 +359,7 @@ export default function ResponsivenessPage() {
           <p id="dispute-count" className="text-end text-[11px] text-muted-foreground">{reason.trim().length}/500</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDisputeFor(null)}>{t('common.cancel', 'Cancel')}</Button>
-            <Button onClick={submitDispute} disabled={busy || reason.trim().length < 10}>
+            <Button onClick={submitDispute} busy={busy} disabled={reason.trim().length < 10}>
               {busy && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}{t('responsiveness.dispute_send', 'Send dispute')}
             </Button>
           </DialogFooter>

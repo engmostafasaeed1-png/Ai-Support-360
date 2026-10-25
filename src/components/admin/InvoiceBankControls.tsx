@@ -153,7 +153,7 @@ export default function InvoiceBankControls({ invoice, onClose }: { invoice: Inv
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={setAccount.isPending}
+                      busy={setAccount.isPending}
                       onClick={() => { if (invoiceId) setAccount.mutate({ paymentId: invoiceId, details: null, note: accountNote }); }}
                     >
                       Use the platform account again
@@ -161,7 +161,7 @@ export default function InvoiceBankControls({ invoice, onClose }: { invoice: Inv
                   )}
                   <Button
                     size="sm"
-                    disabled={!canSave || setAccount.isPending}
+                    busy={setAccount.isPending} disabled={!canSave}
                     onClick={() => { if (invoiceId) setAccount.mutate({ paymentId: invoiceId, details: clean, note: accountNote }); }}
                   >
                     Save the account of this invoice

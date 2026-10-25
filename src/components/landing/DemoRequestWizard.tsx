@@ -379,7 +379,7 @@ export default function DemoRequestWizard({
             <Button
               variant="ghost"
               onClick={back}
-              disabled={step === 0 || submitting}
+              busy={submitting} disabled={step === 0}
               className="rounded-xl"
             >
               <ArrowLeft className="w-4 h-4 me-1.5" /> Back
@@ -400,7 +400,7 @@ export default function DemoRequestWizard({
             ) : (
               <Button
                 onClick={submit}
-                disabled={!canNext || submitting}
+                busy={submitting} disabled={!canNext}
                 className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-95 border-0 shadow-lg"
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Send request <Send className="w-4 h-4 ms-1.5" /></>}

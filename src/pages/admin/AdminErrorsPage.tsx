@@ -120,7 +120,7 @@ export default function AdminErrorsPage() {
             All client and server errors are logged here so you can take action.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+        <Button variant="outline" size="sm" onClick={() => refetch()} busy={isFetching}>
           <RefreshCw className={`w-4 h-4 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
@@ -276,7 +276,7 @@ export default function AdminErrorsPage() {
               variant="ghost"
               size="sm"
               onClick={() => selected && deleteMutation.mutate(selected.id)}
-              disabled={deleteMutation.isPending}
+              busy={deleteMutation.isPending}
             >
               <Trash2 className="w-4 h-4 mr-1.5" /> Delete
             </Button>
@@ -287,7 +287,7 @@ export default function AdminErrorsPage() {
             ) : (
               <Button
                 onClick={() => selected && resolveMutation.mutate({ id: selected.id, notes })}
-                disabled={resolveMutation.isPending}
+                busy={resolveMutation.isPending}
               >
                 <CheckCircle2 className="w-4 h-4 mr-1.5" /> Mark Resolved
               </Button>

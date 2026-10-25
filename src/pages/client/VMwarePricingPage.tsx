@@ -174,7 +174,7 @@ function PlanCard({ plan, cycle, sub, busy, onRequest }: PlanCardProps) {
               <p className="text-center text-[11px] text-muted-foreground">An administrator will contact you.</p>
             </>
           ) : (
-            <Button className="w-full" variant={popular ? 'default' : 'secondary'} disabled={busy} onClick={onRequest}>
+            <Button className="w-full" variant={popular ? 'default' : 'secondary'} busy={busy} onClick={onRequest}>
               {busy ? <Loader2 aria-hidden="true" className="me-2 h-4 w-4 animate-spin" /> : null}
               {isFree ? 'Request free sandbox' : 'Request plan'}
             </Button>

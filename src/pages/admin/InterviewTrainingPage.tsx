@@ -352,7 +352,7 @@ export default function InterviewTrainingPage() {
                           {[3, 5, 8, 10].map(n => <SelectItem key={n} value={String(n)}>{n} questions</SelectItem>)}
                         </SelectContent>
                       </Select>
-                      <Button size="sm" className="text-xs h-8 gradient-primary border-0" disabled={generating} onClick={generateFromFiles}>
+                      <Button size="sm" className="text-xs h-8 gradient-primary border-0" busy={generating} onClick={generateFromFiles}>
                         <Sparkles className="w-3.5 h-3.5 me-1.5" /> {generating ? 'Generating...' : 'Generate questions from files'}
                       </Button>
                     </div>
@@ -421,7 +421,7 @@ export default function InterviewTrainingPage() {
             </div>
 
             <div className="flex gap-2 pt-2">
-              <Button onClick={() => saveMutation.mutate({ ...form, id: editingId || undefined })} disabled={saveMutation.isPending} className="gradient-primary border-0">
+              <Button onClick={() => saveMutation.mutate({ ...form, id: editingId || undefined })} busy={saveMutation.isPending} className="gradient-primary border-0">
                 <Save className="w-4 h-4 me-1.5" /> {saveMutation.isPending ? 'Saving...' : 'Save Config'}
               </Button>
               <Button variant="outline" onClick={() => { setEditingId(null); setNewConfig(false); }}>Cancel</Button>

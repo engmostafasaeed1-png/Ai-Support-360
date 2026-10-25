@@ -581,7 +581,7 @@ export default function LoginPage() {
                 <p className="text-sm font-medium text-destructive">{t('auth.oauth_error_title', 'Sign-in did not complete')}</p>
                 <p className="text-xs text-muted-foreground">{oauthError.description}</p>
                 {oauthError.error !== 'no_account' && socialProviders.includes('google') && (
-                  <Button type="button" size="sm" variant="outline" onClick={() => handleOAuthLogin('google')} disabled={!!oauthLoading}>
+                  <Button type="button" size="sm" variant="outline" onClick={() => handleOAuthLogin('google')} busy={!!oauthLoading}>
                     {t('auth.oauth_try_again', 'Try again')}
                   </Button>
                 )}
@@ -597,7 +597,7 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
-            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" disabled={loading || !!oauthLoading || !!(lockoutUntil && Date.now() < lockoutUntil)}>
+            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" busy={loading || !!oauthLoading} disabled={!!(lockoutUntil && Date.now() < lockoutUntil)}>
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {lockRemaining ? `Locked (${lockRemaining})` : t('auth.login_btn')}
             </Button>

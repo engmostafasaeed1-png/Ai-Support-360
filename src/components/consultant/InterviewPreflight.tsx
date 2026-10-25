@@ -111,7 +111,7 @@ export default function InterviewPreflight({ onContinue, onCancel, resumed }: Pr
             );
           })}
         </ul>
-        <Button type="button" variant="outline" size="sm" onClick={test} disabled={testing || !startable}>
+        <Button type="button" variant="outline" size="sm" onClick={test} busy={testing} disabled={!startable}>
           {testing ? <Loader2 className="me-1 h-4 w-4 animate-spin motion-reduce:animate-none" /> : <Mic className="me-1 h-4 w-4" />}
           {t('interview.pre_test', 'Test camera and microphone')}
         </Button>

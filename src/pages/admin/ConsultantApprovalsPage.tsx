@@ -441,7 +441,7 @@ export default function ConsultantApprovalsPage() {
                             size="sm"
                             className={option.tone === 'danger' ? 'text-destructive hover:bg-destructive/10' : option.tone === 'primary' ? 'gradient-primary border-0' : ''}
                             onClick={() => openDecision(c.id, c.name, option)}
-                            disabled={updateStatus.isPending}
+                            busy={updateStatus.isPending}
                           >
                             {option.label}
                           </Button>
@@ -478,12 +478,12 @@ export default function ConsultantApprovalsPage() {
             <p className="text-[11px] text-muted-foreground text-end">{decisionReason.length}/1000</p>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDecisionTarget(null)} disabled={updateStatus.isPending}>
+            <Button variant="ghost" onClick={() => setDecisionTarget(null)} busy={updateStatus.isPending}>
               Cancel
             </Button>
             <Button
               onClick={submitDecision}
-              disabled={updateStatus.isPending}
+              busy={updateStatus.isPending}
               className={decisionTarget?.option.tone === 'primary' ? 'gradient-primary border-0' : ''}
               variant={decisionTarget?.option.tone === 'danger' ? 'destructive' : 'default'}
             >

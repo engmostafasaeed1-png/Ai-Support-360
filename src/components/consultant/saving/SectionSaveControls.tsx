@@ -10,7 +10,7 @@ export default function SectionSaveControls({ state, disabled = false }: { state
   return <div className="space-y-1.5">
     <div className="flex flex-wrap items-center justify-end gap-2">
       <span role="status" className="text-xs text-muted-foreground">{status}</span>
-      <Button type="button" size="sm" disabled={disabled || state.saving || !state.dirty} onClick={state.manualSave}><Save className="h-4 w-4 me-1" />{t('common.save', 'Save')}</Button>
+      <Button type="button" size="sm" busy={state.saving} disabled={disabled || !state.dirty} onClick={state.manualSave}><Save className="h-4 w-4 me-1" />{t('common.save', 'Save')}</Button>
     </div>
     {state.error && <p role="alert" className="text-xs text-destructive">{state.error}</p>}
   </div>;
