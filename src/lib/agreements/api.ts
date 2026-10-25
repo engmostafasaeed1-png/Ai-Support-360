@@ -40,7 +40,8 @@ export interface SaUsage {
   month: string; used_hours: number; committed: number | null; capacity_hours_per_week: number | null; rollover_balance: number;
   sla: { measured: number; met: number; pct: number | null } | null; end_date: string | null; termination_end: string | null; tickets: number;
   recent: Array<{ id: string; title: string; status: string; created_at: string }>; spend: number;
-  months: Array<{ month: string; used_hours: number; committed_hours: number; expired_hours: number; charge_hours: number; overage_hours: number; carried_out: unknown; payment_id: string | null; amount: number | null }>;
+  /** sa_months rows (hours bank month-end settlements). */
+  months: Array<{ month: string; used_hours: number; committed: number; expired_hours: number; charge_hours: number; overage_hours: number; carried_out: unknown; payment_id: string | null; base_amount: number | null }>;
 }
 export interface SaMember {
   consultant_id: string; name?: string; role: CrewRole | string; required: boolean; status: 'invited' | 'active' | 'declined' | 'ended' | string;

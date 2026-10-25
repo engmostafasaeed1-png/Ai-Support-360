@@ -421,7 +421,7 @@ function Usage({ a, lang }: { a: api.SaDetail; lang: 'en' | 'ar' }) {
         <Card className="rounded-2xl"><CardHeader><CardTitle className="text-base">{t('agreements.usage.statements')}</CardTitle></CardHeader>
           <CardContent className="overflow-x-auto">{!u.months.length ? <p className="text-sm text-muted-foreground">{t('agreements.usage.noMonths')}</p> : (
             <table className="w-full text-sm"><thead><tr className="text-xs text-muted-foreground"><th className="p-1 text-start">{t('agreements.usage.month')}</th><th className="p-1 text-start">{t('agreements.usage.used')}</th><th className="p-1 text-start">{t('agreements.usage.expired')}</th><th className="p-1 text-start">{t('agreements.usage.charged')}</th><th className="p-1 text-start">{t('agreements.usage.amount')}</th></tr></thead>
-              <tbody>{u.months.map((m) => <tr key={m.month} className="border-t"><td className="p-1">{m.month.slice(0, 7)}</td><td className="p-1">{m.used_hours}</td><td className="p-1">{m.expired_hours}</td><td className="p-1">{m.charge_hours}</td><td className="p-1">{m.amount ? money(m.amount, cur, lang) : '—'}</td></tr>)}</tbody></table>
+              <tbody>{u.months.map((m) => <tr key={m.month} className="border-t"><td className="p-1">{m.month.slice(0, 7)}</td><td className="p-1">{m.used_hours}</td><td className="p-1">{m.expired_hours}</td><td className="p-1">{m.charge_hours}</td><td className="p-1">{m.base_amount ? money(m.base_amount, cur, lang) : '—'}</td></tr>)}</tbody></table>
           )}<p className="mt-2 text-xs text-muted-foreground">{t('agreements.usage.statementHint')}</p></CardContent></Card>
       </div>
     </>

@@ -63,7 +63,7 @@ export default function AgreementDocuments({ a, settings }: { a: api.SaDetail; s
   const slaPdf = () => gen('sla', () => slaSnapshotPdfBlob({ name: a.name, reference: a.reference, sla: terms!.sla, legalDraft: a.legal_draft }, lang), `sla-${base}.pdf`);
   const statementPdf = () => gen('stmt', () => statementPdfBlob({
     name: a.name, reference: a.reference, clientName: tenant?.name ?? t('agreements.role.client'), consultantName: a.consultant_name ?? null, currency: terms?.rate.currency ?? 'USD',
-    legalDraft: a.legal_draft, months: (a.usage?.months ?? []).map((m) => ({ month: m.month, used_hours: m.used_hours, committed: (m as { committed?: number }).committed ?? m.committed_hours ?? null, expired_hours: m.expired_hours, charge_hours: m.charge_hours, amount: (m as { base_amount?: number }).base_amount ?? m.amount })),
+    legalDraft: a.legal_draft, months: (a.usage?.months ?? []).map((m) => ({ month: m.month, used_hours: m.used_hours, committed: m.committed, expired_hours: m.expired_hours, charge_hours: m.charge_hours, amount: m.base_amount })),
     tickets: a.usage?.tickets ?? 0, slaPct: a.usage?.sla?.pct ?? null, spend: a.usage?.spend ?? 0,
   }, lang), `statement-${base}.pdf`);
 
