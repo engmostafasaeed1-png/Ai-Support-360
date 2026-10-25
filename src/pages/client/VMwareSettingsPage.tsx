@@ -112,7 +112,7 @@ export default function ClientVMwareSettingsPage() {
                       size="sm"
                       className="w-full text-xs h-8"
                       variant={isActive ? 'outline' : plan.tier === 'pro' ? 'default' : 'secondary'}
-                      busy={subscribe.isPending} disabled={isActive}
+                      busy={subscribe.isPending} reason={isActive && 'same_as_current'}
                       onClick={() => subscribe.mutate({ plan_id: plan.id, environment_id: selectedEnvId || undefined })}
                     >
                       {isActive ? '✓ Current Plan' : 'Subscribe'}

@@ -373,7 +373,7 @@ export default function VerificationPage() {
             <Award className="w-4 h-4 text-accent" />
             Certifications
           </CardTitle>
-          <Button variant="outline" size="sm" className="text-xs" onClick={() => setAddCertOpen(true)} disabled={!consultantId || !userId}>
+          <Button variant="outline" size="sm" className="text-xs" onClick={() => setAddCertOpen(true)} reason={[!userId && 'sign_in_required', !consultantId && 'profile_incomplete']}>
             <Upload className="w-3 h-3 me-1" /> Add certificate
           </Button>
         </CardHeader>

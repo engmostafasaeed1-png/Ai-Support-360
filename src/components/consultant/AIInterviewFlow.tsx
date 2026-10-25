@@ -1235,7 +1235,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                     setMessages(newHistory);
                     sendToAI(newHistory);
                   }}
-                  disabled={isStreaming || messages.length === 0}
+                  busy={isStreaming} reason={messages.length === 0 && 'no_data_yet'}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white/90 hover:bg-white/10 text-[10px] transition-colors disabled:opacity-30"
                 >
                   <HelpCircle className="w-3 h-3" /> Clarify Question
@@ -1247,7 +1247,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                     setMessages(newHistory);
                     sendToAI(newHistory);
                   }}
-                  disabled={isStreaming || messages.length === 0}
+                  busy={isStreaming} reason={messages.length === 0 && 'no_data_yet'}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white/90 hover:bg-white/10 text-[10px] transition-colors disabled:opacity-30"
                 >
                   <RefreshCw className="w-3 h-3" /> Repeat
@@ -1272,7 +1272,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                   <Button
                     size="icon"
                     onClick={toggleListening}
-                    disabled={isStreaming}
+                    busy={isStreaming}
                     className={`h-auto w-12 rounded-xl shrink-0 transition-all ${
                       isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400'
                     }`}
@@ -1283,7 +1283,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                 <Button
                   size="icon"
                   onClick={handleSend}
-                  disabled={!input.trim() || isStreaming}
+                  busy={isStreaming} reason={!input.trim() && 'type_message_first'}
                   className="h-auto w-12 rounded-xl bg-primary hover:bg-primary/90 shrink-0"
                 >
                   <Send className="w-4 h-4" />
@@ -1357,7 +1357,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                 Pause & Resume Later
               </Button>
               {userMessageCount >= 3 && (
-                <Button size="sm" onClick={handleEndInterview} disabled={isStreaming} className="gradient-primary border-0">
+                <Button size="sm" onClick={handleEndInterview} busy={isStreaming} className="gradient-primary border-0">
                   <CheckCircle className="w-4 h-4 me-1" />
                   {interviewLang === 'ar' ? 'إنهاء وتقييم' : 'End & Evaluate'}
                 </Button>

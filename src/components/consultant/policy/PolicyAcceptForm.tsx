@@ -10,10 +10,11 @@ interface Props {
   /** Saves the acknowledgement; a thrown error is shown under the button. */
   onAccept: (version: number) => Promise<void>;
   disabled?: boolean;
+  reason?: import('@/lib/blockedReasons').BlockedInput;
 }
 
 /** Required checkbox + submit. The button stays disabled until the box is ticked. */
-export default function PolicyAcceptForm({ version, submitLabel, onAccept, disabled }: Props) {
+export default function PolicyAcceptForm({ version, submitLabel, onAccept, disabled, reason }: Props) {
   const { t } = useTranslation();
   const id = useId();
   const [checked, setChecked] = useState(false);
@@ -34,7 +35,7 @@ export default function PolicyAcceptForm({ version, submitLabel, onAccept, disab
           {t('consultantPolicy.checkbox', 'I have read and accept the Consultant Service Policy')} ({t('consultantPolicy.versionWord', 'version')} {version})
         </label>
       </div>
-      <Button type="button" onClick={submit} busy={busy} disabled={!checked || disabled} className="w-full gap-2 gradient-primary text-primary-foreground sm:w-auto" aria-describedby={!checked ? `${id}-hint` : undefined}>
+      <Button type="button" onClick={submit} busy={busy} reason={[...(Array.isArray(reason) ? reason : [reason]), disabled && !reason && 'not_editable_now', !checked && { key: 'policy_not_accepted', onNext: () => document.getElementById(`${id}-accept`)?.focus() }]} hint="inline" className="w-full gap-2 gradient-primary text-primary-foreground sm:w-auto" aria-describedby={!checked ? `${id}-hint` : undefined}>
         {busy ? <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ShieldCheck className="h-4 w-4" aria-hidden="true" />}
         {submitLabel || t('consultantPolicy.confirm', 'Confirm')}
       </Button>

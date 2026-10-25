@@ -145,7 +145,7 @@ function CreateEditTicketDialog({
             <Label>SLA Deadline</Label>
             <Input type="date" value={slaDeadline} onChange={e => setSlaDeadline(e.target.value)} />
           </div>
-          <Button onClick={handleSubmit} className="w-full" busy={isLoading} disabled={!title.trim()}>
+          <Button onClick={handleSubmit} className="w-full" busy={isLoading} reason={!title.trim() && 'fill_required_fields'}>
             {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {ticket ? 'Save Changes' : 'Create Ticket'}
           </Button>

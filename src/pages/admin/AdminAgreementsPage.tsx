@@ -106,7 +106,7 @@ export default function AdminAgreementsPage() {
             <Card key={r.id} className="rounded-2xl"><CardContent className="flex flex-wrap items-center justify-between gap-2 p-4 text-sm">
               <div><p className="font-medium">{r.name} {r.reference && <span className="font-mono text-xs font-normal text-muted-foreground">{r.reference}</span>}</p><p className="text-muted-foreground">{r.company ?? '—'} · {r.consultant ?? '—'} · {r.rate ? money(r.rate.hourly_rate, r.rate.currency, lang) : '—'}</p></div>
               <div className="flex gap-2"><Button size="sm" onClick={() => act(() => api.adminReview(r.id, true, note))}>{t('agreements.admin.approve')}</Button>
-                <Button size="sm" variant="destructive" disabled={note.trim().length < 5} onClick={() => act(() => api.adminReview(r.id, false, note))}>{t('agreements.admin.reject')}</Button></div>
+                <Button size="sm" variant="destructive" reason={note.trim().length < 5 && { key: 'reason_required', params: { min: 5 } }} onClick={() => act(() => api.adminReview(r.id, false, note))}>{t('agreements.admin.reject')}</Button></div>
             </CardContent></Card>
           ))}
           {repl.map((r) => (
@@ -162,7 +162,7 @@ export default function AdminAgreementsPage() {
             </CardContent></Card>
           <div className="flex flex-wrap items-end gap-2">
             <div className="min-w-[16rem] flex-1 space-y-1.5"><Label htmlFor="s-reason">{t('agreements.admin.reason')}</Label><Input id="s-reason" value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} /></div>
-            <Button busy={busy} disabled={reason.trim().length < 3} onClick={save}>{t('agreements.save')}</Button>
+            <Button busy={busy} reason={reason.trim().length < 3 && { key: 'reason_required', params: { min: 3 } }} onClick={save}>{t('agreements.save')}</Button>
             <Button variant="outline" onClick={() => api.sendAgreementTestEmail(lang).then((r) => (r.ok ? toast.success(t('agreements.admin.testSent')) : toast.error(r.reason ?? t('agreements.err.generic')))).catch(() => toast.error(t('agreements.err.generic')))}>
               <Mail className="me-1 h-4 w-4" />{t('agreements.admin.testEmail')}</Button>
           </div>

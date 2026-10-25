@@ -1654,7 +1654,7 @@ export default function NewRequestPage() {
       {/* Navigation */}
       {!submitSteps && (
         <div className="flex justify-between">
-          <Button variant="outline" onClick={() => setStep(step - 1)} busy={submitting} disabled={step === 0}>
+          <Button variant="outline" onClick={() => setStep(step - 1)} busy={submitting} reason={step === 0 && 'already_first'}>
             <ArrowLeft className="w-4 h-4 me-1 rtl:rotate-180" /> {t('onboarding.back')}
           </Button>
           {step < steps.length - 1 ? (
@@ -1780,7 +1780,7 @@ function RecommendationCard({ rec, rank, navigate, picked, pickDisabled, onToggl
                   size="sm"
                   variant={picked ? 'default' : 'outline'}
                   className="h-7 text-[10px] gap-1"
-                  disabled={!picked && pickDisabled}
+                  reason={!picked && pickDisabled && { key: 'limit_reached', params: { max: MAX_INVITED_EXPERTS } }}
                   aria-pressed={!!picked}
                   onClick={onTogglePick}
                 >

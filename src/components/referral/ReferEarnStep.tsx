@@ -134,7 +134,7 @@ export default function ReferEarnStep({ onDone, onLater }: { onDone?: () => void
             <span dir="ltr" className="rounded-xl border border-border bg-muted/40 px-4 py-2 font-mono text-lg font-semibold tracking-wide">{ov.code}</span>
             <Button variant="outline" size="sm" className="rounded-xl" onClick={copy}>{copied ? <Check className="w-4 h-4 me-1" /> : <Copy className="w-4 h-4 me-1" />}{t('refz.copy', 'Copy')}</Button>
             {([['whatsapp', 'WhatsApp', MessageCircle], ['linkedin', 'LinkedIn', Share2], ['telegram', 'Telegram', Send], ['email', t('refz.email_own', 'Open in my mail app'), Mail], ['qr', t('refz.qr', 'QR code'), QrCode]] as Array<[ShareChannel | 'qr', string, typeof Share2]>).map(([c, label, Icon]) => (
-              <Button key={c} variant="outline" size="sm" className="rounded-xl" onClick={() => share(c)} disabled={ov.disabled}><Icon className="w-4 h-4 me-1" />{label}</Button>
+              <Button key={c} variant="outline" size="sm" className="rounded-xl" onClick={() => share(c)} reason={ov.disabled && 'feature_disabled_by_admin'}><Icon className="w-4 h-4 me-1" />{label}</Button>
             ))}
           </div>
           {pending && !ov.activation.interview_passed && (
@@ -215,7 +215,7 @@ function WhoInvited({ onLinked, until }: { onLinked: () => void; until: string |
         <Label htmlFor="refstep-who-code" className="sr-only">{t('refz.signup_label', 'Referral code (optional)')}</Label>
         <Input id="refstep-who-code" dir="ltr" value={value} maxLength={24} onChange={(e) => setValue(e.target.value.toUpperCase())} placeholder="SAP-NAME-7K2"
           className="max-w-xs font-mono rounded-xl" aria-describedby="refstep-who-status" disabled={result === 'ok'} />
-        <Button onClick={link} busy={busy} disabled={check.state !== 'valid' || result === 'ok'} className="rounded-xl">
+        <Button onClick={link} busy={busy} reason={[result === 'ok' && 'already_done', check.state !== 'valid' && 'invalid_value']} className="rounded-xl">
           {busy && <Loader2 className="w-4 h-4 me-2 animate-spin" />}{t('refz.who_link', 'Link this code')}
         </Button>
       </div>

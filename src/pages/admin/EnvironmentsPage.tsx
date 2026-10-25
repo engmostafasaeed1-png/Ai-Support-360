@@ -376,7 +376,7 @@ function EnvironmentForm({ env, onSubmit, onCancel }: {
 
         <DialogFooter>
           <DialogClose asChild><Button variant="outline" onClick={onCancel}>{t('common.cancel', 'Cancel')}</Button></DialogClose>
-          <Button className="gradient-primary border-0" onClick={handleSubmit} disabled={!name || !clientId || !guacamoleUrl}>
+          <Button className="gradient-primary border-0" onClick={handleSubmit} reason={[!name && { key: 'field_required', params: { field: t('common.name', 'Name') } }, !clientId && 'choose_option_first', !guacamoleUrl && { key: 'field_required', params: { field: 'Guacamole URL' } }]}>
             {env ? t('common.update', 'Update') : t('common.create', 'Create')}
           </Button>
         </DialogFooter>

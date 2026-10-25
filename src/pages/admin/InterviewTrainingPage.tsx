@@ -330,7 +330,7 @@ export default function InterviewTrainingPage() {
               <div className="mt-3 p-3 rounded-xl border border-dashed border-border bg-background space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <input ref={fileInputRef} type="file" multiple accept={TRAINING_FILE_ACCEPT} className="hidden" onChange={e => { handleFiles(e.target.files); e.target.value = ''; }} />
-                  <Button size="sm" variant="outline" className="text-xs h-8" disabled={extracting} onClick={() => fileInputRef.current?.click()}>
+                  <Button size="sm" variant="outline" className="text-xs h-8" busy={extracting} onClick={() => fileInputRef.current?.click()}>
                     <Upload className="w-3.5 h-3.5 me-1.5" /> {extracting ? 'Reading files...' : 'Upload files'}
                   </Button>
                   <span className="text-[10px] text-muted-foreground">PDF, Word (.docx), TXT, MD or CSV — up to 10 MB each</span>

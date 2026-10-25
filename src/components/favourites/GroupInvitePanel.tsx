@@ -131,9 +131,9 @@ export default function GroupInvitePanel({ candidates, alreadyAsked, modules = [
 
       <p className="flex items-start gap-1.5 text-xs text-muted-foreground"><Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />{note ?? t('fav.invite_note')}</p>
       <div className="flex flex-wrap justify-end gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={() => setTicked(new Set())} busy={busy} disabled={chosen.length === 0}>{t('fav.untick_all')}</Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => setTicked(new Set(preview.ask))} busy={busy} disabled={preview.ask.length === 0}>{t('fav.whole_group')}</Button>
-        <Button type="button" size="sm" className="gap-1.5" busy={busy} disabled={chosen.length === 0} onClick={() => void onConfirm(chosen)}>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setTicked(new Set())} busy={busy} reason={chosen.length === 0 && 'select_items_first'}>{t('fav.untick_all')}</Button>
+        <Button type="button" variant="outline" size="sm" onClick={() => setTicked(new Set(preview.ask))} busy={busy} reason={preview.ask.length === 0 && 'no_recipients'}>{t('fav.whole_group')}</Button>
+        <Button type="button" size="sm" className="gap-1.5" hint="inline" busy={busy} reason={chosen.length === 0 && 'select_items_first'} onClick={() => void onConfirm(chosen)}>
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Send className="h-3.5 w-3.5" aria-hidden="true" />}
           {actionLabel} ({chosen.length})
         </Button>

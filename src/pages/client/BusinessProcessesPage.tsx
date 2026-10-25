@@ -274,7 +274,7 @@ function ProcessNode({
           <button
             onClick={() => hasChildren && onToggle(node.id)}
             className={`w-6 h-6 flex items-center justify-center rounded shrink-0 ${hasChildren ? 'hover:bg-muted cursor-pointer' : 'opacity-30'}`}
-            disabled={!hasChildren}
+            /* disabled-ok: decorative leaf indicator; no children to expand */ disabled={!hasChildren}
           >
             {hasChildren ? (
               isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
@@ -567,7 +567,7 @@ function AddProcessDialog({
             {file && <p className="text-xs text-muted-foreground">Selected: {file.name}</p>}
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button onClick={handleUpload} busy={uploading} disabled={!file} className="gradient-primary border-0 gap-1.5">
+              <Button onClick={handleUpload} busy={uploading} reason={!file && 'upload_file_first'} className="gradient-primary border-0 gap-1.5">
                 <Upload className="w-4 h-4" /> {uploading ? 'Importing...' : 'Import'}
               </Button>
             </DialogFooter>

@@ -219,7 +219,7 @@ export default function AdminSlaPage() {
                 <div><Label>{t('sla.admin.day')}</Label><Input type="date" className="h-8" value={hDay} onChange={(e) => setHDay(e.target.value)} /></div>
                 <div><Label>{t('sla.admin.labelEn')}</Label><Input className="h-8" value={hEn} onChange={(e) => setHEn(e.target.value)} /></div>
                 <div><Label>{t('sla.admin.labelAr')}</Label><Input dir="rtl" className="h-8" value={hAr} onChange={(e) => setHAr(e.target.value)} /></div>
-                <Button size="sm" disabled={!hList || !hDay} onClick={async () => {
+                <Button size="sm" reason={[!hList && 'choose_option_first', !hDay && 'choose_date_first']} onClick={async () => {
                   try { await api.setHoliday(hList, hDay, hEn, hAr, false); setHDay(''); setHEn(''); setHAr(''); await holidays.refetch(); void qc.invalidateQueries({ queryKey: ['sla-settings'] }); } catch (e) { toast.error(slaErrorText(t, e)); }
                 }}>{t('sla.editor.add')}</Button>
               </div>
@@ -236,7 +236,7 @@ export default function AdminSlaPage() {
         <TabsContent value="compliance" className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             {[30, 90, 365].map((d) => <Button key={d} size="sm" variant={days === d ? 'default' : 'outline'} onClick={() => setDays(d)}>{t('sla.report.days', { count: d })}</Button>)}
-            <Button size="sm" variant="outline" className="ms-auto" disabled={!report.data?.breaches?.length} onClick={exportCsv}><Download className="me-1 h-3.5 w-3.5" aria-hidden /> {t('sla.admin.export')}</Button>
+            <Button size="sm" variant="outline" className="ms-auto" reason={!report.data?.breaches?.length && 'nothing_to_export'} onClick={exportCsv}><Download className="me-1 h-3.5 w-3.5" aria-hidden /> {t('sla.admin.export')}</Button>
           </div>
           {report.isLoading || !report.data ? <Skeleton className="h-40 w-full rounded-2xl" /> : (
             <>
@@ -268,7 +268,7 @@ export default function AdminSlaPage() {
             <CardContent className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 <Input className="h-8 max-w-sm" placeholder={t('sla.admin.ticketId')} value={simTicket} onChange={(e) => setSimTicket(e.target.value.trim())} aria-label={t('sla.admin.ticketId')} />
-                <Button size="sm" disabled={!/^[0-9a-f-]{36}$/i.test(simTicket)} onClick={async () => { try { setSim(await api.simulate(simTicket, null, null)); } catch (e) { toast.error(slaErrorText(t, e)); } }}>{t('sla.admin.simRun')}</Button>
+                <Button size="sm" reason={!/^[0-9a-f-]{36}$/i.test(simTicket) && 'invalid_value'} onClick={async () => { try { setSim(await api.simulate(simTicket, null, null)); } catch (e) { toast.error(slaErrorText(t, e)); } }}>{t('sla.admin.simRun')}</Button>
               </div>
               {sim && (
                 <div className="space-y-1 text-xs">

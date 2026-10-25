@@ -108,7 +108,7 @@ function TreeNode({ node, expanded, onToggle, depth = 0 }: {
           <button
             onClick={() => hasChildren && onToggle(node.id)}
             className={`w-6 h-6 flex items-center justify-center rounded shrink-0 ${hasChildren ? 'hover:bg-muted cursor-pointer' : 'opacity-30'}`}
-            disabled={!hasChildren}
+            /* disabled-ok: decorative leaf indicator, no child rows to expand */ disabled={!hasChildren}
           >
             {hasChildren ? (isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />) : <CornerDownRight className="w-3.5 h-3.5 text-muted-foreground" />}
           </button>

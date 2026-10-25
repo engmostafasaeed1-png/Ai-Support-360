@@ -134,7 +134,7 @@ export default function IntegrationsPage() {
                   <ExternalLink className="w-3 h-3" />
                   API Docs
                 </a>
-                <Button size="sm" variant="outline" disabled title="Not available yet">
+                <Button size="sm" variant="outline" reason="feature_not_ready" title="Not available yet">
                   Coming soon
                 </Button>
               </CardContent>

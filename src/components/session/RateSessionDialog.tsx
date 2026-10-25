@@ -388,7 +388,7 @@ export default function RateSessionDialog({
               </Button>
               <Button
                 onClick={() => submit.mutate()}
-                busy={submit.isPending} disabled={score === 0}
+                busy={submit.isPending} reason={score === 0 && 'give_rating_first'}
               >
                 {submit.isPending ? 'Submitting...' : 'Submit Rating'}
               </Button>

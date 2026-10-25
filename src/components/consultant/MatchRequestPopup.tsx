@@ -207,10 +207,10 @@ export default function MatchRequestPopup() {
       <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={() => setSub({ kind: 'decline', id: current.id })}>
         {t('assignment_policy.decline', 'Decline')}
       </Button>
-      <Button variant="outline" disabled={!!askBlockedText} title={askBlockedText ?? undefined} onClick={() => setSub({ kind: 'ask', id: current.id })}>
+      <Button variant="outline" reason={askBlockedText ? { key: 'not_editable_now', message: askBlockedText } : undefined} title={askBlockedText ?? undefined} onClick={() => setSub({ kind: 'ask', id: current.id })}>
         {t('assignment_info.ask_button', 'Request more information')}
       </Button>
-      <Button className="gradient-primary border-0" busy={respond.isPending || checkingNda} disabled={locationBlocked || policyBlocked || !slaReady} onClick={() => { setSub(null); void accept(); }}>
+      <Button className="gradient-primary border-0" busy={respond.isPending || checkingNda} reason={[locationBlocked && 'location_missing', policyBlocked && 'policy_not_accepted', !slaReady && { key: 'sla_not_accepted', onNext: () => { const box = document.querySelector<HTMLElement>('[data-consultant-sla] [role=checkbox]'); box?.scrollIntoView({ block: 'center', behavior: 'smooth' }); box?.focus(); } }]} onClick={() => { setSub(null); void accept(); }}>
         {t('assignment_policy.accept', 'Accept')}
       </Button>
     </>
@@ -236,7 +236,7 @@ export default function MatchRequestPopup() {
       now={now}
       waitingCount={waiting}
       busy={respond.isPending || checkingNda}
-      acceptDisabled={locationBlocked || policyBlocked || !slaReady}
+      acceptDisabled={locationBlocked || policyBlocked || !slaReady} acceptReason={[locationBlocked && 'location_missing', policyBlocked && 'policy_not_accepted', !slaReady && { key: 'sla_not_accepted', onNext: () => { const box = document.querySelector<HTMLElement>('[data-consultant-sla] [role=checkbox]'); box?.scrollIntoView({ block: 'center', behavior: 'smooth' }); box?.focus(); } }]}
       onAccept={() => void accept()}
       onDecline={() => (infoReady && current ? setSub({ kind: 'decline', id: current.id }) : answer('rejected'))}
       onView={view}
@@ -244,7 +244,7 @@ export default function MatchRequestPopup() {
     >
       <LocationBlockedNotice />
       <PolicyBlockedNotice />
-      <SlaAcceptanceBox ticketId={current?.ticket_id} context="assignment" onReadyChange={setSlaReady} />
+      <div data-consultant-sla><SlaAcceptanceBox ticketId={current?.ticket_id} context="assignment" onReadyChange={setSlaReady} /></div>
     </AssignmentRequestDialog>
     </>
   );

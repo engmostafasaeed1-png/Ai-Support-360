@@ -99,7 +99,7 @@ export default function ConfirmLinkProblem({ initialEmail = '', onSignIn, compac
         <Input id="link-problem-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className="h-11 rounded-xl" dir="ltr" />
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button type="button" onClick={resend} busy={sending} disabled={cooldown > 0} aria-busy={sending} className="h-11 flex-1">
+        <Button type="button" onClick={resend} busy={sending} reason={cooldown > 0 && { key: 'rate_limit', params: { minutes: Math.max(1, Math.ceil(cooldown / 60)) } }} aria-busy={sending} className="h-11 flex-1">
           {sending && <Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden="true" />}
           {cooldown > 0
             ? t('auth.link.resend_wait', 'Send again in {{s}} s', { s: cooldown })

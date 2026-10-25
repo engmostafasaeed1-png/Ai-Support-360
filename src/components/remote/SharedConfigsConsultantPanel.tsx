@@ -134,7 +134,7 @@ export default function SharedConfigsConsultantPanel() {
                         </Button>
                         <Button size="sm" className="h-7 text-xs gap-1" variant="outline"
                           onClick={() => handleConnect(cfg.tool_type, connectionId)}
-                          disabled={!idValid}>
+                          reason={(!idValid) && 'invalid_value'}>
                           <ExternalLink className="w-3 h-3" /> Connect
                         </Button>
                       </>

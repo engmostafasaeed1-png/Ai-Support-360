@@ -232,25 +232,25 @@ export default function MyConsultantsPage() {
                     <SelectTrigger className="h-8 w-44 text-xs" aria-label={t('fav.choose_group')}><SelectValue placeholder={t('fav.choose_group')} /></SelectTrigger>
                     <SelectContent>{activeGroups.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}</SelectContent>
                   </Select>
-                  <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" busy={busy} disabled={!bulkGroup || !selectedIds.length}
+                  <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" busy={busy} reason={[!bulkGroup && 'choose_option_first', !selectedIds.length && 'select_items_first']}
                     onClick={() => act(() => fav.addToGroup(bulkGroup, selectedIds), t('fav.added_to_group', { count: selectedIds.length, group: groupName(bulkGroup) }))}>
                     <FolderPlus className="h-3.5 w-3.5" aria-hidden="true" />{t('fav.add_to_group')}
                   </Button>
-                  <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" busy={busy} disabled={!bulkGroup || !selectedIds.length}
+                  <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" busy={busy} reason={[!bulkGroup && 'choose_option_first', !selectedIds.length && 'select_items_first']}
                     onClick={() => act(() => fav.removeFromGroup(bulkGroup, selectedIds), t('fav.removed_from_group', { group: groupName(bulkGroup) }))}>
                     <FolderMinus className="h-3.5 w-3.5" aria-hidden="true" />{t('fav.remove_from_group')}
                   </Button>
                   <Input value={bulkTag} onChange={(e) => setBulkTag(e.target.value)} placeholder={t('fav.tag_ph')} aria-label={t('fav.tag_ph')} className="h-8 w-32 text-xs" maxLength={30} />
-                  <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" busy={busy} disabled={!bulkTag.trim() || !selectedIds.length}
+                  <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" busy={busy} reason={[!bulkTag.trim() && 'fill_required_fields', !selectedIds.length && 'select_items_first']}
                     onClick={() => act(async () => { await fav.tagMany(selectedIds, bulkTag); setBulkTag(''); }, t('fav.tagged'))}>
                     <Tag className="h-3.5 w-3.5" aria-hidden="true" />{t('fav.tag')}
                   </Button>
-                  <Button size="sm" variant="outline" className="h-8 gap-1 text-xs text-destructive" busy={busy} disabled={!selectedIds.length} onClick={() => setConfirmRemove(selectedIds)}>
+                  <Button size="sm" variant="outline" className="h-8 gap-1 text-xs text-destructive" busy={busy} reason={!selectedIds.length && 'select_items_first'} onClick={() => setConfirmRemove(selectedIds)}>
                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />{t('fav.remove')}
                   </Button>
                 </>
               )}
-              <Button size="sm" variant="outline" className="ms-auto h-8 gap-1 text-xs" onClick={exportCsv} disabled={shown.length === 0}>
+              <Button size="sm" variant="outline" className="ms-auto h-8 gap-1 text-xs" onClick={exportCsv} reason={shown.length === 0 && 'nothing_to_export'}>
                 <Download className="h-3.5 w-3.5" aria-hidden="true" />{selectedIds.length ? t('fav.export_selected') : t('fav.export')}
               </Button>
             </div>
@@ -363,9 +363,9 @@ export default function MyConsultantsPage() {
                       <div className="flex flex-wrap items-center gap-1">
                         {!g.archived_at && (
                           <>
-                            <Button size="icon" variant="ghost" className="h-8 w-8" aria-label={t('fav.move_up', { name: g.name })} busy={busy} disabled={i === 0}
+                            <Button size="icon" variant="ghost" className="h-8 w-8" aria-label={t('fav.move_up', { name: g.name })} busy={busy} reason={i === 0 && 'already_first'}
                               onClick={() => act(() => fav.reorderGroups(moveGroup(fav.groups, g.id, -1)))}><ArrowUp className="h-4 w-4" aria-hidden="true" /></Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8" aria-label={t('fav.move_down', { name: g.name })} busy={busy} disabled={i === activeGroups.length - 1}
+                            <Button size="icon" variant="ghost" className="h-8 w-8" aria-label={t('fav.move_down', { name: g.name })} busy={busy} reason={i === activeGroups.length - 1 && 'already_last'}
                               onClick={() => act(() => fav.reorderGroups(moveGroup(fav.groups, g.id, 1)))}><ArrowDown className="h-4 w-4" aria-hidden="true" /></Button>
                             <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs" onClick={() => setEditing(g)}><Pencil className="h-3.5 w-3.5" aria-hidden="true" />{t('fav.edit')}</Button>
                           </>

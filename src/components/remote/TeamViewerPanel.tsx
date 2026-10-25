@@ -146,7 +146,7 @@ export default function TeamViewerPanel({ onShare }: { onShare?: () => void }) {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => { setAddOpen(false); setEditDevice(null); }}>Cancel</Button>
-              <Button onClick={handleSave} disabled={!alias || !tvId || !isValidConnectionId('teamviewer', tvId)} className="gradient-primary border-0">Save</Button>
+              <Button onClick={handleSave} reason={(!alias || !tvId || !isValidConnectionId('teamviewer', tvId)) && 'invalid_value'} className="gradient-primary border-0">Save</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

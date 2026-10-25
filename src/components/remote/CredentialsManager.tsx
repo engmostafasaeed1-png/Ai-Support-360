@@ -273,7 +273,7 @@ export default function CredentialsManager({ environmentId, canEdit = true }: Cr
             <DialogClose asChild>
               <Button variant="outline" onClick={resetForm}>{t('common.cancel', 'Cancel')}</Button>
             </DialogClose>
-            <Button className="gradient-primary border-0" onClick={handleSave} disabled={!username || !password}>
+            <Button className="gradient-primary border-0" onClick={handleSave} reason={(!username || !password) && 'invalid_value'}>
               <Shield className="w-4 h-4 me-1" />
               {editingCred ? t('common.update', 'Update') : t('remote.save_credentials', 'Save Securely')}
             </Button>

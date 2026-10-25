@@ -451,7 +451,7 @@ export default function ConsultantsPage() {
 
                     <p className="mt-3 text-xs text-muted-foreground">Sessions are arranged inside a request, so everything stays protected in the portal.</p>
                     <div className="flex gap-2 mt-2">
-                      <Button size="sm" className="gradient-primary border-0 flex-1 text-xs" onClick={() => invite(c.id)} disabled={!!c.holdUntil}
+                      <Button size="sm" className="gradient-primary border-0 flex-1 text-xs" onClick={() => invite(c.id)} reason={!!c.holdUntil && { key: 'on_hold', message: holdDirectoryView(c.holdUntil, 'label', lang).label || undefined, to: '/client/consultants' }}
                         title={c.holdUntil ? holdDirectoryView(c.holdUntil, 'label', lang).label ?? undefined : undefined}>Open a request</Button>
                       <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => navigate(`/client/consultants/${c.id}`)}>{t('consultants_page.view_profile')}</Button>
                     </div>

@@ -111,17 +111,17 @@ export default function InterviewPreflight({ onContinue, onCancel, resumed }: Pr
             );
           })}
         </ul>
-        <Button type="button" variant="outline" size="sm" onClick={test} busy={testing} disabled={!startable}>
+        <Button type="button" variant="outline" size="sm" onClick={test} busy={testing} reason={!startable && 'offline'}>
           {testing ? <Loader2 className="me-1 h-4 w-4 animate-spin motion-reduce:animate-none" /> : <Mic className="me-1 h-4 w-4" />}
           {t('interview.pre_test', 'Test camera and microphone')}
         </Button>
         {!startable && <p role="alert" className="text-sm text-destructive">{t('interview.pre_offline_block', 'Reconnect to the internet to start.')}</p>}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="ghost" onClick={onCancel}>{t('common.back', 'Back')}</Button>
-          <Button type="button" variant="outline" disabled={!startable} onClick={() => onContinue({ textOnly: true })}>
+          <Button type="button" variant="outline" reason={!startable && 'offline'} onClick={() => onContinue({ textOnly: true })}>
             <Keyboard className="me-1 h-4 w-4" /> {t('interview.pre_text_only', 'Continue text-only')}
           </Button>
-          <Button type="button" className="gradient-primary text-primary-foreground" disabled={!startable} onClick={() => onContinue({ textOnly: false })}>
+          <Button type="button" className="gradient-primary text-primary-foreground" reason={!startable && 'offline'} onClick={() => onContinue({ textOnly: false })}>
             <Play className="me-1 h-4 w-4" /> {voiceReady ? t('interview.pre_start_voice', 'Start with voice and video') : t('interview.pre_start', 'Start the interview')}
           </Button>
         </div>

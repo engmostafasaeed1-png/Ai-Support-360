@@ -95,7 +95,7 @@ export default function TicketStatusActions({ ticketId, status }: Props) {
           {available.map((a) => {
             const Icon = a.icon;
             return (
-              <Button key={a.to} size="sm" variant={a.variant} className="gap-1.5 text-xs" disabled={busy !== null} onClick={(e) => onAction(a.to, e)}>
+              <Button key={a.to} size="sm" variant={a.variant} className="gap-1.5 text-xs" busy={busy !== null} onClick={(e) => onAction(a.to, e)}>
                 {busy === a.to && a.to !== 'resolved' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Icon className="w-3.5 h-3.5" />}
                 {a.label}
               </Button>
@@ -125,8 +125,8 @@ export default function TicketStatusActions({ ticketId, status }: Props) {
             <p className="text-[11px] text-muted-foreground">{summary.trim().length} characters (at least {MIN_SUMMARY})</p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResolveOpen(false)} disabled={busy !== null}>Cancel</Button>
-            <Button onClick={submitResolution} disabled={busy !== null} className="gradient-primary border-0">
+            <Button variant="outline" onClick={() => setResolveOpen(false)} busy={busy !== null}>Cancel</Button>
+            <Button onClick={submitResolution} busy={busy !== null} className="gradient-primary border-0">
               {busy === 'resolved' && <Loader2 className="w-3.5 h-3.5 me-1.5 animate-spin" />}
               Mark as resolved
             </Button>

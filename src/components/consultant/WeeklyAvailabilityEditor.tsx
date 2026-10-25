@@ -198,7 +198,7 @@ export default function WeeklyAvailabilityEditor({ onSaved }: { onSaved?: () => 
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button type="button" onClick={() => void save()} busy={saving} disabled={!dirty} data-testid="availability-save">
+        <Button type="button" onClick={() => void save()} busy={saving} reason={!dirty && 'nothing_changed'} data-testid="availability-save">
           {saving ? <><Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden="true" />{s.saving}</> : s.save}
         </Button>
         {dirty && <Button type="button" variant="outline" onClick={() => { setRows(withKeys(me.weekly)); setTz(me.timezone || 'Asia/Riyadh'); setTried(false); }}>{s.reset}</Button>}

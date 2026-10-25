@@ -85,7 +85,7 @@ export default function TwoFactorGate({ children }: { children: React.ReactNode 
           <Input inputMode="numeric" maxLength={6} value={code} placeholder="123456"
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
             onKeyDown={(e) => e.key === 'Enter' && void submit()} aria-label="6-digit code" />
-          <Button className="w-full" busy={busy} disabled={code.length !== 6} onClick={() => void submit()}>
+          <Button className="w-full" busy={busy} reason={code.length !== 6 && 'invalid_value'} onClick={() => void submit()}>
             {busy && <Loader2 className="w-4 h-4 me-2 animate-spin" />} Continue
           </Button>
           <Button variant="ghost" className="w-full" onClick={() => void supabase.auth.signOut()}>Sign out</Button>

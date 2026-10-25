@@ -91,7 +91,7 @@ export default function SapDocsCard() {
 
                   <div className="flex flex-wrap items-center gap-2">
                     {working ? (
-                      <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" disabled={importer.stopping} onClick={importer.cancel}>
+                      <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" busy={importer.stopping} onClick={importer.cancel}>
                         {importer.stopping ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Square className="h-3.5 w-3.5" />}
                         {importer.stopping ? 'Stopping...' : 'Stop'}
                       </Button>
@@ -100,7 +100,7 @@ export default function SapDocsCard() {
                         size="sm"
                         variant={action === 'update' ? 'outline' : 'default'}
                         className="h-8 gap-1.5 text-xs"
-                        disabled={!!importer.busy}
+                        reason={!!importer.busy && 'another_action_running'}
                         onClick={() => void importer.run(s.id, action === 'continue' ? 'continue' : 'import')}
                       >
                         {action === 'update' ? <RefreshCw className="h-3.5 w-3.5" /> : <Download className="h-3.5 w-3.5" />}
@@ -108,7 +108,7 @@ export default function SapDocsCard() {
                       </Button>
                     )}
                     {s.status !== 'empty' && (
-                      <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" disabled={!!importer.busy} onClick={() => setRemoving(s)}>
+                      <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" reason={!!importer.busy && 'another_action_running'} onClick={() => setRemoving(s)}>
                         <Trash2 className="h-3.5 w-3.5" /> Remove
                       </Button>
                     )}

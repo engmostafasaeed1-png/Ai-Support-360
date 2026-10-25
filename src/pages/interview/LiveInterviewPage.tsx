@@ -251,7 +251,7 @@ export default function LiveInterviewPage() {
                   aria-label="Message"
                 />
                 <VoiceInput value={input} onTranscript={(t) => setInput(t.slice(0, 4000))} />
-                <Button size="icon" onClick={send} busy={sending} disabled={!input.trim()} aria-label="Send"><Send className="w-4 h-4" /></Button>
+                <Button size="icon" onClick={send} busy={sending} reason={!input.trim() && 'type_message_first'} aria-label="Send"><Send className="w-4 h-4" /></Button>
               </div>
             )}
           </Card>
@@ -262,7 +262,7 @@ export default function LiveInterviewPage() {
                 <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Lightbulb className="w-4 h-4 text-primary" /> AI co-pilot</CardTitle></CardHeader>
                 <CardContent className="space-y-2">
                   <p className="text-xs text-muted-foreground">Only interviewers see these suggestions.</p>
-                  <Button size="sm" variant="outline" onClick={getSuggestions} disabled={suggesting} className="w-full">
+                  <Button size="sm" variant="outline" onClick={getSuggestions} busy={suggesting} className="w-full">
                     {suggesting ? <Loader2 className="w-3.5 h-3.5 animate-spin me-1" /> : null} Suggest next questions
                   </Button>
                   {suggestions.map((s, i) => (
@@ -280,7 +280,7 @@ export default function LiveInterviewPage() {
                     ))}
                   </div>
                   <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Visible to interviewers only" className="min-h-[60px] text-xs" />
-                  <Button size="sm" variant="secondary" className="w-full" disabled={!note.trim()} onClick={async () => { if (await post(note, true)) setNote(''); }}>Save note</Button>
+                  <Button size="sm" variant="secondary" className="w-full" reason={!note.trim() && 'fill_required_fields'} onClick={async () => { if (await post(note, true)) setNote(''); }}>Save note</Button>
                 </CardContent>
               </Card>
 
@@ -298,7 +298,7 @@ export default function LiveInterviewPage() {
                         </div>
                       ))}
                       <Textarea value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Summary for the consultant's profile" className="min-h-[70px] text-xs" maxLength={4000} />
-                      <Button className="w-full" onClick={finish} disabled={finishing}>
+                      <Button className="w-full" onClick={finish} busy={finishing}>
                         {finishing && <Loader2 className="w-3.5 h-3.5 animate-spin me-1" />} Finish interview
                       </Button>
                     </>

@@ -160,7 +160,7 @@ export default function VMwareConsolePage() {
                 <Button
                   size="sm"
                   className="h-8 text-xs"
-                  busy={createSnapshot.isPending} disabled={!snapshotName.trim()}
+                  busy={createSnapshot.isPending} reason={!snapshotName.trim() && 'fill_required_fields'}
                   onClick={() => {
                     createSnapshot.mutate({ environment_id: selectedEnvId, name: snapshotName });
                     setSnapshotName('');

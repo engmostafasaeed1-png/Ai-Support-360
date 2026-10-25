@@ -132,7 +132,7 @@ export default function NDAManagementPage() {
             {t('admin.nda_management_subtitle', 'View all signed Non-Disclosure Agreements between consultants and clients.')}
           </p>
         </div>
-        <Button variant="outline" className="gap-2 shrink-0 self-start" onClick={exportCSV} disabled={ndas.length === 0}>
+        <Button variant="outline" className="gap-2 shrink-0 self-start" onClick={exportCSV} reason={ndas.length === 0 && 'nothing_to_export'}>
           <FileDown className="w-4 h-4" />
           <span className="hidden sm:inline">{t('admin.nda_export_csv', 'Export CSV')}</span>
           <span className="sm:hidden">Export</span>

@@ -29,6 +29,7 @@ interface Props {
   waitingCount: number;
   busy: boolean;
   acceptDisabled?: boolean;
+  acceptReason?: import('@/lib/blockedReasons').BlockedInput;
   onAccept: () => void;
   onDecline: () => void;
   onView: () => void;
@@ -45,7 +46,7 @@ interface Props {
 
 /** The "New assignment request" popup. Presentational: data, acknowledgement and answers live in MatchRequestPopup. */
 export default function AssignmentRequestDialog({
-  item, policy, now, waitingCount, busy, acceptDisabled, onAccept, onDecline, onView, onLater,
+  item, policy, now, waitingCount, busy, acceptDisabled, acceptReason, onAccept, onDecline, onView, onLater,
   infoReady = false, onPreview, onAskInfo, askBlockedText, children,
 }: Props) {
   const { t, i18n } = useTranslation();
@@ -141,7 +142,7 @@ export default function AssignmentRequestDialog({
                 <Button
                   variant="outline"
                   onClick={onAskInfo}
-                  busy={busy} disabled={!!askBlockedText}
+                  busy={busy} reason={askBlockedText ? { key: 'not_editable_now', message: askBlockedText } : undefined}
                   title={askBlockedText ?? undefined}
                   aria-describedby={askBlockedText ? 'assignment-ask-blocked' : undefined}
                 >
@@ -152,7 +153,7 @@ export default function AssignmentRequestDialog({
                   <Eye className="me-1 h-4 w-4" aria-hidden="true" /> {t('assignment_policy.view', 'View details')}
                 </Button>
               )}
-              <Button className="gradient-primary border-0" onClick={onAccept} busy={busy} disabled={acceptDisabled}>
+              <Button className="gradient-primary border-0" onClick={onAccept} busy={busy} reason={acceptReason ?? (acceptDisabled && 'previous_step_incomplete')}>
                 <Check className="me-1 h-4 w-4" aria-hidden="true" /> {t('assignment_policy.accept', 'Accept')}
               </Button>
             </DialogFooter>

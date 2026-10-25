@@ -125,7 +125,7 @@ function CreateTaskDialog({ onSubmit }: { onSubmit: (task: { title: string; desc
             <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
           </div>
           <Input placeholder="Tags (comma separated)" value={tagsInput} onChange={e => setTagsInput(e.target.value)} />
-          <Button onClick={handleSubmit} className="w-full" disabled={!title.trim()}>Create Task</Button>
+          <Button onClick={handleSubmit} className="w-full" reason={!title.trim() && 'fill_required_fields'}>Create Task</Button>
         </div>
       </DialogContent>
     </Dialog>

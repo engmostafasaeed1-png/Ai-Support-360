@@ -146,7 +146,7 @@ export default function RustDeskPanel({ onShare }: { onShare?: () => void }) {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => { setAddOpen(false); setEditHost(null); }}>Cancel</Button>
-              <Button onClick={handleSave} disabled={!alias || !rdId || !isValidConnectionId('rustdesk', rdId)} className="gradient-primary border-0">Save</Button>
+              <Button onClick={handleSave} reason={(!alias || !rdId || !isValidConnectionId('rustdesk', rdId)) && 'invalid_value'} className="gradient-primary border-0">Save</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

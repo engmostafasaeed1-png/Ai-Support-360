@@ -67,7 +67,7 @@ export default function MicCheck({ context, interviewId, lang, className }: Prop
       )}
       <p className="text-xs opacity-80">{t('voice.check_hint', 'Press "Try it", then say a sentence with SAP terms, for example: "I posted the invoice in MIRO and checked ACDOCA in S/4HANA."')}</p>
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" size="sm" variant={voice.listening ? 'destructive' : 'secondary'} onClick={toggle} disabled={voice.status === 'starting'}>
+        <Button type="button" size="sm" variant={voice.listening ? 'destructive' : 'secondary'} onClick={toggle} busy={voice.status === 'starting'}>
           {voice.status === 'starting' ? <Loader2 className="h-3.5 w-3.5 me-1 animate-spin" /> : voice.listening ? <Square className="h-3.5 w-3.5 me-1" /> : <Mic className="h-3.5 w-3.5 me-1" />}
           {voice.listening ? t('voice.check_stop', 'Stop') : t('voice.check_try', 'Try it')}
         </Button>

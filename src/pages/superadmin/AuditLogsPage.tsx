@@ -69,7 +69,7 @@ export default function AuditLogsPage() {
           <p className="text-sm text-muted-foreground">{t('super_admin.audit_subtitle', 'Complete audit trail of all system actions')}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefetching}>
+          <Button variant="outline" size="sm" onClick={handleRefresh} busy={isRefetching}>
             {isRefetching ? <Loader2 className="w-3.5 h-3.5 me-1 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 me-1" />}
             {t('common.refresh', 'Refresh')}
           </Button>

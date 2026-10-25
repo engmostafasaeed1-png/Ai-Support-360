@@ -477,7 +477,7 @@ export default function AIChatbot() {
                     size="icon"
                     aria-label="Send message"
                     className="h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 shrink-0"
-                    busy={isLoading} disabled={!input.trim()}
+                    busy={isLoading} reason={!input.trim() && 'type_message_first'}
                   >
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </Button>

@@ -66,7 +66,7 @@ export default function InterviewRsvpCard({ sessionId, status, organizerName, on
           {organizerName ? `${organizerName} will be told by notification and e-mail.` : 'The organizer will be told by notification and e-mail.'}
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => send('accepted')} busy={saving} disabled={status === 'accepted'}>
+          <Button size="sm" onClick={() => send('accepted')} busy={saving} reason={status === 'accepted' && 'already_done'}>
             {saving && mode === null ? <Loader2 className="w-3.5 h-3.5 animate-spin me-1" /> : <Check className="w-3.5 h-3.5 me-1" />} Accept
           </Button>
           <Button size="sm" variant="outline" onClick={() => setMode(mode === 'reschedule' ? null : 'reschedule')} busy={saving}>

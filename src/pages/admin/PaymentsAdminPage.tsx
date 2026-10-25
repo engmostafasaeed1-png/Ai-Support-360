@@ -402,11 +402,11 @@ export default function PaymentsAdminPage() {
                             </p>
                           )}
                           {p.status === 'pending' && (
-                            <Button size="sm" variant="outline" className="h-8 text-xs me-1" busy={setPayout.isPending} disabled={!p.has_details} title={!p.has_details ? 'Consultant has not entered bank details yet' : undefined} onClick={() => setPayout.mutate({ id: p.id, status: 'processing' })}>Start</Button>
+                            <Button size="sm" variant="outline" className="h-8 text-xs me-1" busy={setPayout.isPending} reason={!p.has_details && { key: 'missing_payout_details', to: undefined }} hint="inline" title={!p.has_details ? 'Consultant has not entered bank details yet' : undefined} onClick={() => setPayout.mutate({ id: p.id, status: 'processing' })}>Start</Button>
                           )}
                           {(p.status === 'pending' || p.status === 'processing') && (
                             <>
-                              <Button size="sm" className="h-8 text-xs me-1" disabled={!p.has_details} title={!p.has_details ? 'Consultant has not entered bank details yet' : undefined} onClick={() => setPayoutDialog({ payout: p, status: 'completed' })}>Mark paid</Button>
+                              <Button size="sm" className="h-8 text-xs me-1" reason={!p.has_details && { key: 'missing_payout_details', to: undefined }} hint="inline" title={!p.has_details ? 'Consultant has not entered bank details yet' : undefined} onClick={() => setPayoutDialog({ payout: p, status: 'completed' })}>Mark paid</Button>
                               <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setPayoutDialog({ payout: p, status: 'failed' })}>Failed</Button>
                             </>
                           )}
@@ -490,7 +490,7 @@ function ConfirmPaymentDialog({ invoice, onClose }: { invoice: any; onClose: () 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
-            busy={confirm.isPending} disabled={!bankRef.trim()}
+            busy={confirm.isPending} reason={!bankRef.trim() && 'payment_reference_missing'} hint="inline"
             onClick={() => confirm.mutate({ id: invoice.id, bankReference: bankRef.trim(), received: received ? Number(received) : undefined }, { onSuccess: onClose })}
           >
             Confirm payment
@@ -518,7 +518,7 @@ function RejectReportDialog({ invoice, onClose }: { invoice: any; onClose: () =>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button busy={reject.isPending} disabled={!note.trim()} onClick={() => reject.mutate({ id: invoice.id, note: note.trim() }, { onSuccess: onClose })}>Send to the client</Button>
+          <Button busy={reject.isPending} reason={!note.trim() && { key: 'reason_required', params: { min: 1 } }} onClick={() => reject.mutate({ id: invoice.id, note: note.trim() }, { onSuccess: onClose })}>Send to the client</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -551,7 +551,7 @@ function PayoutActionDialog({ state, onClose }: { state: { payout: any; status: 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
-            busy={setPayout.isPending} disabled={!text.trim()}
+            busy={setPayout.isPending} reason={!text.trim() && (paid ? 'payment_reference_missing' : { key: 'reason_required', params: { min: 1 } })} hint="inline"
             onClick={() => setPayout.mutate(
               paid ? { id: state!.payout.id, status: 'completed', bankReference: text.trim() } : { id: state!.payout.id, status: 'failed', note: text.trim() },
               { onSuccess: onClose },
@@ -700,7 +700,7 @@ function NewInvoiceDialog({ open, onClose }: { open: boolean; onClose: () => voi
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
-            busy={create.isPending} disabled={!valid}
+            busy={create.isPending} reason={[clientId === 'none' && 'choose_option_first', !(Number(amount) > 0) && 'invalid_value', description.trim().length < 3 && { key: 'text_too_short', params: { min: 3 } }, !/^[A-Za-z]{3}$/.test(currency.trim()) && 'invalid_value']} hint="inline"
             onClick={() => create.mutate({
               clientId,
               consultantId: consultantId === 'none' ? null : consultantId,
@@ -760,14 +760,14 @@ function SettingsTab() {
               <Label className="text-xs">Commission (%)</Label>
               <Input type="number" step="0.5" min="0" max="60" value={commission} onChange={(e) => setCommission(e.target.value)} className="w-32" />
             </div>
-            <Button busy={save.isPending} disabled={commission === ''} onClick={() => save.mutate({ key: 'commission_percent', value: Number(commission) })}>Save</Button>
+            <Button busy={save.isPending} reason={commission === '' && { key: 'field_required', params: { field: 'Commission percentage' } }} onClick={() => save.mutate({ key: 'commission_percent', value: Number(commission) })}>Save</Button>
           </div>
           <div className="flex items-end gap-3 pt-2 border-t border-border/40">
             <div className="space-y-1.5">
               <Label className="text-xs">VAT (%) - the same value as in the card above</Label>
               <Input type="number" step="0.5" min="0" max="30" value={vat} onChange={(e) => setVat(e.target.value)} className="w-32" />
             </div>
-            <Button variant="outline" busy={save.isPending} disabled={vat === ''} onClick={() => save.mutate({ key: 'vat_percent', value: Number(vat) })}>Save</Button>
+            <Button variant="outline" busy={save.isPending} reason={vat === '' && { key: 'field_required', params: { field: 'VAT percentage' } }} onClick={() => save.mutate({ key: 'vat_percent', value: Number(vat) })}>Save</Button>
           </div>
           <p className="text-[11px] text-muted-foreground">Ask your accountant which VAT applies. It is added on top of the consultant fee plus the platform service fee and the payment processing fee.</p>
         </CardContent>

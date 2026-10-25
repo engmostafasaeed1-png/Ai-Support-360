@@ -218,7 +218,7 @@ function Detail({ row, onClose }: { row: AdminFeedbackRow | null; onClose: () =>
                   <Label htmlFor="fb-dup">Duplicate of (report id)</Label>
                   <div className="flex gap-2">
                     <Input id="fb-dup" value={dup} onChange={(e) => setDup(e.target.value.trim())} placeholder="Report id" />
-                    <Button variant="outline" busy={busy} disabled={(dup !== '' && !UUID.test(dup))} onClick={() => void patch({ duplicate_of: dup || null })}>Set</Button>
+                    <Button variant="outline" busy={busy} reason={(dup !== '' && !UUID.test(dup)) && 'invalid_value'} onClick={() => void patch({ duplicate_of: dup || null })}>Set</Button>
                   </div>
                 </div>
               </section>
@@ -226,7 +226,7 @@ function Detail({ row, onClose }: { row: AdminFeedbackRow | null; onClose: () =>
               <section aria-label="Internal notes" className="space-y-1.5">
                 <Label htmlFor="fb-notes">Internal notes (never shown to the person)</Label>
                 <Textarea id="fb-notes" rows={3} maxLength={4000} value={notes} onChange={(e) => setNotes(e.target.value)} />
-                <Button size="sm" variant="outline" busy={busy} disabled={notes === (row.admin_notes ?? '')} onClick={() => void patch({ admin_notes: notes })}>Save notes</Button>
+                <Button size="sm" variant="outline" busy={busy} reason={notes === (row.admin_notes ?? '') && 'nothing_changed'} onClick={() => void patch({ admin_notes: notes })}>Save notes</Button>
               </section>
 
               <section aria-label="Reply" className="space-y-1.5">
@@ -238,7 +238,7 @@ function Detail({ row, onClose }: { row: AdminFeedbackRow | null; onClose: () =>
                     <Checkbox checked={emailReply && row.consent_contact} disabled={!row.consent_contact} onCheckedChange={(v) => setEmailReply(v === true)} />
                     {row.consent_contact ? 'Also send by e-mail' : 'E-mail not allowed by the person'}
                   </label>
-                  <Button size="sm" busy={busy} disabled={reply.trim().length < 2 || (!row.user_id && !(emailReply && row.consent_contact))} onClick={() => void sendReply()}>
+                  <Button size="sm" busy={busy} reason={[reply.trim().length < 2 && { key: 'text_too_short', params: { min: 2 } }, (!row.user_id && !(emailReply && row.consent_contact)) && 'reply_recipient_unavailable']} onClick={() => void sendReply()}>
                     {busy ? <Loader2 aria-hidden="true" className="me-1.5 h-4 w-4 animate-spin" /> : <Send aria-hidden="true" className="me-1.5 h-4 w-4" />}Send reply
                   </Button>
                 </div>
@@ -405,7 +405,7 @@ export default function FeedbackAdminPage() {
                     <SelectTrigger className="w-[10rem]" aria-label="New status"><SelectValue placeholder="Set status…" /></SelectTrigger>
                     <SelectContent>{FEEDBACK_STATUSES.map((s) => <SelectItem key={s} value={s}>{FEEDBACK_STATUS_LABEL[s]}</SelectItem>)}</SelectContent>
                   </Select>
-                  <Button size="sm" disabled={!bulkStatus} onClick={() => void applyBulk()}>Apply</Button>
+                  <Button size="sm" reason={!bulkStatus && 'choose_option_first'} onClick={() => void applyBulk()}>Apply</Button>
                   <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
                 </div>
               )}
@@ -463,9 +463,9 @@ export default function FeedbackAdminPage() {
 
               {pages > 1 && (
                 <div className="flex items-center justify-end gap-2 text-sm">
-                  <Button size="sm" variant="outline" disabled={filters.page === 0} onClick={() => set('page', String(filters.page - 1))}>Previous</Button>
+                  <Button size="sm" variant="outline" reason={filters.page === 0 && 'first_page'} onClick={() => set('page', String(filters.page - 1))}>Previous</Button>
                   <span>{filters.page + 1} / {pages}</span>
-                  <Button size="sm" variant="outline" disabled={filters.page + 1 >= pages} onClick={() => set('page', String(filters.page + 1))}>Next</Button>
+                  <Button size="sm" variant="outline" reason={filters.page + 1 >= pages && 'last_page'} onClick={() => set('page', String(filters.page + 1))}>Next</Button>
                 </div>
               )}
             </>

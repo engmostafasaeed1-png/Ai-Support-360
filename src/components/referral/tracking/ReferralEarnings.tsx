@@ -205,7 +205,7 @@ export default function ReferralEarnings({ lines, loading, detailed, payouts, pa
                   placeholder={t('reft.search_ph', 'Name or reference')} />
               </div>
             </div>
-            <Button variant="outline" size="sm" className="col-span-2 rounded-xl md:ms-auto" onClick={csv} disabled={shown.length === 0}>
+            <Button variant="outline" size="sm" className="col-span-2 rounded-xl md:ms-auto" onClick={csv} reason={shown.length === 0 && 'nothing_to_export'}>
               <Download className="me-1 h-4 w-4" aria-hidden="true" />{t('reft.csv', 'CSV ({{n}} rows)', { n: shown.length })}
             </Button>
           </div>
@@ -262,8 +262,8 @@ export default function ReferralEarnings({ lines, loading, detailed, payouts, pa
               <nav className="flex items-center justify-between gap-2 text-xs" aria-label={t('reft.pages', 'Pages')}>
                 <span className="text-muted-foreground">{t('reft.page_of', 'Page {{p}} of {{n}} · {{total}} lines', { p: pg.page, n: pg.pages, total: pg.total })}</span>
                 <span className="flex gap-2">
-                  <Button variant="outline" size="sm" className="rounded-xl" disabled={pg.page <= 1} onClick={() => setPage(pg.page - 1)}>{t('reft.prev', 'Previous')}</Button>
-                  <Button variant="outline" size="sm" className="rounded-xl" disabled={pg.page >= pg.pages} onClick={() => setPage(pg.page + 1)}>{t('reft.next_page', 'Next')}</Button>
+                  <Button variant="outline" size="sm" className="rounded-xl" reason={pg.page <= 1 && 'first_page'} onClick={() => setPage(pg.page - 1)}>{t('reft.prev', 'Previous')}</Button>
+                  <Button variant="outline" size="sm" className="rounded-xl" reason={pg.page >= pg.pages && 'last_page'} onClick={() => setPage(pg.page + 1)}>{t('reft.next_page', 'Next')}</Button>
                 </span>
               </nav>
             </>

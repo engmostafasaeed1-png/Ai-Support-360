@@ -181,7 +181,7 @@ export default function ImportStep({ data, onChange }: Props) {
               variant="outline"
               className="w-full gap-2"
               asChild
-              disabled={importing !== null}
+              busy={importing !== null}
             >
               <span>
                 {importing === 'cv' ? (

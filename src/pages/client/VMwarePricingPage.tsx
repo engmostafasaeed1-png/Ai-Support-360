@@ -163,12 +163,12 @@ function PlanCard({ plan, cycle, sub, busy, onRequest }: PlanCardProps) {
 
         <div className="mt-auto space-y-2 pt-1">
           {sub?.status === 'active' ? (
-            <Button className="w-full" variant="outline" disabled>
+            <Button className="w-full" variant="outline" reason="same_as_current">
               Current plan
             </Button>
           ) : sub?.status === 'requested' ? (
             <>
-              <Button className="w-full" variant="outline" disabled>
+              <Button className="w-full" variant="outline" reason="pending_admin_review">
                 Requested
               </Button>
               <p className="text-center text-[11px] text-muted-foreground">An administrator will contact you.</p>

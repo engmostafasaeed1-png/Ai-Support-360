@@ -1,3 +1,4 @@
+import { rateLimitReason } from '@/lib/blockedReasons';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -537,11 +538,11 @@ export default function LoginPage() {
             <CardDescription>{t('auth.role_choice_desc', 'Choose once to finish creating your account.')}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
-            <Button className="h-12" onClick={() => finishRoleChoice('client')} disabled={!!choosingRole}>
+            <Button className="h-12" onClick={() => finishRoleChoice('client')} busy={!!choosingRole}>
               {choosingRole === 'client' && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {t('auth.role_choice_client', 'I need SAP support (Client)')}
             </Button>
-            <Button variant="outline" className="h-12" onClick={() => finishRoleChoice('consultant')} disabled={!!choosingRole}>
+            <Button variant="outline" className="h-12" onClick={() => finishRoleChoice('consultant')} busy={!!choosingRole}>
               {choosingRole === 'consultant' && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {t('auth.role_choice_consultant', 'I am an SAP consultant (Consultant)')}
             </Button>
@@ -597,7 +598,7 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
-            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" busy={loading || !!oauthLoading} disabled={!!(lockoutUntil && Date.now() < lockoutUntil)}>
+            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" busy={loading || !!oauthLoading} reason={!!(lockoutUntil && Date.now() < lockoutUntil) && rateLimitReason(lockoutUntil)}>
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {lockRemaining ? `Locked (${lockRemaining})` : t('auth.login_btn')}
             </Button>
@@ -631,23 +632,23 @@ export default function LoginPage() {
                   resending={resending}
                   resendCooldown={resendCooldown}
                 />
-                <button
+                <Button variant="ghost"
                   type="button"
                   onClick={handleResendConfirmation}
-                  disabled={resending || resendCooldown > 0}
-                  className="text-xs text-primary hover:underline disabled:opacity-60 disabled:no-underline inline-flex items-center gap-1.5"
+                  busy={resending} reason={resendCooldown > 0 && { key: 'rate_limit', params: { minutes: Math.max(1, Math.ceil(resendCooldown / 60)) } }}
+                  className="h-auto rounded-none p-0 whitespace-normal text-xs text-primary hover:underline disabled:opacity-60 disabled:no-underline inline-flex items-center gap-1.5"
                 >
                   {resending && <Loader2 className="w-3 h-3 animate-spin" />}
                   {resendCooldown > 0 ? `Resend again in ${resendCooldown}s` : 'Resend again'}
-                </button>
+                </Button>
               </div>
             ) : (
-              <button
+              <Button variant="ghost"
                 type="button"
                 onClick={handleResendConfirmation}
-                disabled={resending || resendCooldown > 0}
+                busy={resending} reason={resendCooldown > 0 && { key: 'rate_limit', params: { minutes: Math.max(1, Math.ceil(resendCooldown / 60)) } }}
                 aria-busy={resending}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="h-auto rounded-none p-0 whitespace-normal text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {resending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 {resending
@@ -655,7 +656,7 @@ export default function LoginPage() {
                   : resendCooldown > 0
                     ? `Resend available in ${resendCooldown}s`
                     : "Didn't get the confirmation email? Resend"}
-              </button>
+              </Button>
             )}
             <p className="text-sm text-muted-foreground">
               {t('auth.no_account')}{' '}

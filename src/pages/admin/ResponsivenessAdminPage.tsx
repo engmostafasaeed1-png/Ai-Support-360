@@ -91,7 +91,7 @@ function SettingsCard() {
         </div>
         <p className="text-xs text-muted-foreground">{t('admin.resp_rank_hint', 'The ranking weight is "Responsiveness" in the match weights card under Settings (default 3).')}</p>
         {problems.length > 0 && <p role="alert" className="text-xs text-destructive">{t('admin.resp_problems', 'Please check: {{list}}', { list: problems.join(', ') })}</p>}
-        <Button onClick={save} busy={saving} disabled={problems.length > 0}>{saving && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}{t('common.save', 'Save')}</Button>
+        <Button onClick={save} busy={saving} reason={problems.length > 0 && 'fix_errors_first'}>{saving && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}{t('common.save', 'Save')}</Button>
       </CardContent>
     </Card>
   );
@@ -205,7 +205,7 @@ export default function ResponsivenessAdminPage() {
           <Gauge className="h-5 w-5 text-primary" aria-hidden="true" />
           <h1 className="text-2xl font-bold text-foreground">{t('admin.resp_title', 'Consultant responsiveness')}</h1>
         </div>
-        <Button variant="outline" size="sm" onClick={recompute} disabled={recomputing}>
+        <Button variant="outline" size="sm" onClick={recompute} busy={recomputing}>
           {recomputing ? <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" /> : <RefreshCw className="me-1 h-4 w-4" aria-hidden="true" />}
           {t('admin.resp_recompute', 'Recalculate now')}
         </Button>
@@ -230,7 +230,7 @@ export default function ResponsivenessAdminPage() {
                 </SelectContent>
               </Select></div>
             <label className="flex items-center gap-2 pb-2 text-xs"><Switch checked={onlyMissed} onCheckedChange={setOnlyMissed} />{t('admin.resp_only_missed', 'Only with no-responses (30 d)')}</label>
-            <Button variant="outline" size="sm" className="ms-auto" onClick={exportCsv} disabled={!rows.length}><Download className="me-1 h-4 w-4" aria-hidden="true" />CSV</Button>
+            <Button variant="outline" size="sm" className="ms-auto" onClick={exportCsv} reason={!rows.length && 'nothing_to_export'}><Download className="me-1 h-4 w-4" aria-hidden="true" />CSV</Button>
           </div>
           {q.isLoading ? <Skeleton className="h-48 w-full" /> : q.isError ? (
             <p className="text-sm text-muted-foreground">{t('admin.resp_unavailable', 'Not available until the responsiveness database update is applied.')}</p>

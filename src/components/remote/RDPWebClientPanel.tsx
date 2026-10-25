@@ -182,7 +182,7 @@ export default function RDPWebClientPanel({ onShare }: { onShare?: () => void })
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => { setAddOpen(false); resetForm(); }}>Cancel</Button>
-              <Button onClick={handleSave} disabled={!name || !hostname || !isValidConnectionId(protocol, `${hostname.trim()}:${port.trim() || '3389'}`)} className="gradient-primary border-0">Save</Button>
+              <Button onClick={handleSave} reason={(!name || !hostname || !isValidConnectionId(protocol, `${hostname.trim()}:${port.trim() || '3389'}`)) && 'invalid_value'} className="gradient-primary border-0">Save</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

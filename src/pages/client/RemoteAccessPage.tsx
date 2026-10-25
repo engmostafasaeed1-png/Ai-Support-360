@@ -175,7 +175,7 @@ function EnvironmentFormDialog({
         </div>
         <DialogFooter>
           <DialogClose asChild><Button variant="outline">{t('common.cancel', 'Cancel')}</Button></DialogClose>
-          <Button className="gradient-primary border-0" onClick={handleSubmit} disabled={!name}>
+          <Button className="gradient-primary border-0" onClick={handleSubmit} reason={!name && 'fill_required_fields'}>
             {env ? t('common.update', 'Update') : t('common.create', 'Create')}
           </Button>
         </DialogFooter>

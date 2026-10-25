@@ -103,7 +103,7 @@ export default function ChatInput({ onSend, onTyping, onFileUpload, disabled }: 
           size="icon"
           className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
           onClick={() => fileRef.current?.click()}
-          disabled={disabled}
+          /* disabled-ok: pass-through, parent must supply reason; OWNER parent outside batch */ disabled={disabled}
         >
           <Paperclip className="w-4 h-4" />
         </Button>
@@ -134,7 +134,7 @@ export default function ChatInput({ onSend, onTyping, onFileUpload, disabled }: 
           size="icon"
           className="h-9 w-9 shrink-0 gradient-primary border-0"
           onClick={handleSend}
-          disabled={!canSend || disabled}
+          reason={[disabled && 'not_editable_now', !canSend && 'type_message_first']}
         >
           <Send className="w-4 h-4" />
         </Button>

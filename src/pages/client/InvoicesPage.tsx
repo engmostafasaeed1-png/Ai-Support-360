@@ -568,7 +568,7 @@ export default function InvoicesPage() {
                             className="h-8 gap-1 text-xs border-red-300 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
                             title="Retry generating the PDF"
                             onClick={e => { e.stopPropagation(); generateInvoicePdf(inv, false); }}
-                            disabled={retryingId === inv.id}
+                            busy={retryingId === inv.id}
                           >
                             <RefreshCw className={`w-3.5 h-3.5 ${retryingId === inv.id ? 'animate-spin' : ''}`} />
                             Retry
@@ -657,7 +657,7 @@ export default function InvoicesPage() {
                       variant="outline"
                       className="gap-1.5 border-red-300 text-red-700 hover:bg-red-100 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/40"
                       onClick={() => generateInvoicePdf(selected, false)}
-                      disabled={retryingId === selected.id}
+                      busy={retryingId === selected.id}
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${retryingId === selected.id ? 'animate-spin' : ''}`} />
                       Retry
@@ -667,10 +667,10 @@ export default function InvoicesPage() {
 
                 <div className="flex gap-2 pt-2">
                   {/* Invoices cannot be edited by the client (the database refuses it). */}
-                  <Button className="flex-1 gap-1.5" variant="outline" size="sm" onClick={() => generateInvoicePdf(selected, true)} disabled={retryingId === selected.id}>
+                  <Button className="flex-1 gap-1.5" variant="outline" size="sm" onClick={() => generateInvoicePdf(selected, true)} busy={retryingId === selected.id}>
                     <Eye className="w-4 h-4" /> Preview PDF
                   </Button>
-                  <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={() => generateInvoicePdf(selected, false)} disabled={retryingId === selected.id}>
+                  <Button className="flex-1 gap-1.5 gradient-primary border-0" size="sm" onClick={() => generateInvoicePdf(selected, false)} busy={retryingId === selected.id}>
                     {retryingId === selected.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                     {failedDownloads[selected.id] ? 'Retry Download' : 'Download'}
                   </Button>
