@@ -4,7 +4,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { CheckCircle2, Circle, Clock, Loader2, Plus, ShieldCheck, Trash2, UserPlus, Users, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -193,7 +193,7 @@ export function TeamConfirmation({ a, lang }: { a: api.SaDetail; lang: 'en' | 'a
         </div>
         {a.terms?.nda_required && c.members.some((m) => m.status === 'active' && !m.nda_ok) && (
           myId && a.client_id && c.members.some((m) => m.consultant_id === myId && m.status === 'active' && !m.nda_ok) ? (
-            <NdaStatusCard consultantId={myId} clientId={a.client_id} clientName={a.client_name ?? undefined} onReviewAndSign={() => setNdaOpen(true)}
+            <NdaStatusCard consultantId={myId} clientId={a.client_id} onReviewAndSign={() => setNdaOpen(true)}
               fallback={<div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span>{t('agreements.teamConfirm.ndaYours')}</span>
                 <Button size="sm" variant="outline" onClick={() => setNdaOpen(true)}>{t('agreements.teamConfirm.ndaSign')}</Button></div>} />
           ) : ['client', 'client_member'].includes(a.role) && a.client_id ? (
