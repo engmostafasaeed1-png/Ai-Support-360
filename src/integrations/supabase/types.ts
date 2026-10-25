@@ -8993,6 +8993,725 @@ export type Database = {
           },
         ]
       }
+      sla_acceptances: {
+        Row: {
+          accepted_at: string
+          consultant_id: string
+          context: string
+          disclaimer_version: string
+          id: string
+          policy_id: string | null
+          policy_version: number
+          snapshot_id: string
+          summary: string
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          consultant_id: string
+          context: string
+          disclaimer_version?: string
+          id?: string
+          policy_id?: string | null
+          policy_version: number
+          snapshot_id: string
+          summary: string
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          consultant_id?: string
+          context?: string
+          disclaimer_version?: string
+          id?: string
+          policy_id?: string | null
+          policy_version?: number
+          snapshot_id?: string
+          summary?: string
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_acceptances_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_acknowledgements: {
+        Row: {
+          created_at: string
+          eta: string | null
+          id: string
+          note: string
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          eta?: string | null
+          id?: string
+          note?: string
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          eta?: string | null
+          id?: string
+          note?: string
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_acknowledgements_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_alert_log: {
+        Row: {
+          compliance: number | null
+          created_at: string
+          day: string
+        }
+        Insert: {
+          compliance?: number | null
+          created_at?: string
+          day: string
+        }
+        Update: {
+          compliance?: number | null
+          created_at?: string
+          day?: string
+        }
+        Relationships: []
+      }
+      sla_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+          policy_id: string | null
+          ticket_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          policy_id?: string | null
+          ticket_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          policy_id?: string | null
+          ticket_id?: string | null
+        }
+        Relationships: []
+      }
+      sla_breach_choices: {
+        Row: {
+          choice: string
+          chosen_by: string
+          clock: string
+          created_at: string
+          extend_min: number | null
+          id: string
+          note: string
+          ticket_id: string
+        }
+        Insert: {
+          choice: string
+          chosen_by: string
+          clock: string
+          created_at?: string
+          extend_min?: number | null
+          id?: string
+          note?: string
+          ticket_id: string
+        }
+        Update: {
+          choice?: string
+          chosen_by?: string
+          clock?: string
+          created_at?: string
+          extend_min?: number | null
+          id?: string
+          note?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_breach_choices_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_counter_proposals: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          note: string
+          proposal_id: string | null
+          snapshot_id: string
+          status: string
+          targets: Json
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          note?: string
+          proposal_id?: string | null
+          snapshot_id: string
+          status?: string
+          targets: Json
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          note?: string
+          proposal_id?: string | null
+          snapshot_id?: string
+          status?: string
+          targets?: Json
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_counter_proposals_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_delivery_queue: {
+        Row: {
+          attempts: number
+          channel: string
+          clock: string | null
+          created_at: string
+          dedupe_key: string
+          failed_at: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          lease_until: string | null
+          payload: Json
+          sent_at: string | null
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          channel: string
+          clock?: string | null
+          created_at?: string
+          dedupe_key: string
+          failed_at?: string | null
+          id?: string
+          kind: string
+          last_error?: string | null
+          lease_until?: string | null
+          payload?: Json
+          sent_at?: string | null
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          channel?: string
+          clock?: string | null
+          created_at?: string
+          dedupe_key?: string
+          failed_at?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          lease_until?: string | null
+          payload?: Json
+          sent_at?: string | null
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_delivery_queue_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_holidays: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          day: string
+          id: string
+          label_ar: string
+          label_en: string
+          list_key: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          day: string
+          id?: string
+          label_ar?: string
+          label_en?: string
+          list_key: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          day?: string
+          id?: string
+          label_ar?: string
+          label_en?: string
+          list_key?: string
+        }
+        Relationships: []
+      }
+      sla_policies: {
+        Row: {
+          active_version: number | null
+          applies_to: Json
+          archive_reason: string | null
+          archived_at: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          current_version: number
+          description: string
+          effective_from: string | null
+          id: string
+          is_default: boolean
+          lock_version: number
+          name: string
+          scope: string
+          status: string
+          template_key: string | null
+          tenant_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active_version?: number | null
+          applies_to?: Json
+          archive_reason?: string | null
+          archived_at?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_version?: number
+          description?: string
+          effective_from?: string | null
+          id?: string
+          is_default?: boolean
+          lock_version?: number
+          name: string
+          scope: string
+          status?: string
+          template_key?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active_version?: number | null
+          applies_to?: Json
+          archive_reason?: string | null
+          archived_at?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_version?: number
+          description?: string
+          effective_from?: string | null
+          id?: string
+          is_default?: boolean
+          lock_version?: number
+          name?: string
+          scope?: string
+          status?: string
+          template_key?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      sla_policy_versions: {
+        Row: {
+          body: Json
+          change_note: string
+          content_hash: string
+          created_at: string
+          created_by: string | null
+          meta: Json
+          policy_id: string
+          version: number
+        }
+        Insert: {
+          body: Json
+          change_note?: string
+          content_hash: string
+          created_at?: string
+          created_by?: string | null
+          meta?: Json
+          policy_id: string
+          version: number
+        }
+        Update: {
+          body?: Json
+          change_note?: string
+          content_hash?: string
+          created_at?: string
+          created_by?: string | null
+          meta?: Json
+          policy_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_policy_versions_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "sla_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_reclass_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          from_severity: string
+          id: string
+          proposed_by: string
+          reason: string
+          status: string
+          ticket_id: string
+          to_severity: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          from_severity: string
+          id?: string
+          proposed_by: string
+          reason: string
+          status?: string
+          ticket_id: string
+          to_severity: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          from_severity?: string
+          id?: string
+          proposed_by?: string
+          reason?: string
+          status?: string
+          ticket_id?: string
+          to_severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_reclass_requests_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_reminders_sent: {
+        Row: {
+          channels: string[]
+          id: string
+          recipient_id: string
+          sent_at: string
+          seq: number
+          snapshot_id: string
+          step_key: string
+          ticket_id: string
+        }
+        Insert: {
+          channels?: string[]
+          id?: string
+          recipient_id: string
+          sent_at?: string
+          seq?: number
+          snapshot_id: string
+          step_key: string
+          ticket_id: string
+        }
+        Update: {
+          channels?: string[]
+          id?: string
+          recipient_id?: string
+          sent_at?: string
+          seq?: number
+          snapshot_id?: string
+          step_key?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_reminders_sent_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_ticket_clocks: {
+        Row: {
+          breached_at: string | null
+          consumed_min: number
+          due_at: string | null
+          extended_min: number
+          kind: string
+          met_at: string | null
+          pause_reason: string | null
+          paused_since: string | null
+          running_since: string | null
+          snapshot_id: string
+          started_at: string | null
+          stopped_at: string | null
+          swept_at: string | null
+          target_min: number
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          breached_at?: string | null
+          consumed_min?: number
+          due_at?: string | null
+          extended_min?: number
+          kind: string
+          met_at?: string | null
+          pause_reason?: string | null
+          paused_since?: string | null
+          running_since?: string | null
+          snapshot_id: string
+          started_at?: string | null
+          stopped_at?: string | null
+          swept_at?: string | null
+          target_min: number
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          breached_at?: string | null
+          consumed_min?: number
+          due_at?: string | null
+          extended_min?: number
+          kind?: string
+          met_at?: string | null
+          pause_reason?: string | null
+          paused_since?: string | null
+          running_since?: string | null
+          snapshot_id?: string
+          started_at?: string | null
+          stopped_at?: string | null
+          swept_at?: string | null
+          target_min?: number
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_ticket_clocks_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "sla_ticket_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sla_ticket_clocks_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_ticket_events: {
+        Row: {
+          actor_id: string | null
+          actor_role: string | null
+          created_at: string
+          data: Json
+          id: string
+          kind: string
+          ticket_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          kind: string
+          ticket_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          kind?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_ticket_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_ticket_pauses: {
+        Row: {
+          clock: string
+          ended_at: string | null
+          id: string
+          reason: string
+          started_at: string
+          ticket_id: string
+        }
+        Insert: {
+          clock: string
+          ended_at?: string | null
+          id?: string
+          reason: string
+          started_at?: string
+          ticket_id: string
+        }
+        Update: {
+          clock?: string
+          ended_at?: string | null
+          id?: string
+          reason?: string
+          started_at?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_ticket_pauses_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_ticket_snapshots: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: Json
+          id: string
+          policy_id: string | null
+          policy_name: string
+          policy_version: number
+          reason: string
+          reason_note: string | null
+          severity: string
+          superseded_at: string | null
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data: Json
+          id?: string
+          policy_id?: string | null
+          policy_name: string
+          policy_version: number
+          reason: string
+          reason_note?: string | null
+          severity: string
+          superseded_at?: string | null
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          policy_id?: string | null
+          policy_name?: string
+          policy_version?: number
+          reason?: string
+          reason_note?: string | null
+          severity?: string
+          superseded_at?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_ticket_snapshots_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "sla_policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sla_ticket_snapshots_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           created_at: string
@@ -16253,6 +16972,13 @@ export type Database = {
       ri_parse_ids: { Args: { _payload: Json }; Returns: string[] }
       ri_rate_text: { Args: { _n: number }; Returns: string }
       ri_run_summary: { Args: { _run: string }; Returns: Json }
+      sa_ticket_sla: {
+        Args: { _ticket: string }
+        Returns: {
+          policy_id: string
+          version: number
+        }[]
+      }
       safe_insert_notification: {
         Args: {
           _body: string
@@ -16365,6 +17091,142 @@ export type Database = {
         Returns: boolean
       }
       share_in_validity_period: { Args: { _config: Json }; Returns: boolean }
+      sla_add_business_minutes: {
+        Args: { _cal: Json; _from: string; _minutes: number }
+        Returns: string
+      }
+      sla_apply_snapshot: {
+        Args: {
+          _actor: string
+          _mode?: string
+          _note?: string
+          _override?: Json
+          _policy?: string
+          _reason: string
+          _severity?: string
+          _ticket: string
+          _version?: number
+        }
+        Returns: string
+      }
+      sla_assigned: {
+        Args: { _ticket: string }
+        Returns: {
+          consultant_id: string
+          is_lead: boolean
+          tz: string
+          user_id: string
+        }[]
+      }
+      sla_breach_actions: { Args: { _ticket: string }; Returns: undefined }
+      sla_breach_financial_hook: {
+        Args: { _clock: string; _ticket: string }
+        Returns: undefined
+      }
+      sla_business_minutes: {
+        Args: { _cal: Json; _from: string; _to: string }
+        Returns: number
+      }
+      sla_can_manage: {
+        Args: { _client: string; _tenant: string; _uid: string }
+        Returns: boolean
+      }
+      sla_can_read_owner: {
+        Args: { _client: string; _tenant: string; _uid: string }
+        Returns: boolean
+      }
+      sla_client_can_act: {
+        Args: { _ticket: string; _uid: string }
+        Returns: boolean
+      }
+      sla_default_settings: { Args: never; Returns: Json }
+      sla_deliver: {
+        Args: {
+          _clock: Database["public"]["Tables"]["sla_ticket_clocks"]["Row"]
+          _key: string
+          _role: string
+          _seq: number
+          _snapshot: Database["public"]["Tables"]["sla_ticket_snapshots"]["Row"]
+          _step: Json
+          _ticket: string
+          _user: string
+        }
+        Returns: undefined
+      }
+      sla_effective_policy: {
+        Args: { _ticket: string }
+        Returns: {
+          name: string
+          policy_id: string
+          version: number
+        }[]
+      }
+      sla_enabled: { Args: never; Returns: boolean }
+      sla_event: {
+        Args: { _actor: string; _data?: Json; _kind: string; _ticket: string }
+        Returns: undefined
+      }
+      sla_fire_steps: { Args: { _ticket: string }; Returns: number }
+      sla_first_response_at: {
+        Args: { _since: string; _ticket: string }
+        Returns: string
+      }
+      sla_fmt_minutes: {
+        Args: { _lang?: string; _min: number }
+        Returns: string
+      }
+      sla_has_errors: { Args: { _problems: Json }; Returns: boolean }
+      sla_hash: { Args: { _body: Json; _meta: Json }; Returns: string }
+      sla_in_quiet_hours: { Args: { _q: Json; _tz: string }; Returns: boolean }
+      sla_is_admin: { Args: { _uid: string }; Returns: boolean }
+      sla_lang: { Args: { _user: string }; Returns: string }
+      sla_pause_reason: {
+        Args: { _pauses: Json; _ticket: string }
+        Returns: string
+      }
+      sla_policy_problems: {
+        Args: { _body: Json; _meta: Json; _tenant?: string }
+        Returns: Json
+      }
+      sla_rate_ok: {
+        Args: { _bucket: string; _limit: number; _seconds: number }
+        Returns: boolean
+      }
+      sla_reconcile: { Args: { _ticket: string }; Returns: undefined }
+      sla_resolve_calendar: {
+        Args: { _company_tz: string; _coverage: Json }
+        Returns: Json
+      }
+      sla_settings: { Args: never; Returns: Json }
+      sla_severity_for: { Args: { _urgency: string }; Returns: string }
+      sla_snapshot_data: {
+        Args: {
+          _policy: string
+          _severity: string
+          _ticket: string
+          _version: number
+        }
+        Returns: Json
+      }
+      sla_start_at: {
+        Args: { _rule: string; _ticket: string }
+        Returns: string
+      }
+      sla_step_recipients: {
+        Args: { _extra: Json; _ticket: string; _who: Json }
+        Returns: {
+          role: string
+          tz: string
+          user_id: string
+        }[]
+      }
+      sla_sweep: { Args: { _limit?: number }; Returns: number }
+      sla_text_ok: { Args: { _t: string }; Returns: boolean }
+      sla_ticket_role: {
+        Args: { _ticket: string; _uid: string }
+        Returns: string
+      }
+      sla_valid_tz: { Args: { _tz: string }; Returns: boolean }
       submit_consultant_profile: { Args: never; Returns: Json }
       submit_demo_request: {
         Args: {
