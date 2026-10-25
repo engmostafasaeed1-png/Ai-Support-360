@@ -51,7 +51,7 @@ export function useSlaList<T extends { id: string }>(rows: T[]) {
   return { on, map, atRisk, filter, setFilter, sortByLeft, setSortByLeft, apply };
 }
 
-export function SlaFilterBar({ ctl }: { ctl: ReturnType<typeof useSlaList> }) {
+export function SlaFilterBar({ ctl }: { ctl: Pick<ReturnType<typeof useSlaList>, 'on' | 'filter' | 'setFilter' | 'sortByLeft' | 'setSortByLeft'> }) {
   const { t } = useTranslation();
   if (!ctl.on) return null;
   return (
