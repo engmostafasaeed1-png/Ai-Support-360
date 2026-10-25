@@ -1481,10 +1481,14 @@ BEGIN
   UPDATE public.sa_replacements SET status = CASE WHEN _accept THEN 'done' ELSE 'declined' END, done_at = now() WHERE id = _replacement;
   IF _accept THEN
     UPDATE public.sa_members SET status = 'ended', ended_at = now() WHERE agreement_id = x.agreement_id AND consultant_id = x.from_consultant AND status = 'active';
-    UPDATE public.sa_members SET member_role = 'lead', status = 'active', accepted_at = COALESCE(accepted_at, now())
-     WHERE agreement_id = x.agreement_id AND consultant_id = x.to_consultant AND status IN ('invited', 'active', 'declined');
+    UPDATE public.sa_members m SET member_role = 'lead', status = 'active', required = true, accepted_at = COALESCE(m.accepted_at, now()), sla_accepted_at = now(),
+           sla_policy_id = NULLIF(ag.terms -> 'sla' ->> 'policy_id', '')::uuid, sla_version = NULLIF(ag.terms -> 'sla' ->> 'version', '')::int, sla_hash = ag.terms -> 'sla' ->> 'hash'
+      FROM public.sa_agreements ag
+     WHERE ag.id = x.agreement_id AND m.agreement_id = x.agreement_id AND m.consultant_id = x.to_consultant AND m.status IN ('invited', 'active', 'declined');
     IF NOT FOUND THEN
-      INSERT INTO public.sa_members (agreement_id, consultant_id, member_role, status, accepted_at) VALUES (x.agreement_id, x.to_consultant, 'lead', 'active', now());
+      INSERT INTO public.sa_members (agreement_id, consultant_id, member_role, status, accepted_at, sla_accepted_at, sla_policy_id, sla_version, sla_hash)
+      SELECT x.agreement_id, x.to_consultant, 'lead', 'active', now(), now(), NULLIF(ag.terms -> 'sla' ->> 'policy_id', '')::uuid, NULLIF(ag.terms -> 'sla' ->> 'version', '')::int, ag.terms -> 'sla' ->> 'hash'
+        FROM public.sa_agreements ag WHERE ag.id = x.agreement_id;
     END IF;
     UPDATE public.sa_agreements SET consultant_id = x.to_consultant WHERE id = x.agreement_id;
     PERFORM public.sa_event(x.agreement_id, 'lead_replaced', uid);
@@ -1620,6 +1624,16 @@ BEGIN
 END $$;
 DROP TRIGGER IF EXISTS sa_ticket_link ON public.tickets;   -- runs before sla_ticket_insert (name order), so the SLA hook sees the link
 CREATE TRIGGER sa_ticket_link AFTER INSERT ON public.tickets FOR EACH ROW EXECUTE FUNCTION public.sa_on_ticket_insert();
+-- ...and this one after it (name order 'sm' > 'sla'), once the ticket has its SLA snapshot.
+CREATE OR REPLACE FUNCTION public.sa_on_ticket_insert_sla()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM public.sa_tickets st WHERE st.ticket_id = NEW.id) THEN PERFORM public.sa_record_crew_sla(NEW.id); END IF;
+  RETURN NULL;
+EXCEPTION WHEN OTHERS THEN RETURN NULL;
+END $$;
+DROP TRIGGER IF EXISTS sm_sa_crew_sla ON public.tickets;
+CREATE TRIGGER sm_sa_crew_sla AFTER INSERT ON public.tickets FOR EACH ROW EXECUTE FUNCTION public.sa_on_ticket_insert_sla();
 
 -- New-request form switch "Use my support agreement": the ticket's own client (or a company member who may use the
 -- agreement) attaches a just-created, still unassigned ticket. The SLA snapshot is re-applied with the agreement's policy.
@@ -1636,8 +1650,9 @@ BEGIN
     IF pol IS NOT NULL AND EXISTS (SELECT 1 FROM public.sla_ticket_snapshots s WHERE s.ticket_id = _ticket AND s.superseded_at IS NULL AND (s.policy_id IS DISTINCT FROM pol OR s.policy_version IS DISTINCT FROM ver)) THEN
       EXECUTE 'SELECT public.sla_apply_snapshot($1, ''new_policy'', $2, ''fresh'', NULL, ''Support agreement SLA'', $3, $4)' USING _ticket, uid, pol, ver;
     END IF;
+    PERFORM public.sa_record_crew_sla(_ticket);
   END IF;
-  RETURN jsonb_build_object('linked', ok);
+  RETURN jsonb_build_object('linked', ok, 'agreement_sla', ok AND pol IS NOT NULL);
 END $$;
 
 -- Timesheet activity keeps the agreement "active" for the bypass check.
@@ -1664,10 +1679,13 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $
        OR (_tenant IS NULL AND a.client_id = auth.uid()))
 $$;
 
--- "Agreement: <name>" tags for lists and headers (parties only).
+-- "Agreement: <name>" tags for lists and headers (parties only), with the reference and whether the ticket runs on the
+-- agreement's SLA snapshot ("Agreement SLA") or on the normal flow ("Platform SLA" / company policy).
 CREATE OR REPLACE FUNCTION public.sa_ticket_tags(_tickets uuid[])
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT COALESCE(jsonb_agg(jsonb_build_object('ticket_id', st.ticket_id, 'agreement_id', a.id, 'name', a.name)), '[]'::jsonb)
+  SELECT COALESCE(jsonb_agg(jsonb_build_object('ticket_id', st.ticket_id, 'agreement_id', a.id, 'name', a.name, 'reference', a.reference, 'status', a.status,
+           'sla_active', a.status IN ('active', 'renewal_due'), 'sla_name', a.terms -> 'sla' ->> 'name',
+           'sla_applied', public.sa_ticket_uses_agreement_sla(st.ticket_id, NULLIF(a.terms -> 'sla' ->> 'policy_id', '')::uuid, NULLIF(a.terms -> 'sla' ->> 'version', '')::int))), '[]'::jsonb)
     FROM public.sa_tickets st JOIN public.sa_agreements a ON a.id = st.agreement_id
    WHERE st.ticket_id = ANY (_tickets[1:200]) AND public.sa_role(a.id, auth.uid()) IN ('admin', 'client', 'client_member', 'lead', 'team')
 $$;
