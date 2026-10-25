@@ -15,6 +15,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 import { openExternal } from '@/lib/safeUrl';
+import { useNdaSigningSettings } from '@/hooks/useNdaSigning';
+import NdaSignForm from '@/components/nda/NdaSignForm';
 
 interface NDASigningModalProps {
   open: boolean;
@@ -31,6 +33,8 @@ export default function NDASigningModal({
   const { t } = useTranslation();
   const { template, loading: templateLoading } = useNDATemplate();
   const { signNDA, wasRevoked } = useNDAAgreement(consultantId, clientId);
+  // stricter signing (signature + full name + ID + authorisation) once docs/sql/nda-signature-identity.sql is applied
+  const strict = useNdaSigningSettings().data ?? null;
 
   const [step, setStep] = useState<'preview' | 'sign'>('preview');
   const [consultantName, setConsultantName] = useState('');
@@ -203,6 +207,10 @@ export default function NDASigningModal({
     agreed &&
     (sigType === 'type' ? typedName.trim().length >= 2 : hasDrawn);
 
+  const ndaContentForRecord = hasCustomNDA
+    ? `Custom NDA document provided by ${clientCompany || clientDisplayName || 'the client'}: "${customNdaFilename || 'NDA document'}".\nThe consultant ${consultantName || ''} confirms having read and agreed to all terms of that document.${filledTemplate.trim().length >= 20 ? `\n\n${filledTemplate}` : ''}`
+    : filledTemplate;
+
   const handleSign = async () => {
     if (!canSubmit) return;
     setSubmitting(true);
@@ -211,9 +219,6 @@ export default function NDASigningModal({
         ? canvasRef.current!.toDataURL('image/png')
         : typedName.trim();
 
-    const ndaContentForRecord = hasCustomNDA
-      ? `Custom NDA document provided by ${clientCompany || clientDisplayName || 'the client'}: "${customNdaFilename || 'NDA document'}".\nThe consultant ${consultantName || ''} confirms having read and agreed to all terms of that document.${filledTemplate.trim().length >= 20 ? `\n\n${filledTemplate}` : ''}`
-      : filledTemplate;
     const success = await signNDA(sigData, sigType, ndaContentForRecord);
     setSubmitting(false);
     if (success) {
@@ -343,8 +348,36 @@ export default function NDASigningModal({
               </Button>
             </DialogFooter>
           </>
+        ) : strict ? (
+          /* ========== SIGN STEP (signature + full legal name + ID document + authorisation) ========== */
+          <div className="flex-1 space-y-4 overflow-y-auto pe-1">
+            {!hasCustomNDA && (
+              <div className="border rounded-lg p-3 bg-muted/20">
+                <ScrollArea className="max-h-[120px]">
+                  <pre className="whitespace-pre-wrap text-xs font-sans text-muted-foreground leading-relaxed" dir="auto">{filledTemplate}</pre>
+                </ScrollArea>
+              </div>
+            )}
+            <NdaSignForm
+              party="consultant"
+              action="sign"
+              consultantId={consultantId}
+              clientId={clientId}
+              ndaContent={ndaContentForRecord}
+              defaultName={consultantName}
+              allowTyped={strict.allow_typed_signature}
+              onCancel={() => onOpenChange(false)}
+              secondaryAction={(
+                <Button type="button" variant="ghost" className="gap-1.5" onClick={() => setStep('preview')}>
+                  <ArrowLeft className="w-4 h-4" />
+                  {t('nda.back_to_review', 'Back to Review')}
+                </Button>
+              )}
+              onDone={() => { onOpenChange(false); onSigned?.(); }}
+            />
+          </div>
         ) : (
-          /* ========== SIGN STEP ========== */
+          /* ========== SIGN STEP (before the stricter signing is installed) ========== */
           <>
             {/* Collapsed NDA reference */}
             {!hasCustomNDA && (
