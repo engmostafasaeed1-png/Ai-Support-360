@@ -13,6 +13,9 @@ import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
 import ClientSignNDADialog from '@/components/client/ClientSignNDADialog';
 import ClientNDAUpload from '@/components/client/ClientNDAUpload';
 import { PenTool } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { useNdaSigningSettings, useRefreshNda } from '@/hooks/useNdaSigning';
+import NdaStatusCard from '@/components/nda/NdaStatusCard';
 
 interface NDAContract {
   id: string;
@@ -44,10 +47,31 @@ export default function ContractsPage() {
     });
   }, []);
   const [revoking, setRevoking] = useState(false);
+  const strict = useNdaSigningSettings().data ?? null;
+  const refreshNda = useRefreshNda();
+  const [params] = useSearchParams();
+  const focusId = params.get('nda');
+  const [companyName, setCompanyName] = useState('');
 
   useEffect(() => {
     fetchContracts();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data: cp } = await supabase.from('client_profiles').select('company_name').eq('user_id', user.id).maybeSingle();
+      setCompanyName(cp?.company_name || '');
+    });
   }, []);
+
+  // deep link from the e-mail / notification: open the signing step of that NDA once
+  const [focusHandled, setFocusHandled] = useState(false);
+  useEffect(() => {
+    if (!focusId || focusHandled || loading) return;
+    const c = contracts.find((x) => x.id === focusId);
+    setFocusHandled(true);
+    if (!c) return;
+    document.getElementById(`nda-row-${c.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!c.revoked_at && !c.client_signed_at) setSignContract(c);
+  }, [focusId, focusHandled, loading, contracts]);
 
   const fetchContracts = async () => {
     setLoading(true);
@@ -197,7 +221,7 @@ export default function ContractsPage() {
           </Card>
         ) : (
           contracts.map((contract) => (
-            <Card key={contract.id} className="rounded-2xl border-border/50 hover:shadow-premium transition-all">
+            <Card key={contract.id} id={`nda-row-${contract.id}`} className={`rounded-2xl border-border/50 hover:shadow-premium transition-all ${focusId === contract.id ? 'ring-2 ring-primary/40' : ''}`}>
               <CardContent className="p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -242,7 +266,7 @@ export default function ContractsPage() {
                     <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => downloadPDF(contract)}>
                       <Download className="w-3.5 h-3.5" /> PDF
                     </Button>
-                    {!contract.revoked_at && !contract.client_signed_at && (
+                    {!strict && !contract.revoked_at && !contract.client_signed_at && (
                       <Button size="sm" className="gap-1 text-xs" onClick={() => setSignContract(contract)}>
                         <PenTool className="w-3.5 h-3.5" /> Sign
                       </Button>
@@ -254,6 +278,10 @@ export default function ContractsPage() {
                     )}
                   </div>
                 </div>
+                {strict && (
+                  <NdaStatusCard ndaId={contract.id} consultantName={contract.consultant_name} clientName={companyName || undefined}
+                    onReviewAndSign={() => setSignContract(contract)} className="mt-4" />
+                )}
               </CardContent>
             </Card>
           ))
@@ -298,7 +326,7 @@ export default function ContractsPage() {
 
               <div className="border rounded-lg p-4">
                 <p className="text-xs text-muted-foreground mb-2">Signature</p>
-                {viewContract.signature_type === 'draw' ? (
+                {viewContract.signature_data?.startsWith('data:image') ? (
                   <img src={viewContract.signature_data} alt="Signature" className="max-h-24 border rounded" />
                 ) : (
                   <p className="text-xl font-serif italic text-foreground">{viewContract.signature_data}</p>
@@ -309,7 +337,7 @@ export default function ContractsPage() {
                 <p className="text-xs text-muted-foreground mb-2">Client signature</p>
                 {!viewContract.client_signed_at ? (
                   <p className="text-sm text-muted-foreground">Not signed yet.</p>
-                ) : viewContract.client_signature_type === 'draw' ? (
+                ) : viewContract.client_signature_data?.startsWith('data:image') ? (
                   <img src={viewContract.client_signature_data || ''} alt="Client signature" className="max-h-24 border rounded" />
                 ) : (
                   <p className="text-xl font-serif italic text-foreground">{viewContract.client_signature_data}</p>
@@ -335,7 +363,7 @@ export default function ContractsPage() {
           ndaContent={signContract.nda_content}
           consultantName={signContract.consultant_name}
           defaultName={signerDefault}
-          onSigned={fetchContracts}
+          onSigned={() => { fetchContracts(); void refreshNda(); }}
         />
       )}
 
