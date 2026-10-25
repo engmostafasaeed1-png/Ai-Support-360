@@ -2239,11 +2239,18 @@ GRANT EXECUTE ON FUNCTION
   public.sa_select_application(uuid), public.sa_reopen(uuid, text), public.sa_offer(uuid, jsonb, text), public.sa_respond_offer(uuid, boolean),
   public.sa_accept_terms(uuid, integer, text, text), public.sa_propose_rate_change(uuid, numeric, numeric, numeric, numeric, date, text),
   public.sa_decide_rate_change(uuid, boolean), public.sa_request_termination(uuid, text), public.sa_handover_note(uuid, text),
-  public.sa_suspend(uuid, date, text), public.sa_resume(uuid), public.sa_set_auto_renew(uuid, boolean), public.sa_invite_member(uuid, uuid),
-  public.sa_member_respond(uuid, boolean), public.sa_request_replacement(uuid, uuid, text), public.sa_admin_decide_replacement(uuid, boolean, text),
+  public.sa_suspend(uuid, date, text), public.sa_resume(uuid), public.sa_set_auto_renew(uuid, boolean),
+  public.sa_invite_member(uuid, uuid, text, numeric, jsonb, uuid, boolean), public.sa_update_member(uuid, uuid, text, numeric, jsonb, uuid, boolean),
+  public.sa_remove_member(uuid, uuid, text), public.sa_member_respond(uuid, boolean, boolean, text),
+  public.sa_request_replacement(uuid, uuid, text), public.sa_admin_decide_replacement(uuid, boolean, text),
   public.sa_replacement_accept(uuid, boolean), public.sa_post_message(uuid, uuid, text), public.sa_usable(uuid), public.sa_attach_ticket(uuid, uuid), public.sa_ticket_tags(uuid[]),
-  public.sa_get(uuid), public.sa_list_mine(uuid), public.sa_admin_set_settings(jsonb, text), public.sa_admin_settings(), public.sa_admin_list(text), public.sa_admin_review(uuid, boolean, text)
+  public.sa_get(uuid), public.sa_list_mine(uuid), public.sa_admin_set_settings(jsonb, text), public.sa_admin_settings(), public.sa_admin_list(text), public.sa_admin_review(uuid, boolean, text),
+  public.sa_document_begin_upload(uuid, uuid, text, text, text, text, bigint, text, boolean), public.sa_document_finish_upload(uuid),
+  public.sa_document_open(uuid, integer), public.sa_document_archive(uuid)
 TO authenticated;
+-- Every storage request evaluates the restrictive bucket policies (anon included), so the two path checks are callable
+-- by both roles; they only answer true for the signed-in owner of a prepared upload / a just-logged download.
+GRANT EXECUTE ON FUNCTION public.sa_doc_storage_read_ok(text), public.sa_doc_storage_insert_ok(text) TO anon, authenticated;
 -- The SLA hook must stay callable from the SLA functions (they run as the owner; no browser grant needed).
 
 -- ------------------------------------------------------------------------------------------------ OPTIONAL (owner decision, commented out)
