@@ -1,11 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/AuthContext';
 import * as api from '@/lib/sla/api';
 
 /** Admin switch + severities + bounds (null-safe: before the SQL is applied `ready` is false and the feature is off). */
 export function useSlaSettings() {
-  const { user } = useAuth();
-  return useQuery({ queryKey: ['sla-settings'], queryFn: api.fetchPublicSettings, enabled: !!user, staleTime: 5 * 60_000 });
+  return useQuery({ queryKey: ['sla-settings'], queryFn: api.fetchPublicSettings, staleTime: 5 * 60_000, retry: false });
 }
 
 /** True only when the database part exists and the owner switched it on. */
