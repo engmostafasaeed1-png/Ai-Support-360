@@ -406,7 +406,7 @@ BEGIN
     PERFORM pg_temp.as_user(oa);
     r := public.sa_attach_ticket(doc, a3);
     IF NOT (r ->> 'linked')::boolean OR NOT ((public.sa_ticket_tags(ARRAY[doc]) -> 0 ->> 'sla_applied')::boolean) THEN RAISE EXCEPTION 'SA34 agreement sla %', r; END IF;
-    IF NOT EXISTS (SELECT 1 FROM public.sla_acceptances x WHERE x.ticket_id = doc AND x.consultant_id = kc) THEN RAISE EXCEPTION 'SA34 lead acceptance % % %', (SELECT jsonb_agg(to_jsonb(m)) FROM public.sa_members m WHERE m.agreement_id = a3), (SELECT terms -> 'sla' - 'body' FROM public.sa_agreements WHERE id = a3), (SELECT jsonb_agg(to_jsonb(s) - 'data') FROM public.sla_ticket_snapshots s WHERE s.ticket_id = doc); END IF;
+    IF NOT EXISTS (SELECT 1 FROM public.sla_acceptances x WHERE x.ticket_id = doc AND x.consultant_id = kc) THEN RAISE EXCEPTION 'SA34 lead acceptance % % %', (SELECT jsonb_agg(to_jsonb(m)) FROM public.sa_members m WHERE m.agreement_id = a3), (SELECT (terms -> 'sla') - 'body' FROM public.sa_agreements WHERE id = a3), (SELECT jsonb_agg(to_jsonb(s) - 'data') FROM public.sla_ticket_snapshots s WHERE s.ticket_id = doc); END IF;
   END IF;
 
   -- SA35 crew changes: only the client; the lead cannot be removed; a member may leave with a reason.
