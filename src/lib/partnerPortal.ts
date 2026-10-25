@@ -15,6 +15,8 @@ export function capacityConflict(r: Pick<PartnerResource, 'capacity_hours_week' 
 }
 
 export const partnerApi = {
+  context: () => safeRpc<{ partner: boolean; demo_default: boolean; admin: boolean }>('partner_context'),
+  adminSetDemo: (tenant: string, on: boolean) => safeRpc('admin_set_tenant_demo_partner', { _tenant: tenant, _on: on }),
   amI: () => safeRpc<boolean>('partner_am_i'),
   overview: () => safeRpc<PartnerResource[]>('partner_overview'),
   resource: (consultantId: string) => safeRpc<Record<string, any>>('partner_resource_overview', { _consultant_id: consultantId }),

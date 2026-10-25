@@ -11,9 +11,9 @@ export default function PartnerCompaniesCard() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ['admin-partner-tenants'], queryFn: async () => {
-    const { data, error } = await supabase.from('tenants').select('id, name, is_partner' as 'id, name').order('name').limit(500);
+    const { data, error } = await supabase.from('tenants').select('id, name, is_partner, demo_partner' as 'id, name').order('name').limit(500);
     if (error) return null;
-    return (data ?? []) as unknown as { id: string; name: string; is_partner: boolean }[];
+    return (data ?? []) as unknown as { id: string; name: string; is_partner: boolean; demo_partner: boolean }[];
   } });
   if (q.data === null) return <p className="text-sm text-muted-foreground">{t('partner.admin_not_ready', 'Partner companies become available once the partner database update is applied.')}</p>;
   return (
@@ -21,7 +21,14 @@ export default function PartnerCompaniesCard() {
       <p className="p-4 text-sm text-muted-foreground">{t('partner.admin_hint', 'Turn on only after you have checked the company. Partners can invite consultants and manage their availability.')}</p>
       {(q.data ?? []).map((tn) => (
         <label key={tn.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-          <span>{tn.name}</span>
+          <span className="flex-1">{tn.name}</span>
+          <span className="text-xs text-muted-foreground">{t('partner.admin_demo', 'Demo')}</span>
+          <Switch checked={tn.demo_partner} aria-label={`${tn.name} ${t('partner.admin_demo', 'Demo')}`} onCheckedChange={async (v) => {
+            const r = await partnerApi.adminSetDemo(tn.id, v);
+            if (r.error) toast.error(t('partner.error', 'Could not save. Please try again.'));
+            qc.invalidateQueries({ queryKey: ['admin-partner-tenants'] });
+          }} />
+          <span className="text-xs text-muted-foreground">{t('partner.admin_partner', 'Partner')}</span>
           <Switch checked={tn.is_partner} aria-label={tn.name} onCheckedChange={async (v) => {
             const r = await partnerApi.adminSetPartner(tn.id, v);
             if (r.error) toast.error(t('partner.error', 'Could not save. Please try again.'));

@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Building2, UserPlus } from 'lucide-react';
+import { Building2, FlaskConical, UserPlus } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { DEMO_DETAILS, DEMO_RESOURCES, demoInvite, demoSetAvailability } from '@/lib/partnerDemo';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,9 +25,17 @@ function SlaChip({ risk }: { risk: number }) {
 export default function PartnerPortalPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const list = useQuery({ queryKey: ['partner-overview'], queryFn: async () => {
+  const ctx = useQuery({ queryKey: ['partner-context'], queryFn: async () => (await partnerApi.context()).data ?? { partner: false, demo_default: false, admin: false } });
+  const [demo, setDemo] = useState<boolean | null>(null);
+  // Default ON for demo partner companies; admins without a partner company can only see the demo.
+  useEffect(() => { if (ctx.data && demo === null) setDemo(ctx.data.demo_default || !ctx.data.partner); }, [ctx.data, demo]);
+  const isDemo = demo === true;
+  const [demoRows, setDemoRows] = useState(DEMO_RESOURCES);
+  const real = useQuery({ queryKey: ['partner-overview'], enabled: demo === false, queryFn: async () => {
     const r = await partnerApi.overview(); if (r.error) throw new Error(r.error.message); return r.data ?? [];
   } });
+  const list = isDemo ? { data: demoRows, isLoading: false, isError: false } : { data: real.data, isLoading: real.isLoading || demo === null, isError: real.isError };
+  const demoToast = () => toast.info(t('partner.demo_toast', 'Demo: nothing is saved'));
   const [email, setEmail] = useState('');
   const [inviting, setInviting] = useState(false);
   const [sel, setSel] = useState<Set<string>>(new Set());
@@ -40,6 +50,7 @@ export default function PartnerPortalPage() {
   const refresh = () => qc.invalidateQueries({ queryKey: ['partner-overview'] });
 
   const invite = async () => {
+    if (isDemo) { setDemoRows((rs) => demoInvite(rs, email.trim())); setEmail(''); return demoToast(); }
     setInviting(true);
     const r = await partnerApi.invite(email.trim());
     setInviting(false);
@@ -50,6 +61,13 @@ export default function PartnerPortalPage() {
   };
 
   const apply = async () => {
+    if (isDemo) {
+      const res = demoSetAvailability(demoRows, [...sel], { status: status || null, capacity: cap === '' ? null : Number(cap),
+        holdFrom: holdFrom ? new Date(holdFrom).toISOString() : null, holdTo: holdTo ? new Date(holdTo).toISOString() : null });
+      setDemoRows(res.rows); demoToast();
+      if (res.conflicts.length) toast.warning(t('partner.conflicts', 'Saved. {{n}} active agreement commitment(s) are affected: {{list}}', { n: res.conflicts.length, list: res.conflicts.map((c) => c.agreement).join(', ') }));
+      setSel(new Set()); setStatus(''); setCap(''); setHoldFrom(''); setHoldTo(''); return;
+    }
     setSaving(true);
     const r = await partnerApi.setAvailability([...sel], {
       status: status || null, capacity: cap === '' ? null : Number(cap),
@@ -76,6 +94,17 @@ export default function PartnerPortalPage() {
           <p className="text-sm text-muted-foreground">{t('partner.subtitle', 'Your consultants, their availability and assignments in one place')}</p>
         </div>
       </header>
+
+      {(ctx.data?.partner || ctx.data?.admin) && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <Switch checked={isDemo} disabled={!ctx.data?.partner} /* disabled-ok: admins without a partner company have no real data to switch to */
+              onCheckedChange={(v) => { setDemo(v); setSel(new Set()); setOpen(null); }} aria-label={t('partner.demo_switch', 'Demo data')} />
+            {t('partner.demo_switch', 'Demo data')}
+          </label>
+          {isDemo && <span className="flex items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-1.5 text-sm font-semibold text-foreground" role="status">
+            <FlaskConical className="h-4 w-4" />{t('partner.demo_banner', 'Demo data - not real consultants')}</span>}
+        </div>)}
 
       {list.isError ? <Card className="rounded-2xl"><CardContent className="p-6 text-sm text-muted-foreground">{t('partner.no_access', 'This page is for verified partner companies. Ask the platform team to enable your company.')}</CardContent></Card> : (
       <Tabs defaultValue="resources">
@@ -152,7 +181,7 @@ export default function PartnerPortalPage() {
         </TabsContent>
 
         <TabsContent value="assignments" className="space-y-3">
-          {active.map((r) => <AssignmentsCard key={r.resource_id} r={r} />)}
+          {active.map((r) => <AssignmentsCard key={r.resource_id} r={r} demo={isDemo} />)}
           {active.length === 0 && <p className="text-sm text-muted-foreground">{t('partner.empty', 'No resources yet. Invite your first consultant above.')}</p>}
         </TabsContent>
       </Tabs>)}
@@ -160,22 +189,23 @@ export default function PartnerPortalPage() {
       <Sheet open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
           <SheetHeader><SheetTitle>{open?.name}</SheetTitle></SheetHeader>
-          {open && <ResourceDetail consultantId={open.consultant_id} />}
+          {open && <ResourceDetail consultantId={open.consultant_id} demo={isDemo} />}
         </SheetContent>
       </Sheet>
     </div>
   );
 }
 
-function useResource(id: string) {
-  return useQuery({ queryKey: ['partner-resource', id], queryFn: async () => {
+function useResource(id: string, demo: boolean) {
+  const realQ = useQuery({ queryKey: ['partner-resource', id], enabled: !demo, queryFn: async () => {
     const r = await partnerApi.resource(id); if (r.error) throw new Error(r.error.message); return r.data ?? {};
   } });
+  return demo ? { data: DEMO_DETAILS[id] ?? {}, isLoading: false } : realQ;
 }
 
-function AssignmentsCard({ r }: { r: PartnerResource }) {
+function AssignmentsCard({ r, demo }: { r: PartnerResource; demo: boolean }) {
   const { t } = useTranslation();
-  const q = useResource(r.consultant_id);
+  const q = useResource(r.consultant_id, demo);
   const d = q.data as any;
   return (
     <Card className="rounded-2xl"><CardContent className="space-y-2 p-4">
@@ -189,14 +219,15 @@ function AssignmentsCard({ r }: { r: PartnerResource }) {
   );
 }
 
-function ResourceDetail({ consultantId }: { consultantId: string }) {
+function ResourceDetail({ consultantId, demo }: { consultantId: string; demo: boolean }) {
   const { t } = useTranslation();
-  const q = useResource(consultantId);
+  const q = useResource(consultantId, demo);
   const d = q.data as any;
   if (q.isLoading) return <Skeleton className="mt-4 h-40" />;
   if (!d) return null;
   const yes = (v: boolean) => (v ? t('partner.yes', 'Done') : t('partner.no', 'Missing'));
   const items: [string, string][] = [
+    ...(d.modules ? [[t('partner.d_modules', 'Modules / versions'), String(d.modules)] as [string, string]] : []),
     [t('partner.d_verification', 'Verification'), String(d.verification ?? '—')],
     [t('partner.d_profile', 'Profile submitted'), yes(d.profile_submitted)],
     [t('partner.d_interview', 'AI interview'), yes(d.interview_done)],
