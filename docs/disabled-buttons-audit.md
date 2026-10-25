@@ -27,7 +27,7 @@ Menu items, switches, checkboxes and inputs are not buttons and keep the native 
 2. **Submit timesheet**: the reason text comes from the timesheet rules as one sentence; it is shown as is. A structured cause would let the button link to the exact step.
 3. **Subscribe (plan checkout)**: "no price yet" can mean still loading or an invalid ticket count; both currently say "Enter a ticket count to see the price."
 4. **Activate agreement**: there is no Activate button; an agreement activates automatically once the crew checklist is complete. Confirm that is wanted, or we add a button.
-5. **Approve BRD**: the button has no dimmed state today (approval is refused by the server with a readable reason). Confirm no extra pre-condition (for example "read every section") is wanted.
+5. **Approve BRD**: decided by the owner (Oct 25): dimmed until the consultant has opened every section of the version under review (`brd_sections_unread` / `brd_sections_not_opened`, `src/lib/brdSectionsRead.ts`). Request changes and Decline are never held back.
 6. **Four-eyes admin approvals** stay hidden (not dimmed) for the admin who started the action, as before.
 
 ## Opt-outs
@@ -743,6 +743,10 @@ Condition = what the button shows (reason keys from the catalogue) or the loadin
 | brd_not_approved | next | Open the BRD | فتح مستند المتطلبات |
 | brd_not_submitted | message | Submit a business requirements document version first. | أرسل نسخة من مستند متطلبات العمل أولًا. |
 | brd_not_submitted | next | Open the BRD | فتح مستند المتطلبات |
+| brd_sections_unread | message | Open every BRD section before approving ({{done}} of {{total}} opened). | افتح كل أقسام مستند المتطلبات قبل الاعتماد (فُتح {{done}} من {{total}}). |
+| brd_sections_unread | next | Go to the next section | الانتقال إلى القسم التالي |
+| brd_sections_not_opened | message | Open this BRD version and read every section before approving. | افتح هذه النسخة من مستند المتطلبات واقرأ كل أقسامها قبل الاعتماد. |
+| brd_sections_not_opened | next | Open the BRD below | فتح المستند أدناه |
 | bids_closed | message | Bidding for this request has closed. | أُغلق باب العروض لهذا الطلب. |
 | no_bids_yet | message | No bids have arrived yet. | لم تصل أي عروض بعد. |
 | work_not_started | message | Work on this request has not started yet. | لم يبدأ العمل على هذا الطلب بعد. |
