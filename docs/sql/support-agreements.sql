@@ -2082,6 +2082,40 @@ BEGIN
   RETURN res || jsonb_build_object('base', base, 'payment_id', pid);
 END $$;
 
+-- Monthly statement e-mails to the recipients the client chose inside the company (terms.statement_recipients,
+-- only while terms.statement_email is on). Recipients outside the company never receive anything.
+CREATE OR REPLACE FUNCTION public.sa_notify_statement(_id uuid, _month date)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE a public.sa_agreements; x text; u uuid; m text := to_char(_month, 'YYYY-MM');
+BEGIN
+  SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
+  IF a.id IS NULL OR NOT COALESCE((a.terms ->> 'statement_email')::boolean, false) THEN RETURN; END IF;
+  FOR x IN SELECT jsonb_array_elements_text(COALESCE(a.terms -> 'statement_recipients', '[]'::jsonb)) LOOP
+    u := public.sa_company_user(a.tenant_id, a.client_id, x);
+    CONTINUE WHEN u IS NULL;
+    PERFORM public.sa_notify(_id, u, 'Monthly statement ' || m || ': ' || a.name, 'الكشف الشهري ' || m || ': ' || a.name,
+      'The monthly statement of the support agreement is ready in the portal (hours, SLA compliance, spend).',
+      'الكشف الشهري لاتفاقية الدعم جاهز في البوابة (الساعات والالتزام باتفاقية مستوى الخدمة والإنفاق).', 'client', true, 'statement_r:' || _id || ':' || m || ':' || u);
+  END LOOP;
+END $$;
+
+-- Statement notice for pay-as-you-go and capacity agreements (hours bank statements come with the settlement).
+CREATE OR REPLACE FUNCTION public.sa_statement_notice(_id uuid, _month date)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE a public.sa_agreements; n int; m text := to_char(_month, 'YYYY-MM'); used numeric;
+BEGIN
+  SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
+  INSERT INTO public.sa_notices (dedupe_key) VALUES ('stmt_event:' || _id || ':' || m) ON CONFLICT DO NOTHING;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  IF n = 0 THEN RETURN; END IF;
+  used := public.sa_month_hours(_id, _month);
+  PERFORM public.sa_event(_id, 'month_statement', NULL, jsonb_build_object('month', m, 'used', used));
+  PERFORM public.sa_notify_parties(_id, 'Monthly statement ' || m || ': ' || a.name, 'الكشف الشهري ' || m || ': ' || a.name,
+    'Approved hours in ' || m || ': ' || used || '. The statement is ready in the agreement documents.',
+    'الساعات المعتمدة في ' || m || ': ' || used || '. الكشف جاهز في مستندات الاتفاقية.', true, 'statement:' || _id || ':' || m);
+  PERFORM public.sa_notify_statement(_id, _month);
+END $$;
+
 CREATE OR REPLACE FUNCTION public.sa_sweep()
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE s jsonb := public.sa_settings(); a public.sa_agreements; d int; first_d int; n_act int := 0; n_ren int := 0; n_set int := 0; rr public.sa_rate_records; tk uuid;
