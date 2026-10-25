@@ -786,7 +786,8 @@ DECLARE
   _years int := (public.nda_sig_settings() ->> 'id_retention_years')::int;
   _n integer;
 BEGIN
-  IF current_user IN ('authenticated', 'anon') AND NOT public.nda_is_admin(auth.uid()) THEN
+  -- signed-in callers must be admins; the daily job and backend code run without a user
+  IF auth.uid() IS NOT NULL AND NOT public.nda_is_admin(auth.uid()) THEN
     RAISE EXCEPTION 'nda_forbidden' USING ERRCODE = '42501';
   END IF;
   PERFORM set_config('app.nda_identity_anonymise', '1', true);
@@ -811,7 +812,8 @@ RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   _n integer;
 BEGIN
-  IF current_user IN ('authenticated', 'anon') AND NOT public.nda_is_admin(auth.uid()) THEN
+  -- signed-in callers must be admins; the daily job and backend code run without a user
+  IF auth.uid() IS NOT NULL AND NOT public.nda_is_admin(auth.uid()) THEN
     RAISE EXCEPTION 'nda_forbidden' USING ERRCODE = '42501';
   END IF;
   IF _user IS NULL THEN RAISE EXCEPTION 'nda_not_found' USING ERRCODE = '22023'; END IF;
