@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { friendlyErrorMessage, functionErrorMessage, isNetworkError } from './friendlyError';
+import { blockedRefusalText, friendlyErrorMessage, functionErrorMessage, isNetworkError } from './friendlyError';
 
 describe('friendlyErrorMessage', () => {
   it('hides the row-level security text', () => {
@@ -57,5 +57,34 @@ describe('functionErrorMessage', () => {
     expect(
       await functionErrorMessage({ name: 'FunctionsHttpError', message: 'Edge Function returned a non-2xx status code' }, null),
     ).toBe('The service could not finish this request. Please try again in a moment.');
+  });
+});
+
+describe('server refusal codes use the dimmed-button catalogue', () => {
+  it('turns sla_acceptance_required into the SLA sentence and the next step', () => {
+    expect(friendlyErrorMessage({ message: 'sla_acceptance_required' })).toBe(
+      'Accept the SLA targets for this request first. Next step: Review the SLA.',
+    );
+  });
+
+  it('turns nda_required raised by a database rule into the NDA sentence', () => {
+    expect(friendlyErrorMessage({ message: 'nda_required: both parties must sign', code: 'P0001' })).toBe(
+      'An NDA signed by both sides is needed first. Next step: Open the NDA.',
+    );
+  });
+
+  it('reads the reason an edge function returned', async () => {
+    expect(await functionErrorMessage(new Error('x'), { error: 'rate_limited' })).toBe(
+      'Too many tries. Please wait a moment and try again.',
+    );
+  });
+
+  it('gives the Arabic text when asked', () => {
+    expect(blockedRefusalText('brd_gate', 'ar')).toMatch(/^يجب/);
+  });
+
+  it('leaves ordinary errors to the existing rules', () => {
+    expect(blockedRefusalText('new row violates row-level security policy')).toBeNull();
+    expect(friendlyErrorMessage('new row violates row-level security policy')).toBe('You do not have permission to do this.');
   });
 });
