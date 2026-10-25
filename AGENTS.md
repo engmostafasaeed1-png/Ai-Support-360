@@ -7,7 +7,7 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - Shared Button drops its variant gradient when callers pass a base background colour (custom gradients kept), preserving emergency/status colours.
 - Consultant landing/pricing pages own head tags via useHeadTags (dedupe, restore on unmount), never also via RouteSeo, to avoid competing updates.
 - Admin full consultant profiles load only via the audited admin-only RPC in the shared sheet (ephemeral queries, short-lived links, timed in-memory bank reveals), so private payout data is never persisted.
-- Invoice details use shared billing controls and the admin confirmation hook.
+- Invoice details use shared billing controls + admin confirmation hook.
 - Timesheet PDF/CSV rows come only from the shared timesheet document helpers (screen amounts, approval metadata), so exports never diverge.
 - Credibility scores/star fills come only from the shared credibility library; photo performance rings only from lib/ringAvatar via ConsultantRing (map popups via its DOM twin), outer arc pure client rating, inner arc only public responsiveness, so all surfaces agree.
 - Consultant request/success counts and Success levels come only from the database success RPCs (aggregates only, no per-ticket data) and lib/successLevel, shown through the shared ring summary as SuccessStars level stars (never a ring arc), so every surface agrees and the AI-interview tier never shares its wording.
@@ -24,8 +24,7 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - AI interviews start only through the shared interviewStart resolver (resume in-progress, else reuse newest pending, single-flight insert) behind a visible blocker/preflight; completion counts the interview as its own weighted item from the shared helper, and evaluation confirms trigger-awarded badges, so no surface creates duplicates or a different percent.
 - Long ticket submits and matching runs use the shared TaskProgressPanel with real step states; new tickets save via ticketSubmission helpers (single-flight, tab-stored id) so progress stays honest and tickets never duplicate.
 - Team engagement: on gated tickets only team activation writes active assignments and tickets.consultant_id, after all four gates, for client- and admin-added members (admin changes audited); team requests only invite and team rows only mirror existing tables, so access rules follow the gates.
-- index.html head tags carry `data-rh="true"` so Helmet replaces them.
-- Social sign-in starts only via startSocialSignIn (rechecks settings).
+- Social sign-in starts only via startSocialSignIn (rechecks settings); index.html head tags carry `data-rh="true"` so Helmet replaces them.
 - Others' consultant names come only from the database viewer rule and the shared consultantName formatter, so no screen, e-mail or AI text leaks a hidden name.
 - Realtime uses `subscribeWhileVisible` with row filters (whole tables only on admin pages); portals and Arabic load lazily, cutting DB/bundle load.
 - Meetings are created only by the schedule-meeting function; entry points use ScheduleMeetingButton/Launcher with `_shared/meetingSchedule.ts`, so disabled buttons show why and screen and server agree.
