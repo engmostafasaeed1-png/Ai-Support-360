@@ -242,7 +242,7 @@ BEGIN
   PERFORM pg_temp.as_user(NULL);
   INSERT INTO public.tickets (client_id, tenant_id, title, sap_module, status, urgency) VALUES (ca, ta, 'Interface down', 'SD', 'matched', 'medium') RETURNING id INTO t2;
   SET LOCAL session_replication_role = replica;  -- plain fixture row: skip the request triggers
-  INSERT INTO public.ticket_match_requests (ticket_id, consultant_id, status) VALUES (t2, qc, 'pending');
+  INSERT INTO public.ticket_match_requests (ticket_id, consultant_id, sent_by, status) VALUES (t2, qc, ad, 'pending');
   SET LOCAL session_replication_role = origin;
   IF NOT public.sla_acceptance_missing(t2, qc) THEN RAISE EXCEPTION 'SL22 gate missing'; END IF;
   PERFORM pg_temp.as_user(q);
