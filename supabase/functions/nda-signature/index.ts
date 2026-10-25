@@ -107,9 +107,7 @@ Deno.serve(async (req) => {
     const row = data as { cipher: string; user_id: string; id_type: string; id_country: string; id_masked: string };
     try {
       const value = await decryptIdNumber(row.cipher, secret, row.user_id);
-      return new Response(JSON.stringify({ id_number: value, id_type: row.id_type, id_country: row.id_country }), {
-        status: 200, headers: { ...(jsonResponse(req, {}, 200).headers ? Object.fromEntries(jsonResponse(req, {}, 200).headers) : {}), 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-      });
+      return jsonResponse(req, { id_number: value, id_type: row.id_type, id_country: row.id_country }, 200, { 'Cache-Control': 'no-store' });
     } catch (e) {
       return jsonResponse(req, { error: (e as Error).message === 'id_key_mismatch' ? 'nda_id_key_mismatch' : 'nda_id_unreadable' }, 500);
     }
