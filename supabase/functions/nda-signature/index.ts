@@ -15,6 +15,10 @@ import {
   shortTextProblems, signatureProblems, strokeMetrics, SIGNATURE_RULES,
 } from '../_shared/ndaSignature.ts';
 import { decryptIdNumber, encryptIdNumber, ID_KEY_ENV, keyUsable } from '../_shared/ndaIdCrypto.ts';
+import { createPageProbe } from '../_shared/pageReady.ts';
+
+// /consultant/ndas is a new page: e-mails link to it only once the published site serves its marker file
+const consultantNdasReady = createPageProbe(SITE_URL, '/consultant-ndas-ready.json', '/consultant/ndas');
 
 const point = z.object({ x: z.number().finite(), y: z.number().finite() });
 const SignBody = z.object({
@@ -59,8 +63,9 @@ async function mail(admin: ReturnType<typeof adminClient>, n: Notify, key: strin
     if (!email || !u.user.email_confirmed_at) return { sent: false, reason: 'no_address' };
     const { data: senderRows } = await admin.from('platform_settings').select('key, value').in('key', [...SENDER_SETTING_KEYS]);
     const sender = senderFromSettings(senderRows);
+    const path = n.path.startsWith('/consultant/ndas') && !(await consultantNdasReady()) ? '/consultant' : n.path;
     const r = await sendTemplateEmail('nda-notice', email, {
-      templateData: { lang: n.lang, kind: n.kind, signer: n.signer, path: n.path, siteUrl: SITE_URL, contactEmail: sender.contactEmail },
+      templateData: { lang: n.lang, kind: n.kind, signer: n.signer, path, siteUrl: SITE_URL, contactEmail: sender.contactEmail },
       idempotencyKey: key,
       displayName: sender.displayName, fromLocal: sender.fromLocal, replyTo: sender.replyTo,
       pause: { userId: n.user_id, category: n.kind === 'reminder' ? 'reminders' : 'essential' },
