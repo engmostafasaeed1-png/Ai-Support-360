@@ -170,10 +170,10 @@ export default function AgreementWorkspace({ a, settings, portal }: { a: api.SaD
           {a.my_member?.status === 'invited' && (
             <p className="rounded-xl border border-primary/40 bg-primary/5 p-3 text-sm">{t('agreements.crew.invitedBanner')}</p>
           )}
-          {!terms?.team?.length && a.status !== 'draft' ? null : terms?.team?.length && ['draft', 'open', 'negotiating'].includes(a.status) ? (
+          {['draft', 'open', 'negotiating'].includes(a.status) && (terms?.team ?? []).some((e) => e.role !== 'lead') && (
             <Card className="rounded-2xl"><CardHeader><CardTitle className="text-base">{t('agreements.crew.planned')}</CardTitle></CardHeader>
-              <CardContent className="text-sm text-muted-foreground">{t('agreements.crew.plannedText', { count: terms.team.filter((e) => e.role !== 'lead').length })}</CardContent></Card>
-          ) : null}
+              <CardContent className="text-sm text-muted-foreground">{t('agreements.crew.plannedText', { count: (terms?.team ?? []).filter((e) => e.role !== 'lead').length })}</CardContent></Card>
+          )}
 
           {(isClient || isLead) && (
             <Card className="rounded-2xl"><CardHeader><CardTitle className="text-base">{t('agreements.detail.actions')}</CardTitle></CardHeader>
