@@ -18071,6 +18071,16 @@ export type Database = {
         Args: { _approve: boolean; _note: string; _replacement: string }
         Returns: undefined
       }
+      sa_admin_list: { Args: { _status?: string }; Returns: Json }
+      sa_admin_review: {
+        Args: { _approve: boolean; _id: string; _note: string }
+        Returns: undefined
+      }
+      sa_admin_set_settings: {
+        Args: { _reason?: string; _value: Json }
+        Returns: Json
+      }
+      sa_admin_settings: { Args: never; Returns: Json }
       sa_apply: {
         Args: {
           _availability: string
@@ -18107,6 +18117,17 @@ export type Database = {
         Args: { _client: string; _tenant: string; _uid: string }
         Returns: boolean
       }
+      sa_claim_emails: {
+        Args: { _limit?: number }
+        Returns: {
+          agreement_id: string
+          email: string
+          id: string
+          kind: string
+          payload: Json
+          user_id: string
+        }[]
+      }
       sa_company_user: {
         Args: { _client: string; _email: string; _tenant: string }
         Returns: string
@@ -18130,12 +18151,48 @@ export type Database = {
         Returns: undefined
       }
       sa_default_settings: { Args: never; Returns: Json }
+      sa_doc_access_role: {
+        Args: { _agreement: string; _uid: string }
+        Returns: string
+      }
+      sa_doc_path_agreement: { Args: { _name: string }; Returns: string }
+      sa_doc_storage_insert_ok: { Args: { _name: string }; Returns: boolean }
+      sa_doc_storage_read_ok: { Args: { _name: string }; Returns: boolean }
+      sa_doc_type_ok: {
+        Args: { _file: string; _mime: string }
+        Returns: boolean
+      }
+      sa_document_archive: { Args: { _document: string }; Returns: undefined }
+      sa_document_begin_upload: {
+        Args: {
+          _agreement: string
+          _document: string
+          _file_name: string
+          _kind: string
+          _mime: string
+          _no_secrets: boolean
+          _note: string
+          _size: number
+          _title: string
+        }
+        Returns: Json
+      }
+      sa_document_finish_upload: { Args: { _upload: string }; Returns: Json }
+      sa_document_open: {
+        Args: { _document: string; _version?: number }
+        Returns: Json
+      }
       sa_enabled: { Args: never; Returns: boolean }
       sa_event: {
         Args: { _actor: string; _data?: Json; _id: string; _kind: string }
         Returns: undefined
       }
+      sa_finish_email: {
+        Args: { _error?: string; _id: string; _ok: boolean }
+        Returns: undefined
+      }
       sa_fmt_min: { Args: { _m: number }; Returns: string }
+      sa_get: { Args: { _id: string }; Returns: Json }
       sa_handover_note: {
         Args: { _id: string; _note: string }
         Returns: undefined
@@ -18159,6 +18216,7 @@ export type Database = {
         Args: { _actor: string; _agreement: string; _ticket: string }
         Returns: boolean
       }
+      sa_list_mine: { Args: { _tenant?: string }; Returns: Json }
       sa_member_nda_ok: {
         Args: { _client: string; _consultant: string }
         Returns: boolean
@@ -18176,6 +18234,7 @@ export type Database = {
         Args: { _a: Database["public"]["Tables"]["sa_agreements"]["Row"] }
         Returns: string[]
       }
+      sa_month_hours: { Args: { _id: string; _month: string }; Returns: number }
       sa_name_taken: {
         Args: {
           _client: string
@@ -18225,6 +18284,10 @@ export type Database = {
           _title_ar: string
           _title_en: string
         }
+        Returns: undefined
+      }
+      sa_notify_statement: {
+        Args: { _id: string; _month: string }
         Returns: undefined
       }
       sa_offer: {
@@ -18327,6 +18390,13 @@ export type Database = {
         Args: { _id: string; _reason: string }
         Returns: string
       }
+      sa_reserved_shares: {
+        Args: { _consultant_ids: string[] }
+        Returns: {
+          consultant_id: string
+          share: number
+        }[]
+      }
       sa_resolve_sla: {
         Args: { _client: string; _sla: Json; _tenant: string }
         Returns: Json
@@ -18350,10 +18420,16 @@ export type Database = {
         Returns: undefined
       }
       sa_settings: { Args: never; Returns: Json }
+      sa_settle_month: { Args: { _id: string; _month: string }; Returns: Json }
+      sa_statement_notice: {
+        Args: { _id: string; _month: string }
+        Returns: undefined
+      }
       sa_suspend: {
         Args: { _id: string; _reason: string; _until: string }
         Returns: undefined
       }
+      sa_sweep: { Args: never; Returns: Json }
       sa_terms_problems: { Args: { _t: Json }; Returns: string[] }
       sa_text_ok: { Args: { _t: string }; Returns: boolean }
       sa_ticket_live_agreement: { Args: { _ticket: string }; Returns: string }
@@ -18387,8 +18463,10 @@ export type Database = {
         Returns: undefined
       }
       sa_usable: { Args: { _tenant?: string }; Returns: Json }
+      sa_usage: { Args: { _id: string }; Returns: Json }
       sa_user_label: { Args: { _uid: string }; Returns: string }
       sa_user_of: { Args: { _consultant: string }; Returns: string }
+      sa_wake: { Args: never; Returns: undefined }
       sa_withdraw_application: { Args: { _id: string }; Returns: undefined }
       safe_insert_notification: {
         Args: {
