@@ -154,7 +154,7 @@ BEGIN
   IF pg_temp.sign_err(k, kx || jsonb_build_object('image_path', 'signatures/' || k || '/' || gen_random_uuid() || '.png')) NOT LIKE '%nda_signature_file_missing%' THEN RAISE EXCEPTION 'ND03 file'; END IF;
   IF pg_temp.sign_err(k, kx || jsonb_build_object('image_path', 'signatures/' || u || '/' || gen_random_uuid() || '.png')) NOT LIKE '%nda_signature_file_missing%' THEN RAISE EXCEPTION 'ND03 other user file'; END IF;
   IF pg_temp.sign_err(k, kx || '{"authorised": false}') NOT LIKE '%nda_confirmation_required%' THEN RAISE EXCEPTION 'ND03 authorised'; END IF;
-  IF pg_temp.sign_err(k, kx - 'agreed') NOT LIKE '%nda_confirmation_required%' THEN RAISE EXCEPTION 'ND03 agreed'; END IF;
+  IF pg_temp.sign_err(k, kx || '{"agreed": "yes"}') NOT LIKE '%nda_confirmation_required%' THEN RAISE EXCEPTION 'ND03 agreed'; END IF;
   IF pg_temp.sign_err(k, kx || '{"job_title": "Call me on +966 55 123 4567"}') NOT LIKE '%nda_contact_details%' THEN RAISE EXCEPTION 'ND03 contact filter'; END IF;
   -- legitimate names from other scripts and with hyphen / apostrophe pass the name rule
   IF NOT public.nda_name_ok('مُحَمَّد بن سلمان') OR NOT public.nda_name_ok('Jean-Luc O''Neil') OR NOT public.nda_name_ok('Ana María López') THEN RAISE EXCEPTION 'ND03 legit names'; END IF;
