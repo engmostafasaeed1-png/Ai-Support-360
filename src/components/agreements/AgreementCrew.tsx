@@ -157,14 +157,14 @@ export function TeamConfirmation({ a, lang }: { a: api.SaDetail; lang: 'en' | 'a
   const items = c.items.filter((i) => i.needed !== false && (i.key !== 'admin_review' || i.needed));
   return (
     <Card className={cn('rounded-2xl', !live && !c.ready && 'border-info/40')}>
-      <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-base"><ShieldCheck className="h-4 w-4 text-primary" aria-hidden />{t('agreements.confirm.title')}</CardTitle>
-        <p className="text-sm text-muted-foreground">{live ? t('agreements.confirm.live') : t('agreements.confirm.slaStarts')}</p></CardHeader>
+      <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-base"><ShieldCheck className="h-4 w-4 text-primary" aria-hidden />{t('agreements.teamConfirm.title')}</CardTitle>
+        <p className="text-sm text-muted-foreground">{live ? t('agreements.teamConfirm.live') : t('agreements.teamConfirm.slaStarts')}</p></CardHeader>
       <CardContent className="space-y-4">
         {!live && (
-          <ul className="grid gap-2 sm:grid-cols-2" aria-label={t('agreements.confirm.title')}>
+          <ul className="grid gap-2 sm:grid-cols-2" aria-label={t('agreements.teamConfirm.title')}>
             {items.map((i) => (
               <li key={i.key} className="flex items-start gap-2 text-sm">{ITEM_ICON(i.ok)}
-                <span>{t(`agreements.confirm.item.${i.key}`, { date: fmtDate(i.date ?? null, lang) })}</span></li>
+                <span>{t(`agreements.teamConfirm.item.${i.key}`, { date: fmtDate(i.date ?? null, lang) })}</span></li>
             ))}
           </ul>
         )}
@@ -191,11 +191,11 @@ export function TeamConfirmation({ a, lang }: { a: api.SaDetail; lang: 'en' | 'a
         </div>
         {a.terms?.nda_required && c.members.some((m) => m.status === 'active' && !m.nda_ok) && (
           myId && a.client_id && c.members.some((m) => m.consultant_id === myId && m.status === 'active' && !m.nda_ok) ? (
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span>{t('agreements.confirm.ndaYours')}</span>
-              <Button size="sm" variant="outline" onClick={() => setNdaOpen(true)}>{t('agreements.confirm.ndaSign')}</Button></div>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span>{t('agreements.teamConfirm.ndaYours')}</span>
+              <Button size="sm" variant="outline" onClick={() => setNdaOpen(true)}>{t('agreements.teamConfirm.ndaSign')}</Button></div>
           ) : ['client', 'client_member'].includes(a.role) ? (
-            <p className="text-xs text-muted-foreground">{t('agreements.confirm.ndaClient')} <Link className="text-primary underline-offset-2 hover:underline" to="/client/contracts">{t('agreements.confirm.ndaLink')}</Link></p>
-          ) : <p className="text-xs text-muted-foreground">{t('agreements.confirm.ndaHow')}</p>
+            <p className="text-xs text-muted-foreground">{t('agreements.teamConfirm.ndaClient')} <Link className="text-primary underline-offset-2 hover:underline" to="/client/contracts">{t('agreements.teamConfirm.ndaLink')}</Link></p>
+          ) : <p className="text-xs text-muted-foreground">{t('agreements.teamConfirm.ndaHow')}</p>
         )}
         {myId && a.client_id && ndaOpen && (
           <NDASigningModal open={ndaOpen} onOpenChange={setNdaOpen} consultantId={myId} clientId={a.client_id} onSigned={() => { setNdaOpen(false); refresh(); }} />
