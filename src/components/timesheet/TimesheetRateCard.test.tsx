@@ -87,9 +87,9 @@ describe('TimesheetRateCard as the client', () => {
     render(<TimesheetRateCard {...base} canApprove rates={[rate({ status: 'proposed', hourly_rate: 55, decided_at: null })]} />);
     fireEvent.click(screen.getByRole('button', { name: /Decline/ }));
     const decline = screen.getByRole('button', { name: 'Decline the rate' }) as HTMLButtonElement;
-    expect(decline.disabled).toBe(true);
+    expect(decline).toBeBlocked();
     fireEvent.change(screen.getByPlaceholderText(/Tell the consultant why the rate is declined/), { target: { value: 'Too high' } });
-    expect(decline.disabled).toBe(false);
+    expect(decline).toBeUnblocked();
     fireEvent.click(decline);
     await waitFor(() => expect(mocks.rpc).toHaveBeenCalledTimes(1));
     expect(mocks.rpc.mock.calls[0][1]._approve).toBe(false);

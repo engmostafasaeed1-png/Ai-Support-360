@@ -57,7 +57,7 @@ describe('SapDocsCard', () => {
     render(<SapDocsCard />);
     expect(screen.queryByText('Not imported')).not.toBeNull();
     const sw = screen.getByRole('switch', { name: /Use SAP BTP best practices guide in suggestions/ }) as HTMLButtonElement;
-    expect(sw.disabled).toBe(true);
+    expect(sw).toBeBlocked();
     expect(screen.queryByRole('button', { name: /Remove/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Import/ }));
     expect(mocks.run).toHaveBeenCalledWith('btp-best-practices', 'import');
@@ -71,7 +71,7 @@ describe('SapDocsCard', () => {
     expect(screen.queryByRole('button', { name: /Update/ })).not.toBeNull();
     expect(screen.queryByRole('button', { name: /Remove/ })).not.toBeNull();
     const sw = screen.getByRole('switch', { name: /Use SAPUI5 and SAP Fiori in suggestions/ }) as HTMLButtonElement;
-    expect(sw.disabled).toBe(false);
+    expect(sw).toBeUnblocked();
     fireEvent.click(sw);
     expect(mocks.setEnabled).toHaveBeenCalledWith({ id: 'sapui5', enabled: true });
   });

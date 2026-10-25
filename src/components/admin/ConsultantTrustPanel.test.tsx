@@ -101,7 +101,7 @@ describe('ConsultantTrustPanel', () => {
 
   it('does not let anything be saved in the demo', () => {
     render(<ConsultantTrustPanel consultant={BASE} readOnly />);
-    expect((screen.getByRole('button', { name: 'Mark as checked' }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole('button', { name: 'Remove check' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Mark as checked' }) as HTMLButtonElement)).toBeBlocked();
+    expect((screen.getByRole('button', { name: 'Remove check' }) as HTMLButtonElement)).toBeBlocked();
   });
 });

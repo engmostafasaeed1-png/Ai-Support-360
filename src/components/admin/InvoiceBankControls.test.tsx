@@ -59,11 +59,11 @@ describe('InvoiceBankControls', () => {
   it('saves an own account only with the account holder and an IBAN or an account number', () => {
     render(<InvoiceBankControls invoice={invoice} onClose={() => {}} />);
     const save = screen.getByRole('button', { name: 'Save the account of this invoice' }) as HTMLButtonElement;
-    expect(save.disabled).toBe(true);
+    expect(save).toBeBlocked();
     fireEvent.change(screen.getByLabelText('Account holder'), { target: { value: ' Qurtuba Tech ' } });
-    expect(save.disabled).toBe(true);
+    expect(save).toBeBlocked();
     fireEvent.change(screen.getByLabelText('IBAN'), { target: { value: 'EG11 2222' } });
-    expect(save.disabled).toBe(false);
+    expect(save).toBeUnblocked();
     fireEvent.click(save);
     expect(state.setAccount).toHaveBeenCalledWith({ paymentId: 'p1', details: { beneficiary: 'Qurtuba Tech', iban: 'EG11 2222' }, note: '' });
   });

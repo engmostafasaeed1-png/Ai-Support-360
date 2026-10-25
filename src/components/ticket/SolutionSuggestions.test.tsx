@@ -97,7 +97,7 @@ describe('SolutionSuggestions', () => {
     const helpful = await screen.findByRole('button', { name: 'Helpful' });
     fireEvent.click(helpful);
     await waitFor(() => expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ verdict: 'helpful', item_ids: [ID] })));
-    expect((helpful as HTMLButtonElement).disabled).toBe(true);
+    expect((helpful as HTMLButtonElement)).toBeBlocked();
     fireEvent.click(helpful);
     expect(mocks.insert).toHaveBeenCalledTimes(1);
   });

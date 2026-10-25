@@ -63,7 +63,7 @@ describe('GroupedMultiSelect', () => {
     expect(screen.getByText('You can choose up to 2 entries.')).toBeTruthy();
     fireEvent.click(screen.getByText('Vegetables'));
     const carrot = screen.getByRole('checkbox', { name: 'Carrot' }) as HTMLInputElement;
-    expect(carrot.disabled).toBe(true);
+    expect(carrot).toBeBlocked();
     fireEvent.click(carrot);
     expect(onChange).not.toHaveBeenCalled();
   });
