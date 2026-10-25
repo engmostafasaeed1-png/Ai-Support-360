@@ -23,6 +23,8 @@ import { useNdaSigningSettings } from '@/hooks/useNdaSigning';
 import TicketQuickActions from '@/components/tickets/TicketQuickActions';
 import RemoteAccessStatusPanel from '@/components/tickets/RemoteAccessStatusPanel';
 import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
+import ScheduleMeetingButton from '@/components/meetings/ScheduleMeetingButton';
+import { scheduleBlock } from '@/lib/meetingSchedule';
 import TicketPlanApproval from '@/components/client/TicketPlanApproval';
 import TicketStatusActions from '@/components/consultant/TicketStatusActions';
 import { exportNDAAsPDF } from '@/lib/ndaPdfExport';
@@ -103,6 +105,17 @@ export default function CaseDetailPage() {
       return data;
     },
     enabled: !!caseId,
+  });
+
+  // Team consultants (an active assignment, not the ticket's consultant) can schedule meetings too.
+  const { data: myActiveAssignment = false } = useQuery({
+    queryKey: ['case-my-assignment', caseId, consultantData?.id],
+    queryFn: async () => {
+      const { count } = await supabase.from('ticket_assignments').select('id', { count: 'exact', head: true })
+        .eq('ticket_id', caseId!).eq('consultant_id', consultantData!.id).eq('status', 'active');
+      return (count ?? 0) > 0;
+    },
+    enabled: !!caseId && !!consultantData?.id,
   });
 
   // Fetch client system landscape
@@ -307,6 +320,14 @@ export default function CaseDetailPage() {
 
       {/* SLA of this ticket (snapshot, clocks, acknowledge with ETA) - only while SLA policies are on */}
       <SlaTicketPanel ticketId={ticket.id} />
+
+      {/* Schedule meeting for a team consultant (the quick actions below are for the ticket's own consultant) */}
+      {!(ticket.consultant_id && consultantData?.id === ticket.consultant_id) && (
+        <ScheduleMeetingButton
+          block={scheduleBlock({ role: 'consultant', hasConsultant: true, activeAssignments: 1, status: ticket.status, isAssigned: myActiveAssignment })}
+          onSchedule={() => setMeetingOpen(true)}
+        />
+      )}
 
       {/* Quick Actions: Documents · Remote Access · Request Meeting */}
       {ticket.consultant_id && (

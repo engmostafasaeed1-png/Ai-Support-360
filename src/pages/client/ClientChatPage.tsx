@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageSquare, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import ScheduleMeetingLauncher from '@/components/meetings/ScheduleMeetingLauncher';
 import { useClientSessions } from '@/hooks/useClientSessions';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -10,9 +11,12 @@ export default function ClientChatPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Messages</h1>
-        <p className="text-sm text-muted-foreground">Chat with your consultants</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Messages</h1>
+          <p className="text-sm text-muted-foreground">Chat with your consultants</p>
+        </div>
+        <ScheduleMeetingLauncher role="client" />
       </div>
 
       <div className="space-y-3">

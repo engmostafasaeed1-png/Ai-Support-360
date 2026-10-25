@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Video, MessageSquare, Monitor, Clock, User, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import ScheduleMeetingLauncher from '@/components/meetings/ScheduleMeetingLauncher';
 import { useTenant } from '@/contexts/TenantContext';
 
 const typeIcons = {
@@ -75,9 +76,12 @@ export default function SessionsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{t('sessions_page.title')}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{t('sessions_page.subtitle')}</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{t('sessions_page.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('sessions_page.subtitle')}</p>
+        </div>
+        <ScheduleMeetingLauncher role="client" />
       </div>
 
       {isLoading && (

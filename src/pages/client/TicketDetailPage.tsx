@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import TicketOutcomeControl from '@/components/client/TicketOutcomeControl';
 import { useTranslation } from 'react-i18next';
 import ClientRatingChip from '@/components/consultant/ClientRatingChip';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,6 +53,8 @@ import TicketMatchRequests from '@/components/client/TicketMatchRequests';
 import ScheduleMeetingDialog from '@/components/client/ScheduleMeetingDialog';
 import EmergencyContactPanel from '@/components/client/EmergencyContactPanel';
 import TicketMeetingsList from '@/components/client/TicketMeetingsList';
+import ScheduleMeetingButton from '@/components/meetings/ScheduleMeetingButton';
+import { useMeetingBlock } from '@/hooks/useMeetingEligibility';
 import RequestSatisfactionDialog from '@/components/satisfaction/RequestSatisfactionDialog';
 import { useSatisfactionSurveys } from '@/hooks/useSatisfactionSurveys';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -161,16 +163,6 @@ export default function TicketDetailPage() {
   const [bidOpen, setBidOpen] = useState(false);
   const [meetingOpen, setMeetingOpen] = useState(false);
   const [csatOpen, setCsatOpen] = useState(false);
-  // A meeting needs a consultant assigned to this request (the ticket's consultant or an active assignment).
-  const { data: activeAssignmentCount = 0 } = useQuery({
-    queryKey: ['ticket-active-assignment-count', ticketId],
-    queryFn: async () => {
-      const { count } = await supabase.from('ticket_assignments').select('id', { count: 'exact', head: true }).eq('ticket_id', ticketId!).eq('status', 'active');
-      return count ?? 0;
-    },
-    enabled: !!ticketId,
-  });
-  const canScheduleMeeting = !!ticket?.consultant_id || activeAssignmentCount > 0;
   const [resolutionEditing, setResolutionEditing] = useState(false);
   const [resolutionDraft, setResolutionDraft] = useState('');
   const queryClient = useQueryClient();
@@ -178,6 +170,13 @@ export default function TicketDetailPage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
   }, []);
+  // A meeting needs a consultant assigned to this request (the ticket's consultant or an active assignment); the reason is
+  // always shown next to a disabled button (shared rule with the schedule-meeting function).
+  const meetingBlock = useMeetingBlock({
+    ticketId, role: isAdmin ? 'admin' : 'client', consultantId: ticket?.consultant_id, status: ticket?.status,
+    isOwner: isAdmin || !currentUserId || !ticket ? undefined : ticket.client_id === currentUserId,
+  });
+  const openMeeting = () => { if (!meetingBlock) setMeetingOpen(true); };
 
   if (isLoading) {
     return (
@@ -254,12 +253,7 @@ export default function TicketDetailPage() {
                 {ticket.open_for_bids ? 'Manage Bids' : 'Request Bids'}
                 {(ticket as any).bid_deadline && <span className="text-muted-foreground">· {bidDeadline.text}</span>}
               </Button>
-              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" disabled={!canScheduleMeeting} onClick={() => setMeetingOpen(true)}>
-                <CalendarDays className="w-3.5 h-3.5" /> Schedule Meeting
-              </Button>
-              {!canScheduleMeeting && (
-                <span className="text-xs text-muted-foreground self-center">Meetings can be scheduled once a consultant is assigned to this request.</span>
-              )}
+              <ScheduleMeetingButton block={meetingBlock} onSchedule={openMeeting} />
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setCsatOpen(true)}>
                 <ClipboardCheck className="w-3.5 h-3.5" /> Request CSAT
               </Button>
@@ -322,7 +316,7 @@ export default function TicketDetailPage() {
           role="client"
           ticketStatus={ticket.status}
           hasConsultant={!!ticket.consultant_id}
-          onScheduleMeeting={() => { if (canScheduleMeeting) setMeetingOpen(true); }}
+          onScheduleMeeting={openMeeting}
         />
       )}
 
@@ -585,7 +579,7 @@ export default function TicketDetailPage() {
 
           {/* ─── Meetings List with AI Insights ─── */}
           <SectionWrapper icon={CalendarDays} title="Meetings" defaultOpen>
-            <TicketMeetingsList ticketId={ticket.id} onSchedule={() => { if (canScheduleMeeting) setMeetingOpen(true); }} />
+            <TicketMeetingsList ticketId={ticket.id} onSchedule={openMeeting} block={meetingBlock} portal={isAdmin ? 'admin' : 'client'} />
           </SectionWrapper>
 
           {/* ─── Recorded Sessions ─── */}

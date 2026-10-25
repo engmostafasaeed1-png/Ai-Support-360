@@ -13,6 +13,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import SetAvailabilityDialog from '@/components/consultant/SetAvailabilityDialog';
+import ScheduleMeetingLauncher from '@/components/meetings/ScheduleMeetingLauncher';
 import RescheduleSessionDialog from '@/components/consultant/RescheduleSessionDialog';
 import MeetingLinkButton, { detectProvider } from '@/components/session/MeetingLinkButton';
 import { sessionRoomUrl } from '@/lib/meetingRoom';
@@ -284,9 +285,12 @@ export default function CalendarPage() {
           <h1 className="text-xl md:text-2xl font-bold text-foreground">Session Calendar</h1>
           <p className="text-xs md:text-sm text-muted-foreground mt-1">Manage your upcoming and past sessions.</p>
         </div>
-        <SetAvailabilityDialog
-          trigger={<Button className="gradient-primary border-0 w-full sm:w-auto" size="sm">Set Availability</Button>}
-        />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <ScheduleMeetingLauncher role="consultant" className="gap-1.5 w-full sm:w-auto" />
+          <SetAvailabilityDialog
+            trigger={<Button className="gradient-primary border-0 w-full sm:w-auto" size="sm">Set Availability</Button>}
+          />
+        </div>
       </div>
 
       {/* Week View */}

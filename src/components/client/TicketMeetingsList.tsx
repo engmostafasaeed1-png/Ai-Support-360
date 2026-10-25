@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import RescheduleSessionDialog from '@/components/consultant/RescheduleSessionDialog';
+import ScheduleMeetingButton from '@/components/meetings/ScheduleMeetingButton';
+import type { ScheduleBlock } from '@/lib/meetingSchedule';
+import { friendlyErrorMessage } from '@/lib/friendlyError';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +27,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 interface TicketMeetingsListProps {
   ticketId: string;
   onSchedule?: () => void;
+  /** why scheduling is not possible (shown next to the disabled button) */
+  block?: ScheduleBlock | null;
+  portal?: 'client' | 'consultant' | 'admin';
 }
 
 const statusConfig: Record<string, { label: string; icon: typeof CheckCircle2; className: string }> = {
@@ -27,8 +39,14 @@ const statusConfig: Record<string, { label: string; icon: typeof CheckCircle2; c
   cancelled: { label: 'Cancelled', icon: XCircle, className: 'bg-destructive/10 text-destructive' },
 };
 
-export default function TicketMeetingsList({ ticketId, onSchedule }: TicketMeetingsListProps) {
+export default function TicketMeetingsList({ ticketId, onSchedule, block = null, portal = 'client' }: TicketMeetingsListProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['ticket-meetings', ticketId] });
+    queryClient.invalidateQueries({ queryKey: ['ticket-sessions', ticketId] });
+  };
+  const detailsBase = portal === 'consultant' ? '/consultant/sessions' : '/client/sessions';
   const [expandedInsight, setExpandedInsight] = useState<string | null>(null);
 
   const { data: meetings, isLoading } = useQuery({
@@ -101,9 +119,9 @@ export default function TicketMeetingsList({ ticketId, onSchedule }: TicketMeeti
         <p className="text-sm font-medium text-foreground">No meetings yet</p>
         <p className="text-xs text-muted-foreground mt-1">Schedule a meeting to collaborate with consultants.</p>
         {onSchedule && (
-          <Button size="sm" className="mt-3 gradient-primary border-0 gap-1.5" onClick={onSchedule}>
-            <Calendar className="w-3.5 h-3.5" /> Schedule Meeting
-          </Button>
+          <div className="mt-3 flex justify-center">
+            <ScheduleMeetingButton block={block} onSchedule={onSchedule} stacked variant="default" className="gradient-primary border-0 gap-1.5" />
+          </div>
         )}
       </div>
     );
@@ -127,9 +145,7 @@ export default function TicketMeetingsList({ ticketId, onSchedule }: TicketMeeti
           </TabsTrigger>
         </TabsList>
         {onSchedule && (
-          <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1" onClick={onSchedule}>
-            <Calendar className="w-3 h-3" /> New
-          </Button>
+          <ScheduleMeetingButton block={block} onSchedule={onSchedule} label="New" className="h-7 text-[11px] gap-1" />
         )}
       </div>
 
@@ -137,7 +153,7 @@ export default function TicketMeetingsList({ ticketId, onSchedule }: TicketMeeti
         {upcoming.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-4">No upcoming meetings</p>
         ) : (
-          upcoming.map((m: any) => <MeetingCard key={m.id} meeting={m} navigate={navigate} />)
+          upcoming.map((m: any) => <MeetingCard key={m.id} meeting={m} navigate={navigate} detailsBase={detailsBase} onChanged={refresh} />)
         )}
       </TabsContent>
 
@@ -160,9 +176,16 @@ export default function TicketMeetingsList({ ticketId, onSchedule }: TicketMeeti
   );
 }
 
-function MeetingCard({ meeting, navigate }: { meeting: any; navigate: any }) {
+function MeetingCard({ meeting, navigate, detailsBase = '/client/sessions', onChanged }: { meeting: any; navigate: any; detailsBase?: string; onChanged?: () => void }) {
   const status = statusConfig[meeting.status] || statusConfig.scheduled;
   const StatusIcon = status.icon;
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const cancel = async () => {
+    const { error } = await supabase.from('sessions').update({ status: 'cancelled' }).eq('id', meeting.id);
+    if (error) { toast.error('The meeting could not be cancelled', { description: friendlyErrorMessage(error) }); return; }
+    toast.success('Meeting cancelled. The other participants are told.');
+    onChanged?.();
+  };
 
   return (
     <Card className="rounded-xl border-border/50 hover:border-primary/30 transition-colors">
@@ -203,13 +226,36 @@ function MeetingCard({ meeting, navigate }: { meeting: any; navigate: any }) {
             </Button>
           )}
           {meeting.status === 'scheduled' && (
-            <Button size="sm" variant="ghost" className="h-7 text-[10px] gap-1"
-              onClick={() => navigate(`/client/sessions/${meeting.id}`)}>
-              Details <ArrowRight className="w-3 h-3" />
-            </Button>
+            <div className="flex flex-wrap items-center justify-end gap-1">
+              {meeting.scheduled_at && (
+                <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => setRescheduleOpen(true)}>Reschedule</Button>
+              )}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="ghost" className="h-7 text-[10px] text-destructive">Cancel</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-2xl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel this meeting?</AlertDialogTitle>
+                    <AlertDialogDescription>The meeting is marked as cancelled and the other participants get a notice.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>No, keep it</AlertDialogCancel>
+                    <AlertDialogAction onClick={cancel}>Yes, cancel it</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button size="sm" variant="ghost" className="h-7 text-[10px] gap-1"
+                onClick={() => navigate(`${detailsBase}/${meeting.id}`)}>
+                Details <ArrowRight className="w-3 h-3 rtl:rotate-180" />
+              </Button>
+            </div>
           )}
         </div>
       </CardContent>
+      {meeting.scheduled_at && (
+        <RescheduleSessionDialog open={rescheduleOpen} onOpenChange={setRescheduleOpen} sessionId={meeting.id} scheduledAt={meeting.scheduled_at} onDone={() => onChanged?.()} />
+      )}
     </Card>
   );
 }

@@ -2,9 +2,11 @@ import * as React from 'npm:react@18.3.1'
 import { Body, Button, Container, Head, Heading, Html, Link, Preview, Section, Text } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
 
-/** Bug H5: meeting invitation for an external (non-portal) attendee, with join page and calendar links. */
+/** Bug H5: meeting invitation with join page and calendar links. audience 'guest' = external address (no account), 'member' = a
+ *  consultant or company colleague with a portal account (sign-in wording, link to the meeting in the portal). */
 interface Props {
   lang?: 'en' | 'ar'
+  audience?: 'guest' | 'member'
   title?: string
   organizer?: string
   startsAt?: string
@@ -24,6 +26,8 @@ const STR = {
     join: 'Join the meeting', calendar: 'Add to calendar:', ics: 'Calendar file (.ics)', google: 'Google Calendar',
     tz: 'Times are shown in Riyadh time (UTC+3); the calendar file uses your own time zone.',
     footer: 'You received this one-time invitation because someone entered your address when scheduling this meeting.',
+    memberIntro: (o: string) => `${o} invited you to a meeting on AI Support 360. Join from the link below or from Sessions in the portal.`,
+    memberFooter: 'You receive this e-mail because you were added as a participant of this meeting on AI Support 360.',
   },
   ar: {
     subject: (t: string) => `دعوة اجتماع: ${t}`,
@@ -34,6 +38,8 @@ const STR = {
     join: 'انضم إلى الاجتماع', calendar: 'أضف إلى التقويم:', ics: 'ملف التقويم (.ics)', google: 'تقويم Google',
     tz: 'الأوقات بتوقيت الرياض (UTC+3)، ويستخدم ملف التقويم منطقتك الزمنية.',
     footer: 'وصلتك هذه الدعوة لمرة واحدة لأن أحدهم أدخل عنوانك عند جدولة هذا الاجتماع.',
+    memberIntro: (o: string) => `دعاك ${o} إلى اجتماع على AI Support 360. انضم من الرابط أدناه أو من صفحة الجلسات في البوابة.`,
+    memberFooter: 'وصلتك هذه الرسالة لأنك أُضفت مشاركًا في هذا الاجتماع على AI Support 360.',
   },
 } as const
 
@@ -46,7 +52,7 @@ export function formatMeetingWhen(iso: string | undefined, lang: 'en' | 'ar'): s
   }).format(d)
 }
 
-const MeetingInvitationEmail = ({ lang = 'en', title = 'Meeting', organizer = 'AI Support 360', startsAt, durationMinutes = 60, joinUrl = 'https://www.aisupport360.com', icsUrl, googleUrl }: Props) => {
+const MeetingInvitationEmail = ({ lang = 'en', audience = 'guest', title = 'Meeting', organizer = 'AI Support 360', startsAt, durationMinutes = 60, joinUrl = 'https://www.aisupport360.com', icsUrl, googleUrl }: Props) => {
   const l = lang === 'ar' ? 'ar' : 'en'
   const t = STR[l]
   return (
@@ -56,7 +62,7 @@ const MeetingInvitationEmail = ({ lang = 'en', title = 'Meeting', organizer = 'A
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>{t.heading}</Heading>
-          <Text style={text}>{t.intro(organizer)}</Text>
+          <Text style={text}>{audience === 'member' ? t.memberIntro(organizer) : t.intro(organizer)}</Text>
           <Section style={box}>
             <Text style={titleStyle}>{title}</Text>
             <Text style={item}><strong>{t.when}:</strong> {formatMeetingWhen(startsAt, l)}</Text>
@@ -73,7 +79,7 @@ const MeetingInvitationEmail = ({ lang = 'en', title = 'Meeting', organizer = 'A
             </Text>
           )}
           <Text style={small}>{t.tz}</Text>
-          <Text style={small}>{t.footer}</Text>
+          <Text style={small}>{audience === 'member' ? t.memberFooter : t.footer}</Text>
         </Container>
       </Body>
     </Html>
@@ -83,7 +89,7 @@ const MeetingInvitationEmail = ({ lang = 'en', title = 'Meeting', organizer = 'A
 export const template = {
   component: MeetingInvitationEmail,
   subject: (d: Record<string, any>) => STR[d.lang === 'ar' ? 'ar' : 'en'].subject(String(d.title || 'AI Support 360').slice(0, 120)),
-  displayName: 'Meeting invitation (external attendee)',
+  displayName: 'Meeting invitation (participant or external attendee)',
   previewData: { lang: 'en', title: 'SAP FI posting issue', organizer: 'Mostafa', startsAt: '2026-11-02T08:00:00Z', durationMinutes: 60, joinUrl: 'https://www.aisupport360.com/join/123', icsUrl: 'https://example.com/meeting.ics', googleUrl: 'https://calendar.google.com' },
 } satisfies TemplateEntry
 
