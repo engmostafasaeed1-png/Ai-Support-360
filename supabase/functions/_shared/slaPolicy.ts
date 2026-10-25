@@ -416,7 +416,7 @@ export function businessMinutes(fromMs: number, toMs: number, cal: ResolvedCalen
   if (!(toMs > fromMs)) return 0;
   if (cal.mode === '24x7') return (toMs - fromMs) / MINUTE;
   let total = 0;
-  let p = localParts(fromMs, cal.tz);
+  const p = localParts(fromMs, cal.tz);
   let day = { y: p.y, m: p.m, d: p.d };
   for (let i = 0; i < MAX_DAYS_SCANNED; i++) {
     const w = windowsOf(cal, day);
@@ -430,7 +430,6 @@ export function businessMinutes(fromMs: number, toMs: number, cal: ResolvedCalen
     if (zonedToUtc(n.y, n.m, n.d, 0, 0, cal.tz) >= toMs) break;
     day = n;
   }
-  p = undefined as unknown as LocalParts;
   return total;
 }
 
@@ -546,9 +545,8 @@ export function dueSteps(steps: EscalationStep[], clock: ClockKind, targetMin: n
 export function repeatDue(s: EscalationStep, firstSentMs: number, lastSeq: number, nowMs: number, acked: boolean, bounds: Pick<SlaBounds, 'max_repeats' | 'min_repeat_min'>): number | null {
   if (!s.repeat_min || (s.until_ack && acked)) return null;
   const every = Math.max(s.repeat_min, bounds.min_repeat_min) * MINUTE;
-  const seq = Math.floor((nowMs - firstSentMs) / every);
-  if (seq <= lastSeq || seq < 1) return null;
-  return Math.min(seq, bounds.max_repeats) > lastSeq ? Math.min(seq, bounds.max_repeats) : null;
+  const seq = Math.min(Math.floor((nowMs - firstSentMs) / every), bounds.max_repeats);
+  return seq >= 1 && seq > lastSeq ? seq : null;
 }
 
 /** When each step of one clock would fire for a clock started at `startMs` without pauses (preview and admin dry run). */
