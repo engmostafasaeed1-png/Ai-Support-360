@@ -43,7 +43,8 @@ describe('Approve BRD waits until every section was opened', () => {
     expect(approve).toHaveAttribute('aria-disabled', 'true');
     expect(approve).toHaveAccessibleDescription(/Open every BRD section before approving \(1 of 2 opened\)\./);
     fireEvent.click(approve);
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByText(/brd\.approval\.dialog\.title_approved/)).toBeNull();
+    expect(screen.getByTestId('blocked-popover')).toBeInTheDocument();
     // Request changes and Decline are never held back
     expect(screen.getByRole('button', { name: /action\.changes_requested/ })).not.toHaveAttribute('aria-disabled');
 
