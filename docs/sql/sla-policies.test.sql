@@ -292,7 +292,8 @@ BEGIN
   PERFORM pg_temp.as_user(ob);
   IF jsonb_array_length(public.sla_client_report(tb, 30) -> 'at_risk') <> 0 THEN RAISE EXCEPTION 'SL28 other company report'; END IF;
   PERFORM pg_temp.as_user(oa);
-  IF jsonb_array_length(public.sla_client_report(tb, 30) -> 'at_risk') IS NOT NULL AND pg_temp.err(format('SELECT public.sla_client_report(%L, 30)', tb)) NOT LIKE '%sla_forbidden%' THEN RAISE EXCEPTION 'SL28 cross report'; END IF;
+  IF pg_temp.err(format('SELECT public.sla_client_report(%L, 30)', tb)) NOT LIKE '%sla_forbidden%' THEN RAISE EXCEPTION 'SL28 cross report'; END IF;
+  IF (SELECT count(*) FROM jsonb_array_elements(public.sla_client_report(ta, 30) -> 'at_risk')) = 0 THEN RAISE EXCEPTION 'SL28 own report'; END IF;
   PERFORM pg_temp.as_user(ad);
   IF jsonb_typeof(public.sla_admin_report(30) -> 'by_company') <> 'array' THEN RAISE EXCEPTION 'SL28 admin report'; END IF;
 
