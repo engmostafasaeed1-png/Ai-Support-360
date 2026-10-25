@@ -3,7 +3,7 @@
 Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql/`); read it before changing files there.
 
 - Payout reminders are shared by dashboard and Earnings; admin readiness badges use presence/status metadata only, keeping bank identifiers out.
-- Dimmed buttons use Button `reason` (keys in `src/lib/blockedReasons.ts`, which also maps server refusal codes) or `busy`, never bare `disabled` (guard test; `disabled-ok:` opt-out), so each block says why and what next.
+- Dimmed buttons use Button `reason` (keys and server codes in `src/lib/blockedReasons.ts`) or `busy`, never bare `disabled` (guard test; `disabled-ok:` opt-out), so each block says why and what next.
 - Shared Button drops its variant gradient when callers pass a base background colour (custom gradients kept), preserving emergency/status colours.
 - Consultant landing/pricing pages own head tags via useHeadTags (dedupe, restore on unmount), never also via RouteSeo, to avoid competing updates.
 - Admin full consultant profiles load only via the audited admin-only RPC in the shared sheet (ephemeral queries, short-lived links, timed in-memory bank reveals), so private payout data is never persisted.
