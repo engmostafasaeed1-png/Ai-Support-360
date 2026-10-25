@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { format, isPast, isFuture, isToday } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import ScheduleMeetingLauncher from '@/components/meetings/ScheduleMeetingLauncher';
 
 const statusConfig: Record<string, { label: string; icon: typeof CheckCircle2; className: string }> = {
   scheduled: { label: 'Scheduled', icon: Calendar, className: 'bg-blue-500/10 text-blue-600' },
@@ -163,11 +164,14 @@ export default function VideoSessionsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Video Sessions</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage all your video consultations — upcoming, live, and past.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Video Sessions</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage all your video consultations — upcoming, live, and past.
+          </p>
+        </div>
+        <ScheduleMeetingLauncher role="client" />
       </div>
 
       {/* Stats Row */}
