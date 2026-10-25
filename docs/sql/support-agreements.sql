@@ -1712,11 +1712,12 @@ END $$;
 CREATE OR REPLACE FUNCTION public.sa_get(_id uuid)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE uid uuid := auth.uid(); r text := public.sa_role(_id, uid); a public.sa_agreements; cid uuid := public.sa_consultant_of(uid); party boolean; base jsonb; s jsonb := public.sa_settings();
+  dr text := public.sa_doc_access_role(_id, uid);
 BEGIN
   IF r IS NULL THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
   party := r IN ('admin', 'client', 'client_member', 'lead', 'team');
-  base := jsonb_build_object('id', a.id, 'name', a.name, 'status', a.status, 'role', r, 'request', a.request - CASE WHEN party OR COALESCE((a.request ->> 'show_budget')::boolean, false) THEN '' ELSE 'budget' END,
+  base := jsonb_build_object('id', a.id, 'name', a.name, 'reference', a.reference, 'status', a.status, 'role', r, 'request', a.request - CASE WHEN party OR COALESCE((a.request ->> 'show_budget')::boolean, false) THEN '' ELSE 'budget' END,
     'modules', to_jsonb(public.sa_modules(a)), 'deadline', a.deadline, 'invite_only', a.invite_only, 'legal_draft', COALESCE((s ->> 'draft_legal_flag')::boolean, true),
     'created_at', a.created_at,
     'terms_public', jsonb_build_object('model', a.terms ->> 'model', 'term', a.terms -> 'term', 'sla', a.terms -> 'sla', 'scope', a.terms -> 'scope', 'bank', a.terms -> 'bank',
@@ -1735,19 +1736,211 @@ BEGIN
     'suspended_until', a.suspended_until, 'nda_ok', CASE WHEN a.consultant_id IS NOT NULL THEN public.sa_nda_ok(a) END,
     'versions', COALESCE((SELECT jsonb_agg(jsonb_build_object('version', v.version, 'hash', v.content_hash, 'note', v.note, 'at', v.created_at) ORDER BY v.version DESC) FROM public.sa_versions v WHERE v.agreement_id = _id), '[]'::jsonb),
     'acceptances', COALESCE((SELECT jsonb_agg(jsonb_build_object('version', x.version, 'party', x.party, 'name', x.typed_name, 'at', x.accepted_at, 'hash', x.content_hash, 'legal_draft', x.legal_draft) ORDER BY x.accepted_at) FROM public.sa_acceptances x WHERE x.agreement_id = _id), '[]'::jsonb),
+    'member_acceptances', COALESCE((SELECT jsonb_agg(jsonb_build_object('consultant_id', x.consultant_id, 'name', public.consultant_public_name(x.consultant_id), 'role', x.member_role,
+                     'typed_name', x.typed_name, 'sla_version', x.sla_version, 'sla_hash', x.sla_hash, 'terms_version', x.terms_version, 'at', x.accepted_at) ORDER BY x.accepted_at)
+                   FROM public.sa_member_acceptances x WHERE x.agreement_id = _id), '[]'::jsonb),
     'rates', COALESCE((SELECT jsonb_agg(to_jsonb(x) - 'agreement_id' - 'proposed_by' - 'accepted_by' ORDER BY x.seq) FROM public.sa_rate_records x WHERE x.agreement_id = _id), '[]'::jsonb),
     'rate_in_force', (SELECT to_jsonb(x) - 'agreement_id' - 'proposed_by' - 'accepted_by' FROM public.sa_rate_on(_id, current_date) x WHERE x.id IS NOT NULL),
     'rate_changes', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', c.id, 'by', c.proposed_role, 'hourly_rate', c.hourly_rate, 's1_multiplier', c.s1_multiplier, 'overage_rate', c.overage_rate,
                      'effective_from', c.effective_from, 'reason', c.reason, 'status', c.status, 'at', c.created_at) ORDER BY c.created_at DESC) FROM public.sa_rate_changes c WHERE c.agreement_id = _id), '[]'::jsonb),
     'offers', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', o.id, 'by', o.by_role, 'patch', o.patch, 'note', o.note, 'status', o.status, 'at', o.created_at) ORDER BY o.created_at DESC) FROM public.sa_offers o WHERE o.agreement_id = _id), '[]'::jsonb),
     'applications', CASE WHEN r IN ('admin', 'client', 'client_member') THEN COALESCE((SELECT jsonb_agg((to_jsonb(p) - 'user_id') || jsonb_build_object('name', public.consultant_public_name(p.consultant_id)) ORDER BY p.created_at) FROM public.sa_applications p WHERE p.agreement_id = _id), '[]'::jsonb) END,
-    'members', COALESCE((SELECT jsonb_agg(jsonb_build_object('consultant_id', m.consultant_id, 'name', public.consultant_public_name(m.consultant_id), 'role', m.member_role, 'status', m.status)) FROM public.sa_members m WHERE m.agreement_id = _id), '[]'::jsonb),
+    'confirmation', public.sa_confirmation(_id),
+    'members', COALESCE(public.sa_confirmation(_id) -> 'members', '[]'::jsonb),
+    'my_member', (SELECT jsonb_build_object('role', m.member_role, 'status', m.status, 'required', m.required, 'capacity_hours_per_week', m.capacity_hours_per_week,
+                    'working_hours', m.working_hours, 'backup_for', m.backup_for, 'sla_accepted_at', m.sla_accepted_at)
+                  FROM public.sa_members m WHERE m.agreement_id = _id AND m.consultant_id = cid AND m.status IN ('invited', 'active') LIMIT 1),
     'replacement', (SELECT jsonb_build_object('id', x.id, 'status', x.status, 'to', x.to_consultant, 'reason', x.reason) FROM public.sa_replacements x WHERE x.agreement_id = _id AND x.status IN ('pending_admin', 'pending_consultant') LIMIT 1),
     'events', COALESCE((SELECT jsonb_agg(jsonb_build_object('kind', e.kind, 'role', e.actor_role, 'data', e.data, 'at', e.created_at) ORDER BY e.created_at DESC) FROM (SELECT * FROM public.sa_events WHERE agreement_id = _id ORDER BY created_at DESC LIMIT 100) e), '[]'::jsonb),
     'messages', COALESCE((SELECT jsonb_agg(jsonb_build_object('consultant_id', m.consultant_id, 'role', m.sender_role, 'body', m.body, 'at', m.created_at) ORDER BY m.created_at)
                   FROM public.sa_messages m WHERE m.agreement_id = _id AND (r IN ('admin', 'client', 'client_member') OR m.consultant_id = cid)), '[]'::jsonb),
     'usage', CASE WHEN a.status IN ('active', 'suspended', 'renewal_due', 'expired', 'terminated', 'archived') THEN public.sa_usage(_id) END,
+    -- Agreement documents: same NDA gate as ticket documents; consultants without an active place + NDA see only that they are locked.
+    'documents_locked', dr IS NULL,
+    'can_upload', dr IN ('client', 'lead', 'team') AND a.status <> 'archived',
+    'documents', CASE WHEN dr IS NOT NULL THEN COALESCE((SELECT jsonb_agg(jsonb_build_object('id', d.id, 'kind', d.kind, 'title', d.title, 'current_version', d.current_version,
+                     'archived_at', d.archived_at, 'created_at', d.created_at,
+                     'versions', COALESCE((SELECT jsonb_agg(jsonb_build_object('version', v.version, 'file_name', v.file_name, 'mime_type', v.mime_type, 'size_bytes', v.size_bytes,
+                                   'note', v.note, 'by_role', v.uploaded_role, 'by', public.sa_user_label(v.uploaded_by), 'at', v.uploaded_at) ORDER BY v.version DESC)
+                                 FROM public.sa_document_versions v WHERE v.document_id = d.id), '[]'::jsonb)) ORDER BY d.created_at)
+                   FROM public.sa_documents d WHERE d.agreement_id = _id), '[]'::jsonb) END,
+    'downloads', CASE WHEN dr IN ('admin', 'client', 'lead') THEN COALESCE((SELECT jsonb_agg(jsonb_build_object('document_id', l.document_id, 'version', l.version, 'role', l.actor_role,
+                     'by', public.sa_user_label(l.user_id), 'at', l.created_at) ORDER BY l.created_at DESC)
+                   FROM (SELECT * FROM public.sa_document_access x WHERE x.agreement_id = _id ORDER BY x.created_at DESC LIMIT 100) l), '[]'::jsonb) END,
     'fees', jsonb_build_object('service_fee_percent', public.sa_service_fee_percent(), 'processing_fee_percent', public.payment_processing_fee_percent(), 'vat_percent', public.payment_vat_percent()));
+END $$;
+
+-- ------------------------------------------------------------------------------------------------ agreement documents
+-- Private bucket 'agreement-documents', names <agreement>/<upload>/<file>. Allowed: PDF, DOCX, XLSX, PNG, JPEG, WebP up
+-- to doc_max_mb (default 20 MB). Readers: the client company, admins, and crew members with an ACTIVE place and the NDA
+-- signed by both sides (when the agreement requires an NDA) - the same NDA gate as ticket documents. Uploads: client,
+-- lead and active crew. Files are never replaced or deleted (new versions only); every download is logged first and the
+-- storage read policy only lets a file be opened right after its logged request (sa_document_open).
+CREATE OR REPLACE FUNCTION public.sa_doc_access_role(_agreement uuid, _uid uuid)
+RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE r text := public.sa_role(_agreement, _uid); a public.sa_agreements; cid uuid;
+BEGIN
+  IF r IN ('admin', 'client', 'client_member') THEN RETURN r; END IF;
+  IF r IS NULL OR r NOT IN ('lead', 'team') THEN RETURN NULL; END IF;
+  SELECT * INTO a FROM public.sa_agreements WHERE id = _agreement;
+  cid := public.sa_consultant_of(_uid);
+  IF NOT EXISTS (SELECT 1 FROM public.sa_members m WHERE m.agreement_id = _agreement AND m.consultant_id = cid AND m.status = 'active') THEN RETURN NULL; END IF;
+  IF COALESCE((a.terms ->> 'nda_required')::boolean, true) AND NOT public.sa_member_nda_ok(a.client_id, cid) THEN RETURN NULL; END IF;
+  RETURN r;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.sa_doc_type_ok(_file text, _mime text)
+RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path = public AS $$
+  SELECT CASE lower(COALESCE(substring(_file from '\.([A-Za-z0-9]+)$'), ''))
+    WHEN 'pdf' THEN lower(COALESCE(_mime, '')) = 'application/pdf'
+    WHEN 'docx' THEN lower(COALESCE(_mime, '')) = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    WHEN 'xlsx' THEN lower(COALESCE(_mime, '')) = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    WHEN 'png' THEN lower(COALESCE(_mime, '')) = 'image/png'
+    WHEN 'jpg' THEN lower(COALESCE(_mime, '')) = 'image/jpeg'
+    WHEN 'jpeg' THEN lower(COALESCE(_mime, '')) = 'image/jpeg'
+    WHEN 'webp' THEN lower(COALESCE(_mime, '')) = 'image/webp'
+    ELSE false END
+$$;
+
+CREATE OR REPLACE FUNCTION public.sa_doc_path_agreement(_name text)
+RETURNS uuid LANGUAGE plpgsql IMMUTABLE SET search_path = public AS $$
+BEGIN
+  RETURN split_part(COALESCE(_name, ''), '/', 1)::uuid;
+EXCEPTION WHEN OTHERS THEN RETURN NULL;
+END $$;
+
+-- Storage checks (called by the storage.objects policies below).
+CREATE OR REPLACE FUNCTION public.sa_doc_storage_insert_ok(_name text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT auth.uid() IS NOT NULL AND EXISTS (SELECT 1 FROM public.sa_document_uploads u WHERE u.storage_path = _name AND u.user_id = auth.uid()
+                                              AND u.finished_at IS NULL AND u.expires_at > now())
+$$;
+
+CREATE OR REPLACE FUNCTION public.sa_doc_storage_read_ok(_name text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT auth.uid() IS NOT NULL
+     AND EXISTS (SELECT 1 FROM public.sa_document_access l WHERE l.storage_path = _name AND l.user_id = auth.uid() AND l.created_at > now() - interval '2 minutes')
+     AND public.sa_doc_access_role(public.sa_doc_path_agreement(_name), auth.uid()) IS NOT NULL
+$$;
+
+-- Step 1 of an upload: checks (role, type, size, title/note filters, "contains no passwords" confirmation) and a
+-- one-time storage name valid for 15 minutes.
+CREATE OR REPLACE FUNCTION public.sa_document_begin_upload(_agreement uuid, _document uuid, _kind text, _title text, _file_name text, _mime text, _size bigint, _note text, _no_secrets boolean)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE uid uuid := auth.uid(); r text := public.sa_doc_access_role(_agreement, uid); a public.sa_agreements; d public.sa_documents; s jsonb := public.sa_settings();
+  up uuid := gen_random_uuid(); path text; k text := _kind; ti text := btrim(COALESCE(_title, '')); txt text;
+BEGIN
+  IF NOT public.sa_enabled() THEN RAISE EXCEPTION 'sa_disabled' USING ERRCODE = '55000'; END IF;
+  SELECT * INTO a FROM public.sa_agreements WHERE id = _agreement;
+  IF a.id IS NULL OR r IS NULL OR r NOT IN ('client', 'lead', 'team') OR a.status = 'archived' THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
+  IF _no_secrets IS NOT TRUE THEN RAISE EXCEPTION 'sa_no_secrets_confirm' USING ERRCODE = '22023'; END IF;
+  IF NOT public.sa_rate_ok('sa_doc:' || uid, 30, 86400) THEN RAISE EXCEPTION 'sa_rate_limited' USING ERRCODE = '53400'; END IF;
+  IF NOT public.sa_doc_type_ok(_file_name, _mime) THEN RAISE EXCEPTION 'sa_doc_type' USING ERRCODE = '22023'; END IF;
+  IF _size IS NULL OR _size <= 0 OR _size > COALESCE((s ->> 'doc_max_mb')::numeric, 20) * 1048576 THEN RAISE EXCEPTION 'sa_doc_size' USING ERRCODE = '22023'; END IF;
+  IF _document IS NOT NULL THEN
+    SELECT * INTO d FROM public.sa_documents x WHERE x.id = _document AND x.agreement_id = _agreement AND x.archived_at IS NULL;
+    IF d.id IS NULL THEN RAISE EXCEPTION 'sa_not_found' USING ERRCODE = 'P0002'; END IF;
+    k := d.kind; ti := d.title;
+  ELSE
+    IF COALESCE(k, '') NOT IN ('sow', 'scope_annex', 'access_plan', 'escalation_matrix', 'other') THEN RAISE EXCEPTION 'sa_doc_kind' USING ERRCODE = '22023'; END IF;
+    IF char_length(ti) NOT BETWEEN 1 AND 120 THEN RAISE EXCEPTION 'sa_doc_title' USING ERRCODE = '22023'; END IF;
+    IF (SELECT count(*) FROM public.sa_documents x WHERE x.agreement_id = _agreement) >= COALESCE((s ->> 'docs_per_agreement')::int, 50) THEN RAISE EXCEPTION 'sa_doc_limit' USING ERRCODE = '55000'; END IF;
+  END IF;
+  txt := concat_ws(' ', ti, _note, _file_name);
+  IF NOT public.sa_text_ok(txt) THEN RAISE EXCEPTION 'sa_contact_details' USING ERRCODE = '22023'; END IF;
+  IF NOT public.sa_secret_ok(txt) THEN RAISE EXCEPTION 'sa_secret_details' USING ERRCODE = '22023'; END IF;
+  path := _agreement || '/' || up || '/' || left(regexp_replace(_file_name, '[^A-Za-z0-9._-]+', '_', 'g'), 100);
+  INSERT INTO public.sa_document_uploads (id, agreement_id, document_id, kind, title, storage_path, file_name, mime_type, size_bytes, note, user_id, expires_at)
+  VALUES (up, _agreement, _document, k, ti, path, left(_file_name, 200), lower(_mime), _size, left(COALESCE(_note, ''), 500), uid, now() + interval '15 minutes');
+  RETURN jsonb_build_object('upload_id', up, 'bucket', 'agreement-documents', 'path', path);
+END $$;
+
+-- Step 2: the file is in storage (checked with its stored size and type) -> new document or new version, timeline, notice.
+CREATE OR REPLACE FUNCTION public.sa_document_finish_upload(_upload uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE uid uuid := auth.uid(); u public.sa_document_uploads; r text; did uuid; v int; found_obj boolean := true; sz bigint; mt text; s jsonb := public.sa_settings(); a public.sa_agreements;
+BEGIN
+  SELECT * INTO u FROM public.sa_document_uploads x WHERE x.id = _upload AND x.user_id = uid FOR UPDATE;
+  IF u.id IS NULL OR u.finished_at IS NOT NULL OR u.expires_at < now() THEN RAISE EXCEPTION 'sa_not_found' USING ERRCODE = 'P0002'; END IF;
+  r := public.sa_doc_access_role(u.agreement_id, uid);
+  IF r IS NULL OR r NOT IN ('client', 'lead', 'team') THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
+  IF to_regclass('storage.objects') IS NOT NULL THEN
+    EXECUTE 'SELECT true, (o.metadata ->> ''size'')::bigint, o.metadata ->> ''mimetype'' FROM storage.objects o WHERE o.bucket_id = ''agreement-documents'' AND o.name = $1'
+      INTO found_obj, sz, mt USING u.storage_path;
+    IF found_obj IS NOT TRUE THEN RAISE EXCEPTION 'sa_doc_missing' USING ERRCODE = 'P0002'; END IF;
+    IF sz IS NOT NULL AND sz > COALESCE((s ->> 'doc_max_mb')::numeric, 20) * 1048576 THEN RAISE EXCEPTION 'sa_doc_size' USING ERRCODE = '22023'; END IF;
+    IF mt IS NOT NULL AND NOT public.sa_doc_type_ok(u.file_name, mt) THEN RAISE EXCEPTION 'sa_doc_type' USING ERRCODE = '22023'; END IF;
+  END IF;
+  IF u.document_id IS NULL THEN
+    INSERT INTO public.sa_documents (agreement_id, kind, title, current_version, created_by) VALUES (u.agreement_id, u.kind, u.title, 1, uid) RETURNING id INTO did;
+    v := 1;
+  ELSE
+    UPDATE public.sa_documents SET current_version = current_version + 1 WHERE id = u.document_id AND archived_at IS NULL RETURNING id, current_version INTO did, v;
+    IF did IS NULL THEN RAISE EXCEPTION 'sa_not_found' USING ERRCODE = 'P0002'; END IF;
+  END IF;
+  INSERT INTO public.sa_document_versions (document_id, version, agreement_id, storage_path, file_name, mime_type, size_bytes, note, uploaded_by, uploaded_role)
+  VALUES (did, v, u.agreement_id, u.storage_path, u.file_name, u.mime_type, COALESCE(sz, u.size_bytes), u.note, uid, r);
+  UPDATE public.sa_document_uploads SET finished_at = now() WHERE id = u.id;
+  PERFORM public.sa_event(u.agreement_id, 'document_uploaded', uid, jsonb_build_object('document', did, 'version', v, 'kind', u.kind, 'title', u.title));
+  PERFORM public.sa_audit_log(uid, 'document_uploaded', u.agreement_id, jsonb_build_object('document', did, 'version', v));
+  SELECT * INTO a FROM public.sa_agreements WHERE id = u.agreement_id;
+  PERFORM public.sa_notify_parties(u.agreement_id, 'New agreement document: ' || a.name, 'مستند جديد للاتفاقية: ' || a.name,
+    u.title || ' (version ' || v || ') was added to the agreement documents.', 'أُضيف ' || u.title || ' (الإصدار ' || v || ') إلى مستندات الاتفاقية.', false, 'doc:' || did || ':' || v);
+  RETURN jsonb_build_object('document_id', did, 'version', v);
+END $$;
+
+-- Open one version: access checked, the download logged, then the browser asks storage for a short-lived link.
+CREATE OR REPLACE FUNCTION public.sa_document_open(_document uuid, _version integer DEFAULT NULL)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE uid uuid := auth.uid(); d public.sa_documents; r text; v public.sa_document_versions;
+BEGIN
+  SELECT * INTO d FROM public.sa_documents WHERE id = _document;
+  IF d.id IS NULL THEN RAISE EXCEPTION 'sa_not_found' USING ERRCODE = 'P0002'; END IF;
+  r := public.sa_doc_access_role(d.agreement_id, uid);
+  IF r IS NULL THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
+  IF NOT public.sa_rate_ok('sa_doc_open:' || uid, 200, 3600) THEN RAISE EXCEPTION 'sa_rate_limited' USING ERRCODE = '53400'; END IF;
+  SELECT * INTO v FROM public.sa_document_versions x WHERE x.document_id = _document AND x.version = COALESCE(_version, d.current_version);
+  IF v.document_id IS NULL THEN RAISE EXCEPTION 'sa_not_found' USING ERRCODE = 'P0002'; END IF;
+  INSERT INTO public.sa_document_access (agreement_id, document_id, version, storage_path, user_id, actor_role) VALUES (d.agreement_id, _document, v.version, v.storage_path, uid, r);
+  RETURN jsonb_build_object('bucket', 'agreement-documents', 'path', v.storage_path, 'file_name', v.file_name, 'mime_type', v.mime_type, 'version', v.version);
+END $$;
+
+-- Archive (hide from the active list; versions and the download log stay). Client or the person who added it.
+CREATE OR REPLACE FUNCTION public.sa_document_archive(_document uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE uid uuid := auth.uid(); d public.sa_documents;
+BEGIN
+  SELECT * INTO d FROM public.sa_documents WHERE id = _document FOR UPDATE;
+  IF d.id IS NULL OR d.archived_at IS NOT NULL THEN RAISE EXCEPTION 'sa_not_found' USING ERRCODE = 'P0002'; END IF;
+  IF NOT (public.sa_doc_access_role(d.agreement_id, uid) = 'client' OR (d.created_by = uid AND public.sa_doc_access_role(d.agreement_id, uid) IS NOT NULL)) THEN
+    RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501';
+  END IF;
+  UPDATE public.sa_documents SET archived_at = now(), archived_by = uid WHERE id = _document;
+  PERFORM public.sa_event(d.agreement_id, 'document_archived', uid, jsonb_build_object('document', _document, 'title', d.title));
+END $$;
+
+-- storage.objects rules for the bucket (restrictive = they also narrow any older broad policy).
+DO $$
+BEGIN
+  IF to_regclass('storage.objects') IS NULL THEN RETURN; END IF;
+  EXECUTE 'DROP POLICY IF EXISTS "Agreement files: logged readers only" ON storage.objects';
+  EXECUTE $p$CREATE POLICY "Agreement files: logged readers only" ON storage.objects AS RESTRICTIVE FOR SELECT TO public
+    USING (bucket_id <> 'agreement-documents' OR public.sa_doc_storage_read_ok(name))$p$;
+  EXECUTE 'DROP POLICY IF EXISTS "Agreement files: prepared uploads only" ON storage.objects';
+  EXECUTE $p$CREATE POLICY "Agreement files: prepared uploads only" ON storage.objects AS RESTRICTIVE FOR INSERT TO public
+    WITH CHECK (bucket_id <> 'agreement-documents' OR public.sa_doc_storage_insert_ok(name))$p$;
+  EXECUTE 'DROP POLICY IF EXISTS "Agreement files: never replaced" ON storage.objects';
+  EXECUTE $p$CREATE POLICY "Agreement files: never replaced" ON storage.objects AS RESTRICTIVE FOR UPDATE TO public
+    USING (bucket_id <> 'agreement-documents') WITH CHECK (bucket_id <> 'agreement-documents')$p$;
+  EXECUTE 'DROP POLICY IF EXISTS "Agreement files: never deleted" ON storage.objects';
+  EXECUTE $p$CREATE POLICY "Agreement files: never deleted" ON storage.objects AS RESTRICTIVE FOR DELETE TO public
+    USING (bucket_id <> 'agreement-documents')$p$;
+  EXECUTE 'DROP POLICY IF EXISTS "Agreement files: parties can open" ON storage.objects';
+  EXECUTE $p$CREATE POLICY "Agreement files: parties can open" ON storage.objects FOR SELECT TO authenticated
+    USING (bucket_id = 'agreement-documents' AND public.sa_doc_storage_read_ok(name))$p$;
+  EXECUTE 'DROP POLICY IF EXISTS "Agreement files: parties can upload" ON storage.objects';
+  EXECUTE $p$CREATE POLICY "Agreement files: parties can upload" ON storage.objects FOR INSERT TO authenticated
+    WITH CHECK (bucket_id = 'agreement-documents' AND public.sa_doc_storage_insert_ok(name))$p$;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_list_mine(_tenant uuid DEFAULT NULL)
