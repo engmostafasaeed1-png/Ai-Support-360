@@ -6182,6 +6182,64 @@ export type Database = {
           },
         ]
       }
+      partner_resources: {
+        Row: {
+          accepted_at: string | null
+          capacity_hours_week: number | null
+          consultant_id: string
+          ended_at: string | null
+          id: string
+          invited_at: string
+          invited_by: string | null
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          capacity_hours_week?: number | null
+          consultant_id: string
+          ended_at?: string | null
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          capacity_hours_week?: number | null
+          consultant_id?: string
+          ended_at?: string | null
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_resources_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "partner_resources_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_resources_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_buyer_revisions: {
         Row: {
           created_at: string
@@ -11488,9 +11546,11 @@ export type Database = {
           company_size: string | null
           created_at: string
           created_by: string | null
+          demo_partner: boolean
           domain: string | null
           id: string
           industry: string | null
+          is_partner: boolean
           logo_url: string | null
           max_sessions_per_month: number
           max_tickets_per_month: number
@@ -11509,9 +11569,11 @@ export type Database = {
           company_size?: string | null
           created_at?: string
           created_by?: string | null
+          demo_partner?: boolean
           domain?: string | null
           id?: string
           industry?: string | null
+          is_partner?: boolean
           logo_url?: string | null
           max_sessions_per_month?: number
           max_tickets_per_month?: number
@@ -11530,9 +11592,11 @@ export type Database = {
           company_size?: string | null
           created_at?: string
           created_by?: string | null
+          demo_partner?: boolean
           domain?: string | null
           id?: string
           industry?: string | null
+          is_partner?: boolean
           logo_url?: string | null
           max_sessions_per_month?: number
           max_tickets_per_month?: number
@@ -16440,6 +16504,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_set_tenant_demo_partner: {
+        Args: { _on: boolean; _tenant: string }
+        Returns: undefined
+      }
+      admin_set_tenant_partner: {
+        Args: { _on: boolean; _tenant: string }
+        Returns: undefined
+      }
       admin_storage_overview: { Args: never; Returns: Json }
       admin_success_breakdown: { Args: { _cid: string }; Returns: Json }
       admin_success_disputes: { Args: never; Returns: Json }
@@ -17698,6 +17770,40 @@ export type Database = {
         }
         Returns: undefined
       }
+      partner_am_i: { Args: never; Returns: boolean }
+      partner_context: { Args: never; Returns: Json }
+      partner_enabled: { Args: never; Returns: boolean }
+      partner_invite_resource: { Args: { _email: string }; Returns: string }
+      partner_leave: { Args: never; Returns: undefined }
+      partner_my_links: {
+        Args: never
+        Returns: {
+          id: string
+          invited_at: string
+          status: string
+          tenant_name: string
+        }[]
+      }
+      partner_overview: { Args: never; Returns: Json }
+      partner_resource_overview: {
+        Args: { _consultant_id: string }
+        Returns: Json
+      }
+      partner_respond: {
+        Args: { _accept: boolean; _id: string }
+        Returns: undefined
+      }
+      partner_set_availability: {
+        Args: {
+          _capacity: number
+          _consultant_ids: string[]
+          _hold_from: string
+          _hold_to: string
+          _status: Database["public"]["Enums"]["availability_status"]
+        }
+        Returns: Json
+      }
+      partner_tenant_for: { Args: { _uid: string }; Returns: string }
       pause_my_notifications: {
         Args: {
           _categories?: string[]
