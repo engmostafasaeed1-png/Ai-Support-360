@@ -30,6 +30,7 @@ import SapNotesField from '@/components/ticket/SapNotesField';
 import { MAX_SAP_AREAS, MAX_OTHER_AREA_LENGTH, MAX_AREA_DETAILS_LENGTH, OTHER_AREA, areasSummary, areaLabel, isOtherArea, resolveArea } from '@/lib/sapAreas';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Switch } from '@/components/ui/switch';
 import { checkAttachments, ATTACHMENT_HINT } from '@/lib/attachments';
 import { safeFileName } from '@/lib/storagePath';
 import { invokeWithTimeout } from '@/lib/invokeWithTimeout';
