@@ -13,6 +13,8 @@ import TrackingListControls, { TrackingRowChips } from '@/components/tracking/Tr
 import { useBrdApprovalList } from '@/hooks/useBrdApproval';
 import { BrdApprovalFilterButton, BrdApprovalRowChip } from '@/components/brd/approval/BrdApprovalListControls';
 import { SlaFilterBar, SlaRowChip, useSlaList } from '@/components/sla/SlaListControls';
+import { AgreementTagChip } from '@/components/agreements/AgreementBits';
+import { useAgreementTags } from '@/hooks/useAgreements';
 import {
   Search, TicketPlus, Ticket, ChevronDown, ChevronUp,
   Clock, User, Calendar, Tag, Video, MessageSquare, Monitor,
@@ -70,6 +72,7 @@ export default function TicketsPage() {
   const parentRef = useRef<HTMLDivElement>(null);
 
   const sla = useSlaList(tickets || []);
+  const agreementTags = useAgreementTags((tickets || []).map((x) => x.id));
   const filtered = sla.apply(tt.apply((tickets || []).filter((t) => {
     const matchSearch =
       t.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
@@ -192,6 +195,7 @@ export default function TicketsPage() {
                             <TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} />
                             <BrdApprovalRowChip row={approvals.get(ticket.id)} />
                             {sla.on && <SlaRowChip state={sla.map.get(ticket.id)} atRiskPct={sla.atRisk} />}
+                            {agreementTags.get(ticket.id) && <AgreementTagChip name={agreementTags.get(ticket.id)!.name} />}
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">

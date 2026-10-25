@@ -133,7 +133,8 @@ BEGIN
   IF (SELECT status FROM public.sa_agreements WHERE id = aid) <> 'agreed' THEN RAISE EXCEPTION 'SA11 needs NDA'; END IF;
   PERFORM pg_temp.as_user(NULL);
   INSERT INTO public.nda_agreements (consultant_id, client_id, signature_data, nda_content, signed_at, client_signed_at) VALUES (kc, oa, 'sig', 'nda', now(), now());
-  IF NOT public.sa_try_activate(aid) OR (SELECT status FROM public.sa_agreements WHERE id = aid) <> 'active' THEN RAISE EXCEPTION 'SA11 active'; END IF;
+  IF NOT public.sa_try_activate(aid) THEN RAISE EXCEPTION 'SA11 activate'; END IF;
+  IF (SELECT status FROM public.sa_agreements WHERE id = aid) <> 'active' THEN RAISE EXCEPTION 'SA11 active'; END IF;
 
   -- SA12 a ticket under the agreement gets the agreed rate and a direct request to the lead (no bidding);
   --      a module outside the scope stays a normal ticket.
@@ -145,6 +146,13 @@ BEGIN
   INSERT INTO public.tickets (client_id, tenant_id, title, sap_module, status, urgency, ticket_context)
   VALUES (oa, ta, 'MM question', 'MM', 'new', 'low', jsonb_build_object('support_agreement_id', aid)) RETURNING id INTO t2;
   IF EXISTS (SELECT 1 FROM public.sa_tickets WHERE ticket_id = t2) THEN RAISE EXCEPTION 'SA12 out of scope'; END IF;
+  -- The browser path: a plain ticket attached right after creation by its own client.
+  INSERT INTO public.tickets (client_id, tenant_id, title, sap_module, status, urgency) VALUES (oa, ta, 'Payment run', 'FI', 'new', 'medium') RETURNING id INTO t2;
+  PERFORM pg_temp.as_user(oa);
+  IF NOT (public.sa_attach_ticket(t2, aid) ->> 'linked')::boolean THEN RAISE EXCEPTION 'SA12 attach'; END IF;
+  PERFORM pg_temp.as_user(ob);
+  IF pg_temp.err(format('SELECT public.sa_attach_ticket(%L, %L)', t2, aid)) NOT LIKE '%sa_forbidden%' THEN RAISE EXCEPTION 'SA12 attach other'; END IF;
+  PERFORM pg_temp.as_user(NULL);
   -- Company B cannot attach its ticket to company A's agreement.
   INSERT INTO public.tickets (client_id, title, sap_module, status, urgency, ticket_context)
   VALUES (ob, 'Steal', 'FI', 'new', 'low', jsonb_build_object('support_agreement_id', aid)) RETURNING id INTO t2;

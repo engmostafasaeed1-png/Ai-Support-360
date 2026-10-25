@@ -53,6 +53,11 @@ $$;
 
 INSERT INTO public.platform_settings (key, value) VALUES ('support_agreements', jsonb_build_object('enabled', false))
 ON CONFLICT (key) DO NOTHING;
+INSERT INTO public.platform_settings (key, value) VALUES ('support_agreements_visible', 'false'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+DROP POLICY IF EXISTS "Signed-in users can read support_agreements_visible" ON public.platform_settings;
+CREATE POLICY "Signed-in users can read support_agreements_visible" ON public.platform_settings
+  FOR SELECT TO authenticated USING (key = 'support_agreements_visible');
 
 -- Portal (service) fee for agreement invoices: the admin value, else the platform fee of every other invoice.
 CREATE OR REPLACE FUNCTION public.sa_service_fee_percent()
@@ -510,10 +515,10 @@ BEGIN
     IF s -> 'rate_caps' -> m ->> 'min' IS NOT NULL THEN lo := GREATEST(lo, (s -> 'rate_caps' -> m ->> 'min')::numeric); END IF;
     IF s -> 'rate_caps' -> m ->> 'max' IS NOT NULL THEN hi := LEAST(hi, (s -> 'rate_caps' -> m ->> 'max')::numeric); END IF;
   END LOOP;
-  IF _rate IS NULL OR _rate < lo THEN out := out || 'rate_low'; END IF;
-  IF _rate IS NULL OR _rate > hi THEN out := out || 'rate_high'; END IF;
-  IF (_s1 IS NOT NULL AND (_s1 < 1 OR _s1 > mx)) OR (_ooh IS NOT NULL AND (_ooh < 1 OR _ooh > mx)) THEN out := out || 'multiplier'; END IF;
-  IF _overage IS NOT NULL AND _overage < _rate THEN out := out || 'overage_low'; END IF;
+  IF _rate IS NULL OR _rate < lo THEN out := array_append(out, 'rate_low'); END IF;
+  IF _rate IS NULL OR _rate > hi THEN out := array_append(out, 'rate_high'); END IF;
+  IF (_s1 IS NOT NULL AND (_s1 < 1 OR _s1 > mx)) OR (_ooh IS NOT NULL AND (_ooh < 1 OR _ooh > mx)) THEN out := array_append(out, 'multiplier'); END IF;
+  IF _overage IS NOT NULL AND _overage < _rate THEN out := array_append(out, 'overage_low'); END IF;
   RETURN out;
 END $$;
 
@@ -522,25 +527,25 @@ RETURNS text[] LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public
 DECLARE s jsonb := public.sa_settings(); out text[] := '{}'; sd date; ed date; mods text[];
 BEGIN
   mods := ARRAY(SELECT jsonb_array_elements_text(COALESCE(_t -> 'scope' -> 'modules', '[]'::jsonb)));
-  IF char_length(btrim(COALESCE(_t ->> 'name', ''))) NOT BETWEEN 1 AND 120 THEN out := out || 'name'; END IF;
-  IF cardinality(mods) = 0 THEN out := out || 'modules'; END IF;
-  IF NOT (COALESCE(s -> 'models_enabled', '[]'::jsonb) ? COALESCE(_t ->> 'model', '')) THEN out := out || 'model_disabled'; END IF;
+  IF char_length(btrim(COALESCE(_t ->> 'name', ''))) NOT BETWEEN 1 AND 120 THEN out := array_append(out, 'name'); END IF;
+  IF cardinality(mods) = 0 THEN out := array_append(out, 'modules'); END IF;
+  IF NOT (COALESCE(s -> 'models_enabled', '[]'::jsonb) ? COALESCE(_t ->> 'model', '')) THEN out := array_append(out, 'model_disabled'); END IF;
   BEGIN sd := (_t -> 'term' ->> 'start_date')::date; EXCEPTION WHEN OTHERS THEN sd := NULL; END;
-  BEGIN ed := NULLIF(_t -> 'term' ->> 'end_date', '')::date; EXCEPTION WHEN OTHERS THEN ed := NULL; out := out || 'end_before_start'; END;
-  IF sd IS NULL OR sd < current_date THEN out := out || 'start_past'; END IF;
+  BEGIN ed := NULLIF(_t -> 'term' ->> 'end_date', '')::date; EXCEPTION WHEN OTHERS THEN ed := NULL; out := array_append(out, 'end_before_start'); END;
+  IF sd IS NULL OR sd < current_date THEN out := array_append(out, 'start_past'); END IF;
   IF ed IS NOT NULL AND sd IS NOT NULL THEN
-    IF ed <= sd THEN out := out || 'end_before_start';
-    ELSIF COALESCE((s ->> 'min_term_months')::int, 0) > 0 AND ed < (sd + make_interval(months => (s ->> 'min_term_months')::int))::date THEN out := out || 'term_short';
+    IF ed <= sd THEN out := array_append(out, 'end_before_start');
+    ELSIF COALESCE((s ->> 'min_term_months')::int, 0) > 0 AND ed < (sd + make_interval(months => (s ->> 'min_term_months')::int))::date THEN out := array_append(out, 'term_short');
     END IF;
   END IF;
-  IF COALESCE((_t -> 'term' ->> 'notice_days')::int, -1) NOT BETWEEN 0 AND COALESCE((s ->> 'max_notice_days')::int, 90) THEN out := out || 'notice'; END IF;
+  IF COALESCE((_t -> 'term' ->> 'notice_days')::int, -1) NOT BETWEEN 0 AND COALESCE((s ->> 'max_notice_days')::int, 90) THEN out := array_append(out, 'notice'); END IF;
   IF _t ->> 'model' = 'hours_bank' THEN
-    IF COALESCE((_t -> 'bank' ->> 'hours_per_month')::numeric, 0) NOT BETWEEN 0.25 AND 744 THEN out := out || 'bank_hours'; END IF;
-    IF _t -> 'bank' ->> 'unused' = 'forfeit' AND NOT COALESCE((s ->> 'allow_forfeit')::boolean, false) THEN out := out || 'forfeit_disabled'; END IF;
-    IF COALESCE((_t -> 'bank' ->> 'prepay')::boolean, false) AND NOT COALESCE((s ->> 'allow_prepayment')::boolean, false) THEN out := out || 'prepay_disabled'; END IF;
+    IF COALESCE((_t -> 'bank' ->> 'hours_per_month')::numeric, 0) NOT BETWEEN 0.25 AND 744 THEN out := array_append(out, 'bank_hours'); END IF;
+    IF _t -> 'bank' ->> 'unused' = 'forfeit' AND NOT COALESCE((s ->> 'allow_forfeit')::boolean, false) THEN out := array_append(out, 'forfeit_disabled'); END IF;
+    IF COALESCE((_t -> 'bank' ->> 'prepay')::boolean, false) AND NOT COALESCE((s ->> 'allow_prepayment')::boolean, false) THEN out := array_append(out, 'prepay_disabled'); END IF;
   END IF;
-  IF _t ->> 'model' = 'availability' AND COALESCE((_t ->> 'capacity_hours_per_week')::numeric, 0) NOT BETWEEN 0.5 AND 60 THEN out := out || 'capacity'; END IF;
-  IF COALESCE(_t -> 'rate' ->> 'currency', '') !~ '^[A-Z]{3}$' THEN out := out || 'currency'; END IF;
+  IF _t ->> 'model' = 'availability' AND COALESCE((_t ->> 'capacity_hours_per_week')::numeric, 0) NOT BETWEEN 0.5 AND 60 THEN out := array_append(out, 'capacity'); END IF;
+  IF COALESCE(_t -> 'rate' ->> 'currency', '') !~ '^[A-Z]{3}$' THEN out := array_append(out, 'currency'); END IF;
   out := out || public.sa_rate_problems((_t -> 'rate' ->> 'hourly_rate')::numeric, NULLIF(_t -> 'rate' ->> 's1_multiplier', '')::numeric,
     NULLIF(_t -> 'rate' ->> 'ooh_multiplier', '')::numeric, NULLIF(_t -> 'rate' ->> 'overage_rate', '')::numeric, mods);
   RETURN out;
@@ -614,7 +619,7 @@ $$;
 -- New draft (request details shown to applicants + the draft terms). Company owner/admin or own-account client.
 CREATE OR REPLACE FUNCTION public.sa_create(_tenant uuid, _request jsonb, _terms jsonb)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); id uuid;
+DECLARE uid uuid := auth.uid(); new_id uuid;
 BEGIN
   IF NOT public.sa_enabled() THEN RAISE EXCEPTION 'sa_disabled' USING ERRCODE = '55000'; END IF;
   IF NOT public.sa_can_manage(uid, _tenant, CASE WHEN _tenant IS NULL THEN uid END) THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
@@ -624,10 +629,10 @@ BEGIN
   END IF;
   INSERT INTO public.sa_agreements (tenant_id, client_id, name, request, terms, created_by)
   VALUES (_tenant, uid, left(COALESCE(NULLIF(btrim(_terms ->> 'name'), ''), 'Support agreement'), 120), COALESCE(_request, '{}'::jsonb), COALESCE(_terms, '{}'::jsonb), uid)
-  RETURNING sa_agreements.id INTO id;
-  PERFORM public.sa_event(id, 'created', uid);
-  PERFORM public.sa_audit_log(uid, 'create', id);
-  RETURN id;
+  RETURNING sa_agreements.id INTO new_id;
+  PERFORM public.sa_event(new_id, 'created', uid);
+  PERFORM public.sa_audit_log(uid, 'create', new_id);
+  RETURN new_id;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_save_draft(_id uuid, _request jsonb, _terms jsonb)
@@ -682,7 +687,7 @@ END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_apply(_id uuid, _rate numeric, _currency text, _model text, _capacity numeric, _availability text, _sla_accepted boolean, _message text)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); a public.sa_agreements; cid uuid := public.sa_consultant_of(uid); probs text[]; id uuid; s jsonb := public.sa_settings();
+DECLARE uid uuid := auth.uid(); a public.sa_agreements; cid uuid := public.sa_consultant_of(uid); probs text[]; new_id uuid; s jsonb := public.sa_settings();
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
   IF a.id IS NULL OR public.sa_role(_id, uid) NOT IN ('candidate', 'applicant') OR a.status <> 'open' THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
@@ -699,11 +704,11 @@ BEGIN
   ON CONFLICT (agreement_id, consultant_id) DO UPDATE SET hourly_rate = EXCLUDED.hourly_rate, currency = EXCLUDED.currency, model = EXCLUDED.model,
     capacity_hours_per_week = EXCLUDED.capacity_hours_per_week, availability_note = EXCLUDED.availability_note, sla_accepted_at = now(), message = EXCLUDED.message,
     status = CASE WHEN sa_applications.status IN ('withdrawn', 'declined') THEN 'pending' ELSE sa_applications.status END, updated_at = now()
-  RETURNING sa_applications.id INTO id;
+  RETURNING sa_applications.id INTO new_id;
   PERFORM public.sa_event(_id, 'applied', uid);
   PERFORM public.sa_notify(_id, a.client_id, 'New application: ' || a.name, 'طلب جديد: ' || a.name, 'A consultant applied for your support agreement.',
-    'تقدّم استشاري لاتفاقية الدعم الخاصة بك.', 'client', false, 'applied:' || id || ':' || extract(epoch FROM now())::bigint / 3600);
-  RETURN id;
+    'تقدّم استشاري لاتفاقية الدعم الخاصة بك.', 'client', false, 'applied:' || new_id || ':' || extract(epoch FROM now())::bigint / 3600);
+  RETURN new_id;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_withdraw_application(_id uuid)
@@ -755,7 +760,7 @@ END $$;
 -- ------------------------------------------------------------------------------------------------ negotiation
 CREATE OR REPLACE FUNCTION public.sa_offer(_id uuid, _patch jsonb, _note text DEFAULT '')
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); a public.sa_agreements; r text := public.sa_role(_id, uid); probs text[]; id uuid;
+DECLARE uid uuid := auth.uid(); a public.sa_agreements; r text := public.sa_role(_id, uid); probs text[]; new_id uuid;
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id FOR UPDATE;
   IF r NOT IN ('client', 'lead') OR a.status <> 'negotiating' THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
@@ -765,17 +770,17 @@ BEGIN
   IF cardinality(probs) > 0 THEN RAISE EXCEPTION 'sa_terms_invalid: %', array_to_string(probs, ',') USING ERRCODE = '22023'; END IF;
   UPDATE public.sa_offers SET status = 'superseded' WHERE agreement_id = _id AND status = 'open';
   INSERT INTO public.sa_offers (agreement_id, by_role, by_user, patch, note) VALUES (_id, public.sa_party(r), uid, _patch, left(COALESCE(_note, ''), 1000))
-  RETURNING sa_offers.id INTO id;
+  RETURNING sa_offers.id INTO new_id;
   PERFORM public.sa_event(_id, 'offer', uid, jsonb_build_object('patch', _patch));
   PERFORM public.sa_audit_log(uid, 'counter', _id, jsonb_build_object('patch', _patch));
   IF r = 'client' THEN
     PERFORM public.sa_notify(_id, public.sa_user_of(a.consultant_id), 'Counter-offer: ' || a.name, 'عرض مقابل: ' || a.name,
-      'The client proposes different terms. Please accept or counter.', 'يقترح العميل شروطاً مختلفة. يرجى القبول أو تقديم عرض مقابل.', 'consultant', true, 'offer:' || id);
+      'The client proposes different terms. Please accept or counter.', 'يقترح العميل شروطاً مختلفة. يرجى القبول أو تقديم عرض مقابل.', 'consultant', true, 'offer:' || new_id);
   ELSE
     PERFORM public.sa_notify(_id, a.client_id, 'Counter-offer: ' || a.name, 'عرض مقابل: ' || a.name,
-      'The consultant proposes different terms. Please accept or counter.', 'يقترح الاستشاري شروطاً مختلفة. يرجى القبول أو تقديم عرض مقابل.', 'client', true, 'offer:' || id);
+      'The consultant proposes different terms. Please accept or counter.', 'يقترح الاستشاري شروطاً مختلفة. يرجى القبول أو تقديم عرض مقابل.', 'client', true, 'offer:' || new_id);
   END IF;
-  RETURN id;
+  RETURN new_id;
 END $$;
 
 -- Only the OTHER party may accept or decline an offer; acceptance creates a new terms version (acceptances reset).
@@ -862,7 +867,7 @@ END $$;
 -- ------------------------------------------------------------------------------------------------ rate changes (annual review)
 CREATE OR REPLACE FUNCTION public.sa_propose_rate_change(_id uuid, _rate numeric, _s1 numeric, _ooh numeric, _overage numeric, _effective date, _reason text)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); a public.sa_agreements; r text := public.sa_role(_id, uid); probs text[]; id uuid;
+DECLARE uid uuid := auth.uid(); a public.sa_agreements; r text := public.sa_role(_id, uid); probs text[]; new_id uuid;
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
   IF r NOT IN ('client', 'lead') OR a.status NOT IN ('agreed', 'active', 'suspended', 'renewal_due') THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
@@ -872,12 +877,12 @@ BEGIN
   probs := public.sa_rate_problems(_rate, _s1, _ooh, _overage, public.sa_modules(a));
   IF cardinality(probs) > 0 THEN RAISE EXCEPTION 'sa_rate_out_of_bounds: %', array_to_string(probs, ',') USING ERRCODE = '22023'; END IF;
   INSERT INTO public.sa_rate_changes (agreement_id, proposed_by, proposed_role, hourly_rate, s1_multiplier, ooh_multiplier, overage_rate, effective_from, reason)
-  VALUES (_id, uid, public.sa_party(r), round(_rate, 2), _s1, _ooh, _overage, _effective, left(_reason, 500)) RETURNING sa_rate_changes.id INTO id;
+  VALUES (_id, uid, public.sa_party(r), round(_rate, 2), _s1, _ooh, _overage, _effective, left(_reason, 500)) RETURNING sa_rate_changes.id INTO new_id;
   PERFORM public.sa_event(_id, 'rate_change_proposed', uid, jsonb_build_object('effective_from', _effective));
   PERFORM public.sa_audit_log(uid, 'rate_change_proposed', _id, jsonb_build_object('rate', _rate, 'effective_from', _effective));
   PERFORM public.sa_notify_parties(_id, 'Rate change proposed: ' || a.name, 'اقتراح تغيير السعر: ' || a.name,
-    'A new hourly rate from ' || _effective || ' was proposed. The other party must approve it.', 'اقتُرح سعر جديد اعتباراً من ' || _effective || '. يجب أن يوافق الطرف الآخر.', true, 'ratechange:' || id);
-  RETURN id;
+    'A new hourly rate from ' || _effective || ' was proposed. The other party must approve it.', 'اقتُرح سعر جديد اعتباراً من ' || _effective || '. يجب أن يوافق الطرف الآخر.', true, 'ratechange:' || new_id);
+  RETURN new_id;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_decide_rate_change(_change uuid, _accept boolean)
@@ -997,16 +1002,16 @@ END $$;
 -- Replacing the lead mid-term: client asks -> admin approves -> new consultant accepts; the rate is kept.
 CREATE OR REPLACE FUNCTION public.sa_request_replacement(_id uuid, _to uuid, _reason text)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); a public.sa_agreements; id uuid;
+DECLARE uid uuid := auth.uid(); a public.sa_agreements; new_id uuid;
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
   IF public.sa_role(_id, uid) <> 'client' OR a.status NOT IN ('active', 'suspended', 'renewal_due') THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
   IF NOT public.sa_text_ok(_reason) THEN RAISE EXCEPTION 'sa_contact_details' USING ERRCODE = '22023'; END IF;
   INSERT INTO public.sa_replacements (agreement_id, from_consultant, to_consultant, reason, requested_by) VALUES (_id, a.consultant_id, _to, left(_reason, 1000), uid)
-  RETURNING sa_replacements.id INTO id;
+  RETURNING sa_replacements.id INTO new_id;
   PERFORM public.sa_event(_id, 'replacement_requested', uid);
-  PERFORM public.sa_notify_admins(_id, 'Consultant replacement requested', a.name || ': the client asks to replace the lead consultant.', 'replace:' || id);
-  RETURN id;
+  PERFORM public.sa_notify_admins(_id, 'Consultant replacement requested', a.name || ': the client asks to replace the lead consultant.', 'replace:' || new_id);
+  RETURN new_id;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_admin_decide_replacement(_replacement uuid, _approve boolean, _note text)
@@ -1043,7 +1048,7 @@ END $$;
 -- Q&A between the client and one applicant / the parties (contact-details filter M60).
 CREATE OR REPLACE FUNCTION public.sa_post_message(_id uuid, _consultant uuid, _body text)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); r text := public.sa_role(_id, uid); cid uuid; id uuid; a public.sa_agreements;
+DECLARE uid uuid := auth.uid(); r text := public.sa_role(_id, uid); cid uuid; new_id uuid; a public.sa_agreements;
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
   IF r IN ('candidate', 'applicant', 'lead', 'team') THEN cid := public.sa_consultant_of(uid);
@@ -1053,13 +1058,13 @@ BEGIN
   IF NOT public.sa_text_ok(_body) THEN RAISE EXCEPTION 'sa_contact_details' USING ERRCODE = '22023'; END IF;
   IF NOT public.sa_rate_ok('sa_msg:' || uid, 60, 3600) THEN RAISE EXCEPTION 'sa_rate_limited' USING ERRCODE = '53400'; END IF;
   INSERT INTO public.sa_messages (agreement_id, consultant_id, sender_id, sender_role, body)
-  VALUES (_id, cid, uid, CASE WHEN r = 'client' THEN 'client' ELSE 'consultant' END, left(btrim(_body), 2000)) RETURNING sa_messages.id INTO id;
+  VALUES (_id, cid, uid, CASE WHEN r = 'client' THEN 'client' ELSE 'consultant' END, left(btrim(_body), 2000)) RETURNING sa_messages.id INTO new_id;
   IF r = 'client' THEN
-    PERFORM public.sa_notify(_id, public.sa_user_of(cid), 'New message: ' || a.name, 'رسالة جديدة: ' || a.name, 'The client replied about the support agreement.', 'ردّ العميل بخصوص اتفاقية الدعم.', 'consultant', false, 'msg:' || id);
+    PERFORM public.sa_notify(_id, public.sa_user_of(cid), 'New message: ' || a.name, 'رسالة جديدة: ' || a.name, 'The client replied about the support agreement.', 'ردّ العميل بخصوص اتفاقية الدعم.', 'consultant', false, 'msg:' || new_id);
   ELSE
-    PERFORM public.sa_notify(_id, a.client_id, 'New question: ' || a.name, 'سؤال جديد: ' || a.name, 'A consultant wrote about your support agreement.', 'كتب استشاري بخصوص اتفاقية الدعم.', 'client', false, 'msg:' || id);
+    PERFORM public.sa_notify(_id, a.client_id, 'New question: ' || a.name, 'سؤال جديد: ' || a.name, 'A consultant wrote about your support agreement.', 'كتب استشاري بخصوص اتفاقية الدعم.', 'client', false, 'msg:' || new_id);
   END IF;
-  RETURN id;
+  RETURN new_id;
 END $$;
 
 -- ------------------------------------------------------------------------------------------------ tickets under an agreement
@@ -1076,49 +1081,78 @@ RETURNS TABLE (policy_id uuid, version integer) LANGUAGE sql STABLE SECURITY DEF
    WHERE st.ticket_id = _ticket AND NULLIF(a.terms -> 'sla' ->> 'policy_id', '') IS NOT NULL LIMIT 1
 $$;
 
--- ticket_context.support_agreement_id -> link (live agreement of the same client / company whose scope covers the
--- module), approved agreement rate (S1 multiplier for critical tickets), direct request to the lead consultant.
--- Never raises: a wrong or stale agreement id leaves a normal ticket.
+-- Links a ticket to a live agreement of the same client / company whose scope covers the module: approved agreement
+-- rate (S1 multiplier for critical tickets) and a direct assignment request to the lead consultant (no bidding).
+-- Returns false (and changes nothing) when the agreement does not apply. Never raises.
+CREATE OR REPLACE FUNCTION public.sa_link_ticket(_ticket uuid, _agreement uuid, _actor uuid)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE t record; a public.sa_agreements; rr public.sa_rate_records; rate numeric;
+BEGIN
+  IF NOT public.sa_enabled() OR _agreement IS NULL THEN RETURN false; END IF;
+  SELECT tk.id, tk.client_id, tk.tenant_id, tk.sap_module, tk.sap_modules, tk.critical_response, tk.urgency::text AS urgency INTO t FROM public.tickets tk WHERE tk.id = _ticket;
+  IF t.id IS NULL OR EXISTS (SELECT 1 FROM public.sa_tickets x WHERE x.ticket_id = _ticket) THEN RETURN false; END IF;
+  SELECT * INTO a FROM public.sa_agreements WHERE id = _agreement;
+  IF a.id IS NULL OR a.status NOT IN ('active', 'renewal_due') OR a.termination_end < current_date THEN RETURN false; END IF;
+  IF NOT ((a.tenant_id IS NOT NULL AND a.tenant_id = t.tenant_id) OR (a.client_id = t.client_id)) THEN RETURN false; END IF;
+  IF NOT (t.sap_module = ANY (public.sa_modules(a)) OR COALESCE(t.sap_modules, '{}') && public.sa_modules(a)) THEN RETURN false; END IF;
+  INSERT INTO public.sa_tickets (ticket_id, agreement_id) VALUES (_ticket, _agreement);
+  rr := public.sa_rate_on(_agreement, current_date);
+  IF rr.id IS NOT NULL THEN
+    rate := round(rr.hourly_rate * CASE WHEN COALESCE(t.critical_response, false) OR t.urgency = 'critical' THEN COALESCE(rr.s1_multiplier, 1) ELSE 1 END, 2);
+    UPDATE public.ticket_rates SET status = 'replaced' WHERE ticket_id = _ticket AND consultant_id = a.consultant_id AND status IN ('proposed', 'approved');
+    INSERT INTO public.ticket_rates (ticket_id, consultant_id, hourly_rate, currency, status, source, proposed_by, decided_by, decided_at, decision_note, base_rate, surcharge_percent)
+    VALUES (_ticket, a.consultant_id, rate, rr.currency, 'approved', 'agreement', public.sa_user_of(a.consultant_id), t.client_id, now(),
+            left('Support agreement "' || a.name || '" (rate record ' || rr.seq || ')', 500),
+            CASE WHEN rate <> rr.hourly_rate THEN rr.hourly_rate END, CASE WHEN rate <> rr.hourly_rate THEN round((rate / rr.hourly_rate - 1) * 100, 2) END);
+  END IF;
+  BEGIN
+    INSERT INTO public.ticket_match_requests (ticket_id, consultant_id, sent_by, status, message)
+    VALUES (_ticket, a.consultant_id, t.client_id, 'pending', left('Support agreement: ' || a.name, 500));
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'Agreement request to the lead consultant skipped: %', SQLERRM;
+  END;
+  UPDATE public.sa_agreements SET last_activity_at = now() WHERE id = _agreement;
+  PERFORM public.sa_event(_agreement, 'ticket_linked', _actor, jsonb_build_object('ticket', _ticket));
+  RETURN true;
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'Support agreement link skipped for ticket %: %', _ticket, SQLERRM;
+  RETURN false;
+END $$;
+
+-- Trusted (server) inserts may pass ticket_context.support_agreement_id; the browser cannot (guard_ticket_context
+-- accepts only matching keys) and uses sa_attach_ticket right after creating the ticket.
 CREATE OR REPLACE FUNCTION public.sa_on_ticket_insert()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE aid uuid; a public.sa_agreements; rr public.sa_rate_records; rate numeric; cur text;
+DECLARE aid uuid;
 BEGIN
-  IF NOT public.sa_enabled() THEN RETURN NULL; END IF;
   BEGIN
     aid := NULLIF(NEW.ticket_context ->> 'support_agreement_id', '')::uuid;
   EXCEPTION WHEN OTHERS THEN RETURN NULL;
   END;
-  IF aid IS NULL THEN RETURN NULL; END IF;
-  BEGIN
-    SELECT * INTO a FROM public.sa_agreements WHERE id = aid;
-    IF a.id IS NULL OR a.status NOT IN ('active', 'renewal_due') OR a.termination_end < current_date THEN RETURN NULL; END IF;
-    IF NOT ((a.tenant_id IS NOT NULL AND a.tenant_id = NEW.tenant_id) OR (a.client_id = NEW.client_id)) THEN RETURN NULL; END IF;
-    IF NOT (NEW.sap_module = ANY (public.sa_modules(a)) OR COALESCE(NEW.sap_modules, '{}') && public.sa_modules(a)) THEN RETURN NULL; END IF;
-    INSERT INTO public.sa_tickets (ticket_id, agreement_id) VALUES (NEW.id, aid) ON CONFLICT DO NOTHING;
-    rr := public.sa_rate_on(aid, current_date);
-    IF rr.id IS NOT NULL THEN
-      rate := round(rr.hourly_rate * CASE WHEN COALESCE(NEW.critical_response, false) OR NEW.urgency::text = 'critical' THEN COALESCE(rr.s1_multiplier, 1) ELSE 1 END, 2);
-      cur := rr.currency;
-      INSERT INTO public.ticket_rates (ticket_id, consultant_id, hourly_rate, currency, status, source, proposed_by, decided_by, decided_at, decision_note, base_rate, surcharge_percent)
-      VALUES (NEW.id, a.consultant_id, rate, cur, 'approved', 'agreement', public.sa_user_of(a.consultant_id), NEW.client_id, now(),
-              left('Support agreement "' || a.name || '" (rate record ' || rr.seq || ')', 500),
-              CASE WHEN rate <> rr.hourly_rate THEN rr.hourly_rate END, CASE WHEN rate <> rr.hourly_rate THEN round((rate / rr.hourly_rate - 1) * 100, 2) END);
-    END IF;
-    BEGIN
-      INSERT INTO public.ticket_match_requests (ticket_id, consultant_id, sent_by, status, message)
-      VALUES (NEW.id, a.consultant_id, NEW.client_id, 'pending', left('Support agreement: ' || a.name, 500));
-    EXCEPTION WHEN OTHERS THEN
-      RAISE WARNING 'Agreement request to the lead consultant skipped: %', SQLERRM;
-    END;
-    UPDATE public.sa_agreements SET last_activity_at = now() WHERE id = aid;
-    PERFORM public.sa_event(aid, 'ticket_linked', NEW.client_id, jsonb_build_object('ticket', NEW.id));
-  EXCEPTION WHEN OTHERS THEN
-    RAISE WARNING 'Support agreement link skipped for ticket %: %', NEW.id, SQLERRM;
-  END;
+  IF aid IS NOT NULL THEN PERFORM public.sa_link_ticket(NEW.id, aid, NEW.client_id); END IF;
   RETURN NULL;
 END $$;
 DROP TRIGGER IF EXISTS sa_ticket_link ON public.tickets;   -- runs before sla_ticket_insert (name order), so the SLA hook sees the link
 CREATE TRIGGER sa_ticket_link AFTER INSERT ON public.tickets FOR EACH ROW EXECUTE FUNCTION public.sa_on_ticket_insert();
+
+-- New-request form switch "Use my support agreement": the ticket's own client (or a company member who may use the
+-- agreement) attaches a just-created, still unassigned ticket. The SLA snapshot is re-applied with the agreement's policy.
+CREATE OR REPLACE FUNCTION public.sa_attach_ticket(_ticket uuid, _agreement uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE uid uuid := auth.uid(); t record; ok boolean; pol uuid; ver int;
+BEGIN
+  SELECT tk.id, tk.client_id, tk.consultant_id, tk.created_at INTO t FROM public.tickets tk WHERE tk.id = _ticket;
+  IF t.id IS NULL OR t.client_id <> uid OR public.sa_role(_agreement, uid) NOT IN ('client', 'client_member') THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
+  IF t.consultant_id IS NOT NULL OR t.created_at < now() - interval '30 minutes' THEN RAISE EXCEPTION 'sa_too_late: attach right after creating the ticket' USING ERRCODE = '55000'; END IF;
+  ok := public.sa_link_ticket(_ticket, _agreement, uid);
+  IF ok AND to_regprocedure('public.sla_apply_snapshot(uuid,text,uuid,text,text,text,uuid,integer,jsonb)') IS NOT NULL THEN
+    SELECT x.policy_id, x.version INTO pol, ver FROM public.sa_ticket_sla(_ticket) x;
+    IF pol IS NOT NULL AND EXISTS (SELECT 1 FROM public.sla_ticket_snapshots s WHERE s.ticket_id = _ticket AND s.superseded_at IS NULL AND (s.policy_id IS DISTINCT FROM pol OR s.policy_version IS DISTINCT FROM ver)) THEN
+      EXECUTE 'SELECT public.sla_apply_snapshot($1, ''new_policy'', $2, ''fresh'', NULL, ''Support agreement SLA'', $3, $4)' USING _ticket, uid, pol, ver;
+    END IF;
+  END IF;
+  RETURN jsonb_build_object('linked', ok);
+END $$;
 
 -- Timesheet activity keeps the agreement "active" for the bypass check.
 CREATE OR REPLACE FUNCTION public.sa_on_activity()
@@ -1207,7 +1241,7 @@ BEGIN
   END IF;
   RETURN base || jsonb_build_object(
     'terms', a.terms, 'version', a.version, 'content_hash', (SELECT v.content_hash FROM public.sa_versions v WHERE v.agreement_id = _id AND v.version = a.version),
-    'consultant_id', a.consultant_id, 'admin_review', a.admin_review, 'agreed_at', a.agreed_at, 'started_at', a.started_at, 'start_date', a.start_date, 'end_date', a.end_date,
+    'consultant_id', a.consultant_id, 'consultant_name', CASE WHEN a.consultant_id IS NOT NULL THEN public.consultant_public_name(a.consultant_id) END, 'admin_review', a.admin_review, 'agreed_at', a.agreed_at, 'started_at', a.started_at, 'start_date', a.start_date, 'end_date', a.end_date,
     'auto_renew', jsonb_build_object('client', a.auto_renew_client_at IS NOT NULL, 'consultant', a.auto_renew_consultant_at IS NOT NULL),
     'termination', CASE WHEN a.termination_end IS NOT NULL THEN jsonb_build_object('by', a.termination_requested_by, 'reason', a.termination_reason, 'end', a.termination_end,
                      'handover_until', a.handover_until, 'handover_note', a.handover_note) END,
@@ -1219,8 +1253,8 @@ BEGIN
     'rate_changes', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', c.id, 'by', c.proposed_role, 'hourly_rate', c.hourly_rate, 's1_multiplier', c.s1_multiplier, 'overage_rate', c.overage_rate,
                      'effective_from', c.effective_from, 'reason', c.reason, 'status', c.status, 'at', c.created_at) ORDER BY c.created_at DESC) FROM public.sa_rate_changes c WHERE c.agreement_id = _id), '[]'::jsonb),
     'offers', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', o.id, 'by', o.by_role, 'patch', o.patch, 'note', o.note, 'status', o.status, 'at', o.created_at) ORDER BY o.created_at DESC) FROM public.sa_offers o WHERE o.agreement_id = _id), '[]'::jsonb),
-    'applications', CASE WHEN r IN ('admin', 'client', 'client_member') THEN COALESCE((SELECT jsonb_agg(to_jsonb(p) - 'user_id' ORDER BY p.created_at) FROM public.sa_applications p WHERE p.agreement_id = _id), '[]'::jsonb) END,
-    'members', COALESCE((SELECT jsonb_agg(jsonb_build_object('consultant_id', m.consultant_id, 'role', m.member_role, 'status', m.status)) FROM public.sa_members m WHERE m.agreement_id = _id), '[]'::jsonb),
+    'applications', CASE WHEN r IN ('admin', 'client', 'client_member') THEN COALESCE((SELECT jsonb_agg((to_jsonb(p) - 'user_id') || jsonb_build_object('name', public.consultant_public_name(p.consultant_id)) ORDER BY p.created_at) FROM public.sa_applications p WHERE p.agreement_id = _id), '[]'::jsonb) END,
+    'members', COALESCE((SELECT jsonb_agg(jsonb_build_object('consultant_id', m.consultant_id, 'name', public.consultant_public_name(m.consultant_id), 'role', m.member_role, 'status', m.status)) FROM public.sa_members m WHERE m.agreement_id = _id), '[]'::jsonb),
     'replacement', (SELECT jsonb_build_object('id', x.id, 'status', x.status, 'to', x.to_consultant, 'reason', x.reason) FROM public.sa_replacements x WHERE x.agreement_id = _id AND x.status IN ('pending_admin', 'pending_consultant') LIMIT 1),
     'events', COALESCE((SELECT jsonb_agg(jsonb_build_object('kind', e.kind, 'role', e.actor_role, 'data', e.data, 'at', e.created_at) ORDER BY e.created_at DESC) FROM (SELECT * FROM public.sa_events WHERE agreement_id = _id ORDER BY created_at DESC LIMIT 100) e), '[]'::jsonb),
     'messages', COALESCE((SELECT jsonb_agg(jsonb_build_object('consultant_id', m.consultant_id, 'role', m.sender_role, 'body', m.body, 'at', m.created_at) ORDER BY m.created_at)
@@ -1268,8 +1302,20 @@ BEGIN
   END IF;
   INSERT INTO public.platform_settings (key, value) VALUES ('support_agreements', v)
   ON CONFLICT (key) DO UPDATE SET value = public.platform_settings.value || EXCLUDED.value, updated_at = now();
+  -- Boolean mirror for the menu switch (src/lib/pageVisibility.ts reads boolean rows only).
+  INSERT INTO public.platform_settings (key, value) VALUES ('support_agreements_visible', to_jsonb(public.sa_enabled()))
+  ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
   PERFORM public.sa_audit_log(uid, 'settings', NULL, jsonb_build_object('before', before, 'after', public.sa_settings(), 'reason', left(_reason, 300)));
   RETURN public.sa_settings();
+END $$;
+
+-- Full settings (incl. per-module rate caps) and today's fee percentages for the administrator screen.
+CREATE OR REPLACE FUNCTION public.sa_admin_settings()
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NOT public.sa_is_admin(auth.uid()) THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
+  RETURN jsonb_build_object('settings', public.sa_settings(), 'fees', jsonb_build_object('service_fee_percent', public.payment_service_fee_percent(),
+    'processing_fee_percent', public.payment_processing_fee_percent(), 'vat_percent', public.payment_vat_percent(), 'agreement_fee_percent', public.sa_service_fee_percent()));
 END $$;
 
 CREATE OR REPLACE FUNCTION public.sa_admin_list(_status text DEFAULT NULL)
@@ -1512,8 +1558,8 @@ GRANT EXECUTE ON FUNCTION
   public.sa_decide_rate_change(uuid, boolean), public.sa_request_termination(uuid, text), public.sa_handover_note(uuid, text),
   public.sa_suspend(uuid, date, text), public.sa_resume(uuid), public.sa_set_auto_renew(uuid, boolean), public.sa_invite_member(uuid, uuid),
   public.sa_member_respond(uuid, boolean), public.sa_request_replacement(uuid, uuid, text), public.sa_admin_decide_replacement(uuid, boolean, text),
-  public.sa_replacement_accept(uuid, boolean), public.sa_post_message(uuid, uuid, text), public.sa_usable(uuid), public.sa_ticket_tags(uuid[]),
-  public.sa_get(uuid), public.sa_list_mine(uuid), public.sa_admin_set_settings(jsonb, text), public.sa_admin_list(text), public.sa_admin_review(uuid, boolean, text)
+  public.sa_replacement_accept(uuid, boolean), public.sa_post_message(uuid, uuid, text), public.sa_usable(uuid), public.sa_attach_ticket(uuid, uuid), public.sa_ticket_tags(uuid[]),
+  public.sa_get(uuid), public.sa_list_mine(uuid), public.sa_admin_set_settings(jsonb, text), public.sa_admin_settings(), public.sa_admin_list(text), public.sa_admin_review(uuid, boolean, text)
 TO authenticated;
 -- The SLA hook must stay callable from the SLA functions (they run as the owner; no browser grant needed).
 

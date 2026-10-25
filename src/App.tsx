@@ -191,6 +191,9 @@ const EnvironmentLogsPage = lazyWithRetry(() => import("./pages/admin/Environmen
 const MeetingJoinEventsExportPage = lazyWithRetry(() => import("./pages/admin/MeetingJoinEventsExportPage.tsx"), 'MeetingJoinEventsExportPage');
 const AdminSettingsPage = lazyWithRetry(() => import("./pages/admin/AdminSettingsPage.tsx"), 'AdminSettingsPage');
 const AdminSlaPage = lazyWithRetry(() => import("./pages/admin/AdminSlaPage.tsx"), 'AdminSlaPage');
+const AdminAgreementsPage = lazyWithRetry(() => import("./pages/admin/AdminAgreementsPage.tsx"), 'AdminAgreementsPage');
+const AgreementsListPage = lazyWithRetry(() => import("./pages/agreements/AgreementsListPage.tsx"), 'AgreementsListPage');
+const AgreementDetailPage = lazyWithRetry(() => import("./pages/agreements/AgreementDetailPage.tsx"), 'AgreementDetailPage');
 const NDAManagementPage = lazyWithRetry(() => import("./pages/admin/NDAManagementPage.tsx"), 'NDAManagementPage');
 const InterviewTrainingPage = lazyWithRetry(() => import("./pages/admin/InterviewTrainingPage.tsx"), 'InterviewTrainingPage');
 const QuestionLibraryPage = lazyWithRetry(() => import("./pages/admin/QuestionLibraryPage.tsx"), 'QuestionLibraryPage');
@@ -382,6 +385,8 @@ const App = () => (
               <Route path="cases/:caseId" element={<CaseDetailPage />} />
               <Route path="cases/:caseId/brd" element={<BrdPage />} />
               <Route path="requests" element={<RequestsPage />} />
+              <Route path="agreements" element={<AgreementsListPage portal="consultant" />} />
+              <Route path="agreements/:agreementId" element={<AgreementDetailPage portal="consultant" />} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="earnings" element={<EarningsPage />} />
               <Route path="verification" element={<VerificationPage />} />
@@ -441,6 +446,8 @@ const App = () => (
               <Route path="milestones" element={<MilestonesPage />} />
               <Route path="activity-log" element={<ActivityLogPage />} />
               <Route path="sla" element={<SLAPage />} />
+              <Route path="agreements" element={<AgreementsListPage portal="client" />} />
+              <Route path="agreements/:agreementId" element={<AgreementDetailPage portal="client" />} />
               <Route path="team" element={<TeamMembersPage />} />
               <Route path="reports" element={<ClientReportsPage />} />
               <Route path="referrals" element={<ReferralsPage />} />
@@ -513,6 +520,7 @@ const App = () => (
               <Route path="meeting-join-events" element={<MeetingJoinEventsExportPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="sla" element={<AdminSlaPage />} />
+              <Route path="agreements" element={<AdminAgreementsPage />} />
               <Route path="nda-management" element={<NDAManagementPage />} />
               <Route path="landing-editor" element={<LandingEditorPage />} />
               <Route path="interview-training" element={<InterviewTrainingPage />} />

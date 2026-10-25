@@ -67,6 +67,7 @@ import BrdButton from '@/components/brd/BrdButton';
 import TicketTrackingPanel, { TrackingHeaderChips } from '@/components/tracking/TicketTrackingPanel';
 import { BrdApprovalHeaderChip } from '@/components/brd/approval/BrdApprovalChip';
 import { SlaHeaderChips } from '@/components/sla/SlaChips';
+import { AgreementTicketTag } from '@/components/agreements/AgreementBits';
 import SlaTicketPanel from '@/components/sla/SlaTicketPanel';
 
 function TicketFileLink({ fileUrl, fileName }: { fileUrl: string | null; fileName: string | null }) {
@@ -280,6 +281,7 @@ export default function TicketDetailPage() {
             <TrackingHeaderChips ticketId={ticket.id} />
             <BrdApprovalHeaderChip ticketId={ticket.id} />
             <SlaHeaderChips ticketId={ticket.id} />
+            <AgreementTicketTag ticketId={ticket.id} portal="client" />
           </div>
         </div>
       </div>

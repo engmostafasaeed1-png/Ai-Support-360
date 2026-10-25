@@ -306,6 +306,8 @@ export type MatchConsultant = {
   /** False when the account is disabled or suspended. */
   active?: boolean | null;
   availability_status?: string | null;
+  /** Share of the week (0-1) reserved for clients by support-agreement availability commitments. */
+  reserved_share?: number | null;
   skills?: Array<{ module: string; years?: number | null; certified?: boolean | null }> | null;
   certifications?: Array<{ name: string; verified?: boolean | null; expired?: boolean | null }> | null;
   project_modules?: string[] | null;
@@ -541,7 +543,10 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
   const answeredRate = c.assignment_response_rate;
   parts.push({ key: 'response', fit: responseFit(rt, answeredRate), chip: rt && rt <= 30 && (answeredRate == null || answeredRate >= 0.8) ? '30' : undefined });
   const status = c.availability_status;
-  parts.push({ key: 'availability', fit: status === 'available' ? 1 : status === 'busy' ? 0.5 : 0, chip: status === 'available' ? 'now' : undefined });
+  // Hours reserved by support agreements (availability commitments) lower the fit: half the week reserved = 25 % lower.
+  const reserved = Math.max(0, Math.min(1, Number(c.reserved_share) || 0));
+  const availFit = (status === 'available' ? 1 : status === 'busy' ? 0.5 : 0) * (1 - reserved / 2);
+  parts.push({ key: 'availability', fit: availFit, chip: status === 'available' && reserved < 0.5 ? 'now' : undefined });
   parts.push({ key: 'completion', fit: Math.max(0, Math.min(100, c.completion_percent ?? 0)) / 100 });
   if (s.modules.length > 0) {
     const matched = s.modules.filter((m) => cm.codes.includes(m));

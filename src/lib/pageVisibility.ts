@@ -5,7 +5,7 @@ import type { NavGroup } from '@/components/sidebar/navTypes';
  * (admin switch in Admin settings, default OFF; readable by signed-in users only after
  * docs/sql/solution-architecture-flag.sql). A missing or unreadable setting counts as hidden.
  */
-export const PAGE_VISIBILITY_SETTINGS = ['solution_architecture_visible'] as const;
+export const PAGE_VISIBILITY_SETTINGS = ['solution_architecture_visible', 'support_agreements_visible'] as const;
 export type PageVisibilitySetting = (typeof PAGE_VISIBILITY_SETTINGS)[number];
 export type PageVisibility = Partial<Record<PageVisibilitySetting, boolean>>;
 

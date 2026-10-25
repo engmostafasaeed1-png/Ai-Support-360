@@ -32,6 +32,7 @@ import { cleanNoteList } from '@/lib/sapNotes';
 import RateClientCard from '@/components/consultant/RateClientCard';
 import ClientRatingChip from '@/components/consultant/ClientRatingChip';
 import { SlaHeaderChips } from '@/components/sla/SlaChips';
+import { AgreementTicketTag } from '@/components/agreements/AgreementBits';
 import SlaTicketPanel from '@/components/sla/SlaTicketPanel';
 
 const urgencyColors: Record<string, string> = {
@@ -296,7 +297,7 @@ export default function CaseDetailPage() {
           <BrdButton ticketId={ticket.id} area="consultant" />
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2"><TrackingHeaderChips ticketId={ticket.id} /><BrdApprovalHeaderChip ticketId={ticket.id} /><SlaHeaderChips ticketId={ticket.id} /></div>
+      <div className="flex flex-wrap items-center gap-2"><TrackingHeaderChips ticketId={ticket.id} /><BrdApprovalHeaderChip ticketId={ticket.id} /><SlaHeaderChips ticketId={ticket.id} /><AgreementTicketTag ticketId={ticket.id} portal="consultant" /></div>
 
       {/* Two-layer tracking: automatic stage + the working status set by client and consultant */}
       <TicketTrackingPanel ticketId={ticket.id} ticketTitle={ticket.title ?? ''} />
