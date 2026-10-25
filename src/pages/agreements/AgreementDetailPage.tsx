@@ -30,7 +30,8 @@ export default function AgreementDetailPage({ portal }: { portal: 'client' | 'co
   if (params.get('edit') === '1' && a.role === 'client' && ['draft', 'open'].includes(a.status) && a.terms) {
     return (
       <div className="space-y-4 p-4 md:p-6">{back}
-        <AgreementRequestForm settings={mine.data.settings} agreementId={a.id} initial={{ request: a.request as never, terms: { ...emptyTerms(a.terms.model), ...a.terms } }}
+        <AgreementRequestForm settings={mine.data.settings} agreementId={a.id} status={a.status} reference={a.reference}
+          applicants={(a.applications ?? []).map((p) => p.consultant_id)} initial={{ request: a.request as never, terms: { ...emptyTerms(a.terms.model), ...a.terms } }}
           onCancel={() => setParams({})} onSaved={() => { setParams({}); refresh(); nav(`/client/agreements/${a.id}`); }} />
       </div>
     );
