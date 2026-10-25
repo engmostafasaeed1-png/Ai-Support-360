@@ -42,6 +42,8 @@ export const BLOCKED_REASONS = {
   sla_not_accepted: r('ticket', 'Accept the SLA targets for this request first.', 'اقبل أهداف اتفاقية مستوى الخدمة لهذا الطلب أولًا.', ['Review the SLA', 'مراجعة اتفاقية مستوى الخدمة']),
   brd_not_approved: r('ticket', 'The business requirements document must be approved first.', 'يجب اعتماد مستند متطلبات العمل أولًا.', ['Open the BRD', 'فتح مستند المتطلبات']),
   brd_not_submitted: r('ticket', 'Submit a business requirements document version first.', 'أرسل نسخة من مستند متطلبات العمل أولًا.', ['Open the BRD', 'فتح مستند المتطلبات']),
+  brd_sections_unread: r('ticket', 'Open every BRD section before approving ({{done}} of {{total}} opened).', 'افتح كل أقسام مستند المتطلبات قبل الاعتماد (فُتح {{done}} من {{total}}).', ['Go to the next section', 'الانتقال إلى القسم التالي']),
+  brd_sections_not_opened: r('ticket', 'Open this BRD version and read every section before approving.', 'افتح هذه النسخة من مستند المتطلبات واقرأ كل أقسامها قبل الاعتماد.', ['Open the BRD below', 'فتح المستند أدناه']),
   bids_closed: r('ticket', 'Bidding for this request has closed.', 'أُغلق باب العروض لهذا الطلب.'),
   no_bids_yet: r('ticket', 'No bids have arrived yet.', 'لم تصل أي عروض بعد.'),
   work_not_started: r('ticket', 'Work on this request has not started yet.', 'لم يبدأ العمل على هذا الطلب بعد.'),
