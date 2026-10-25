@@ -28,7 +28,7 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - Social sign-in starts only via startSocialSignIn (rechecks settings).
 - Others' consultant names come only from the database viewer rule and the shared consultantName formatter, so no screen, e-mail or AI text leaks a hidden name.
 - Realtime uses `subscribeWhileVisible` with row filters (whole tables only on admin pages); portals and Arabic load lazily, cutting DB/bundle load.
-- Meetings are created only by the schedule-meeting function (options + schedule: assignment, conflict, external-switch and colleague checks); every entry point uses ScheduleMeetingButton/ScheduleMeetingLauncher with `_shared/meetingSchedule.ts`, so a disabled button always shows its reason and screen and server agree.
+- Meetings are created only by the schedule-meeting function; entry points use ScheduleMeetingButton/Launcher with `_shared/meetingSchedule.ts`, so disabled buttons show why and screen and server agree.
 - Window scroll rules live only in ScrollToTop/lib/scrollUtils; landing reveals use lib/reveal, which hides only what it marks, so content shows without scripts.
 - Sign-up confirmation links open /auth/confirm, verifying only on a button press (code fallback) so scanners cannot use them up; expired links show ConfirmLinkProblem, never the social error.
 - Consultant referrals (Feature Z): attribution, activation, fraud signals, rewards and referral payouts are decided only by docs/sql/referral-program.sql triggers; the browser reads only via my_referral_* / admin_referral_* RPCs (masked, default-deny) and `src/lib/referrals.ts` mirrors the rules (threats/tests: docs/referral-security.md), so money is never set from a screen.
