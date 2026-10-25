@@ -44,7 +44,7 @@ export default function NdaStatusCard({ ndaId, consultantId, clientId, consultan
 
   if (q.isLoading) return <Skeleton className={`h-24 w-full rounded-2xl ${className ?? ''}`} />;
   const s = q.data;
-  if (!s) return <>{fallback}</>;
+  if (!s || s.available === false) return <>{fallback}</>;
   const v = ndaView(s);
   const roleLabel = (p: NdaParty | null) => (p ? t(`ndaSign.role.${p}`) : '');
   const otherName = v.other === 'consultant' ? consultantName : clientName;

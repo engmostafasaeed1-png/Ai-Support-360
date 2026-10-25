@@ -11,6 +11,8 @@ import i18n from '@/i18n/config';
 import type { NdaStatus } from '../../supabase/functions/_shared/ndaSignature';
 
 let status: NdaStatus | null = null;
+// Radix checkboxes measure themselves; jsdom has no ResizeObserver
+globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { auth: { getSession: async () => ({ data: { session: null } }) }, storage: { from: () => ({}) } } }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/hooks/useNdaSigning', () => ({
