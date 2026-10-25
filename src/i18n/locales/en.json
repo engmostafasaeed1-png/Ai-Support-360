@@ -1262,7 +1262,8 @@
     "social_signup": "Sign-up with social providers",
     "social_signup_note": "Keep sign-up with social providers OFF until Google credentials are configured and tested",
     "social_login": "Sign-in for returning users",
-    "social_login_hint": "Shown on the sign-in page only. Turn on Apple or Microsoft only after they are configured."
+    "social_login_hint": "Shown on the sign-in page only. Turn on Apple or Microsoft only after they are configured.",
+    "settings_solution_architecture": "Show Solution Architecture to clients"
   },
   "maintenance": {
     "banner": "The platform is currently undergoing scheduled maintenance. Some features may be temporarily unavailable."
