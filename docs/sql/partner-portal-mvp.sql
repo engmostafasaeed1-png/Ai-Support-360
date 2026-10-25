@@ -47,7 +47,7 @@ CREATE OR REPLACE FUNCTION public.admin_set_tenant_partner(_tenant uuid, _on boo
 BEGIN
   IF NOT (has_role(auth.uid(), 'admin') OR has_role(auth.uid(), 'super_admin')) THEN RAISE EXCEPTION 'permission_missing'; END IF;
   UPDATE tenants SET is_partner = _on, updated_at = now() WHERE id = _tenant;
-  INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
+  INSERT INTO audit_logs (user_id, action, entity_type, entity_id, metadata)
   VALUES (auth.uid(), 'partner_flag', 'tenant', _tenant, jsonb_build_object('is_partner', _on));
 END $$;
 
@@ -83,14 +83,14 @@ BEGIN
     THEN RAISE EXCEPTION 'already_in_partner'; END IF;
   UPDATE partner_resources SET status = CASE WHEN _accept THEN 'active' ELSE 'declined' END,
     accepted_at = CASE WHEN _accept THEN now() END, ended_at = CASE WHEN _accept THEN NULL ELSE now() END WHERE id = _id;
-  INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details) VALUES (auth.uid(), 'partner_respond', 'partner_resource', _id, jsonb_build_object('accept', _accept));
+  INSERT INTO audit_logs (user_id, action, entity_type, entity_id, metadata) VALUES (auth.uid(), 'partner_respond', 'partner_resource', _id, jsonb_build_object('accept', _accept));
 END $$;
 
 CREATE OR REPLACE FUNCTION public.partner_leave() RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   UPDATE partner_resources r SET status = 'left', ended_at = now() FROM consultants c
   WHERE c.id = r.consultant_id AND c.user_id = auth.uid() AND r.status = 'active';
-  INSERT INTO audit_logs (user_id, action, entity_type, details) VALUES (auth.uid(), 'partner_leave', 'partner_resource', '{}'::jsonb);
+  INSERT INTO audit_logs (user_id, action, entity_type, metadata) VALUES (auth.uid(), 'partner_leave', 'partner_resource', '{}'::jsonb);
 END $$;
 
 -- Partner: list of resources with headline numbers.
@@ -128,7 +128,7 @@ BEGIN
     'name', consultant_public_name(c.id), 'verification', c.verification_status,
     'profile_submitted', c.profile_submitted_at IS NOT NULL, 'interview_done', c.ai_interview_completed_at IS NOT NULL,
     'policy_accepted', EXISTS (SELECT 1 FROM consultant_policy_acknowledgements a WHERE a.user_id = c.user_id),
-    'nda_signed', (SELECT count(*) FROM nda_agreements n WHERE n.consultant_id = c.user_id AND n.signed_at IS NOT NULL AND n.revoked_at IS NULL),
+    'nda_signed', (SELECT count(*) FROM nda_agreements n WHERE n.consultant_id IN (c.id, c.user_id) AND n.signed_at IS NOT NULL AND n.client_signed_at IS NOT NULL AND n.revoked_at IS NULL),
     'rating', c.rating, 'reviews', c.total_reviews,
     'responsiveness', (SELECT jsonb_build_object('level', public_level, 'rate_90d', rate_90d) FROM consultant_responsiveness WHERE consultant_id = c.id),
     'success', (SELECT jsonb_build_object('level', level, 'solved_12m', solved_12m, 'requests_12m', requests_12m) FROM consultant_success_stats WHERE consultant_id = c.id),
@@ -136,9 +136,9 @@ BEGIN
         'sla_deadline', k.sla_response_deadline, 'first_response_at', k.first_response_at) ORDER BY k.created_at DESC)
       FROM tickets k WHERE k.status NOT IN ('resolved','closed') AND (k.consultant_id = c.id OR EXISTS (SELECT 1 FROM ticket_team_members m
         WHERE m.ticket_id = k.id AND m.consultant_id = c.id AND m.ended_at IS NULL AND m.accepted_at IS NOT NULL))), '[]'::jsonb),
-    'agreements', coalesce((SELECT jsonb_agg(jsonb_build_object('id', a.id, 'name', g.name, 'ref', g.reference, 'status', g.status,
+    'agreements', coalesce((SELECT jsonb_agg(jsonb_build_object('id', g.id, 'name', g.name, 'ref', g.reference, 'status', g.status,
         'role', m.member_role, 'capacity', m.capacity_hours_per_week))
-      FROM sa_members m JOIN sa_agreements g ON g.id = m.agreement_id AND m.ended_at IS NULL JOIN LATERAL (SELECT m.agreement_id AS id) a ON true
+      FROM sa_members m JOIN sa_agreements g ON g.id = m.agreement_id AND m.ended_at IS NULL
       WHERE m.consultant_id = c.id), '[]'::jsonb),
     'hours_month', jsonb_build_object(
       'approved', (SELECT coalesce(sum(w.hours),0) FROM ticket_work_logs w JOIN ticket_timesheet_submissions s ON s.id = w.submission_id
@@ -160,7 +160,7 @@ BEGIN
   IF _hold_from IS NOT NULL THEN
     INSERT INTO consultant_unavailable_periods (consultant_id, starts_at, ends_at, reason) SELECT unnest(_ids), _hold_from, _hold_to, 'Set by partner';
   END IF;
-  INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details) VALUES (auth.uid(), 'partner_availability', 'tenant', _t,
+  INSERT INTO audit_logs (user_id, action, entity_type, entity_id, metadata) VALUES (auth.uid(), 'partner_availability', 'tenant', _t,
     jsonb_build_object('consultants', _ids, 'status', _status, 'capacity', _capacity, 'hold_from', _hold_from, 'hold_to', _hold_to));
   RETURN coalesce((SELECT jsonb_agg(jsonb_build_object('consultant_id', m.consultant_id, 'agreement', g.name, 'committed', m.capacity_hours_per_week))
     FROM sa_members m JOIN sa_agreements g ON g.id = m.agreement_id
