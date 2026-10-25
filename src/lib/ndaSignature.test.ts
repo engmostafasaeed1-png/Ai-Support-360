@@ -234,3 +234,13 @@ describe('NDA e-mails', () => {
     expect(ar.html).not.toContain('evil.example');
   });
 });
+
+describe('e-mail link to the new consultant NDA page', () => {
+  it('counts only the exact marker file shipped with the front end', async () => {
+    const { isPageMarker } = await import('../../supabase/functions/_shared/pageReady');
+    const marker = readFileSync(resolve(__dirname, '../../public/consultant-ndas-ready.json'), 'utf8');
+    expect(isPageMarker(marker, '/consultant/ndas')).toBe(true);
+    expect(isPageMarker('<!doctype html><html></html>', '/consultant/ndas')).toBe(false);
+    expect(isPageMarker('{"route":"/auth/confirm","ready":true}', '/consultant/ndas')).toBe(false);
+  });
+});
