@@ -373,7 +373,7 @@ export interface LandscapeSystem {
 }
 
 /** Words that announce a credential. Mirror of public.sa_text_has_secret (the database refuses the same). */
-const SECRET_WORDS = /\b(pass(?:word|wort|wd|phrase)?|pwd|kennwort|secret|token|api[ _-]?key|private[ _-]?key|access[ _-]?key|client[ _-]?secret|credentials?|login\s*[:=]|user(?:name)?\s*[:=]|logon\s*[:=])/i;
+const SECRET_WORDS = /\b(?:pass(?:word|wort|wd|phrase)s?|pwd|kennwort|secrets?|tokens?|api[ _-]?keys?|private[ _-]?keys?|access[ _-]?keys?|client[ _-]?secrets?|credentials?)\b|\b(?:login|logon|user(?:name)?)\s*[:=]/i;
 const SECRET_ARABIC = /(كلمة\s*(?:ال)?(?:مرور|سر|السر)|الرقم\s*السري|رمز\s*(?:الدخول|المرور))/;
 const CONN_STRING = /[a-z][a-z0-9+.-]*:\/\/[^\s:@/]+:[^\s@/]+@/i;
 
@@ -419,3 +419,6 @@ export function archFileName(type: ArchType, ref: string, version: number, date:
   const safe = String(ref || 'DOC').replace(/[^A-Za-z0-9]/g, '').slice(0, 20) || 'DOC';
   return `ARCH_${TYPE_TITLES[type].short.replace(/[^A-Za-z]/g, '')}_${safe}_v${Math.max(1, Math.floor(version))}_${d}.pdf`;
 }
+
+/** True when a section's HTML has no visible text. */
+export const htmlIsEmpty = (html: string): boolean => textLength(html ?? '') === 0;
