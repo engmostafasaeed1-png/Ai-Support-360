@@ -95,13 +95,13 @@ export default function PartnerPortalPage() {
         </div>
       </header>
 
-      {(ctx.data?.partner || ctx.data?.admin) && (
+      {(ctx.data?.partner || ctx.data?.admin || isDemo) && (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="flex items-center gap-2 text-sm font-medium">
+          {(ctx.data?.partner || ctx.data?.admin) && <label className="flex items-center gap-2 text-sm font-medium">
             <Switch checked={isDemo} disabled={!ctx.data?.partner} /* disabled-ok: admins without a partner company have no real data to switch to */
               onCheckedChange={(v) => { setDemo(v); setSel(new Set()); setOpen(null); }} aria-label={t('partner.demo_switch', 'Demo data')} />
             {t('partner.demo_switch', 'Demo data')}
-          </label>
+          </label>}
           {isDemo && <span className="flex items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-1.5 text-sm font-semibold text-foreground" role="status">
             <FlaskConical className="h-4 w-4" />{t('partner.demo_banner', 'Demo data - not real consultants')}</span>}
         </div>)}
