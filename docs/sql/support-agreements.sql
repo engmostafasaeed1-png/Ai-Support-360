@@ -1343,30 +1343,103 @@ BEGIN
   RETURN jsonb_build_object('client', a.auto_renew_client_at IS NOT NULL, 'consultant', a.auto_renew_consultant_at IS NOT NULL);
 END $$;
 
--- Team: client invites another consultant at the agreed rate; the consultant accepts or declines.
-CREATE OR REPLACE FUNCTION public.sa_invite_member(_id uuid, _consultant uuid)
+-- Crew after the agreement: the client invites more members (role, capacity, working hours, backup cover, required),
+-- changes their details or removes them; members accept the place + SLA snapshot or decline; a member may leave.
+DROP FUNCTION IF EXISTS public.sa_invite_member(uuid, uuid);
+CREATE OR REPLACE FUNCTION public.sa_invite_member(_id uuid, _consultant uuid, _role text, _capacity numeric, _working_hours jsonb, _backup_for uuid, _required boolean)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); a public.sa_agreements;
+DECLARE uid uuid := auth.uid(); a public.sa_agreements; probs text[]; entry jsonb; team jsonb;
 BEGIN
-  SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
-  IF public.sa_role(_id, uid) <> 'client' OR a.status NOT IN ('agreed', 'active', 'renewal_due') THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
-  IF _consultant = a.consultant_id OR (SELECT count(*) FROM public.sa_members m WHERE m.agreement_id = _id AND m.status IN ('invited', 'active')) >= 5 THEN
+  SELECT * INTO a FROM public.sa_agreements WHERE id = _id FOR UPDATE;
+  IF public.sa_role(_id, uid) <> 'client' OR a.status NOT IN ('agreed', 'active', 'renewal_due', 'suspended') THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
+  IF NOT public.sa_rate_ok('sa_crew:' || uid, 30, 86400) THEN RAISE EXCEPTION 'sa_rate_limited' USING ERRCODE = '53400'; END IF;
+  IF _consultant = a.consultant_id OR COALESCE(_role, '') = 'lead'
+     OR (SELECT count(*) FROM public.sa_members m WHERE m.agreement_id = _id AND m.status IN ('invited', 'active', 'declined')) >= COALESCE((public.sa_settings() ->> 'crew_max')::int, 6) THEN
     RAISE EXCEPTION 'sa_team_full' USING ERRCODE = '55000';
   END IF;
-  INSERT INTO public.sa_members (agreement_id, consultant_id, member_role, status) VALUES (_id, _consultant, 'support', 'invited');
-  PERFORM public.sa_event(_id, 'member_invited', uid);
-  PERFORM public.sa_notify(_id, public.sa_user_of(_consultant), 'Join a support agreement team', 'الانضمام إلى فريق اتفاقية دعم',
-    'You are invited to support ' || a.name || ' at the agreed rate.', 'أنت مدعو لدعم ' || a.name || ' بالسعر المتفق عليه.', 'consultant', true, 'member:' || _id || ':' || _consultant);
+  entry := jsonb_strip_nulls(jsonb_build_object('consultant_id', _consultant, 'role', _role, 'capacity_hours_per_week', _capacity,
+             'working_hours', COALESCE(_working_hours, '{}'::jsonb), 'backup_for', _backup_for));
+  SELECT COALESCE(jsonb_agg(jsonb_build_object('consultant_id', m.consultant_id, 'role', m.member_role)), '[]'::jsonb) INTO team
+    FROM public.sa_members m WHERE m.agreement_id = _id AND m.status IN ('invited', 'active', 'declined');
+  probs := public.sa_crew_problems(a.tenant_id, a.client_id, team || jsonb_build_array(entry), a.consultant_id);
+  IF cardinality(probs) > 0 THEN RAISE EXCEPTION 'sa_terms_invalid: %', array_to_string(probs, ',') USING ERRCODE = '22023'; END IF;
+  INSERT INTO public.sa_members (agreement_id, consultant_id, member_role, status, required, capacity_hours_per_week, working_hours, backup_for, invited_by)
+  VALUES (_id, _consultant, _role, 'invited', COALESCE(_required, true), _capacity, COALESCE(_working_hours, '{}'::jsonb), _backup_for, uid);
+  PERFORM public.sa_event(_id, 'member_invited', uid, jsonb_build_object('consultant', _consultant, 'role', _role, 'required', COALESCE(_required, true)));
+  PERFORM public.sa_audit_log(uid, 'member_invited', _id, jsonb_build_object('consultant', _consultant, 'role', _role));
+  PERFORM public.sa_notify_member_invite(_id, _consultant);
 END $$;
 
-CREATE OR REPLACE FUNCTION public.sa_member_respond(_id uuid, _accept boolean)
+CREATE OR REPLACE FUNCTION public.sa_update_member(_id uuid, _consultant uuid, _role text, _capacity numeric, _working_hours jsonb, _backup_for uuid, _required boolean)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid();
+DECLARE uid uuid := auth.uid(); a public.sa_agreements; m public.sa_members; probs text[]; team jsonb;
 BEGIN
-  UPDATE public.sa_members SET status = CASE WHEN _accept THEN 'active' ELSE 'declined' END
-   WHERE agreement_id = _id AND consultant_id = public.sa_consultant_of(uid) AND status = 'invited';
+  SELECT * INTO a FROM public.sa_agreements WHERE id = _id FOR UPDATE;
+  IF public.sa_role(_id, uid) <> 'client' OR a.status NOT IN ('agreed', 'active', 'renewal_due', 'suspended') THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
+  SELECT * INTO m FROM public.sa_members x WHERE x.agreement_id = _id AND x.consultant_id = _consultant AND x.status IN ('invited', 'active', 'declined') FOR UPDATE;
+  IF m.id IS NULL THEN RAISE EXCEPTION 'sa_not_found' USING ERRCODE = 'P0002'; END IF;
+  IF m.member_role = 'lead' THEN _role := 'lead'; _required := true; ELSIF COALESCE(_role, '') = 'lead' THEN RAISE EXCEPTION 'sa_forbidden: the lead changes through a replacement' USING ERRCODE = '42501'; END IF;
+  SELECT COALESCE(jsonb_agg(jsonb_strip_nulls(CASE WHEN x.consultant_id = _consultant
+           THEN jsonb_build_object('consultant_id', x.consultant_id, 'role', COALESCE(_role, x.member_role), 'capacity_hours_per_week', _capacity, 'working_hours', COALESCE(_working_hours, '{}'::jsonb), 'backup_for', _backup_for)
+           ELSE jsonb_build_object('consultant_id', x.consultant_id, 'role', x.member_role) END)), '[]'::jsonb) INTO team
+    FROM public.sa_members x WHERE x.agreement_id = _id AND x.status IN ('invited', 'active', 'declined');
+  probs := public.sa_crew_problems(a.tenant_id, a.client_id, team, a.consultant_id);
+  IF cardinality(probs) > 0 THEN RAISE EXCEPTION 'sa_terms_invalid: %', array_to_string(probs, ',') USING ERRCODE = '22023'; END IF;
+  UPDATE public.sa_members SET member_role = COALESCE(_role, member_role), capacity_hours_per_week = _capacity, working_hours = COALESCE(_working_hours, '{}'::jsonb),
+         backup_for = _backup_for, required = COALESCE(_required, required) WHERE id = m.id;
+  PERFORM public.sa_event(_id, 'member_updated', uid, jsonb_build_object('consultant', _consultant));
+  PERFORM public.sa_try_activate(_id);
+END $$;
+
+CREATE OR REPLACE FUNCTION public.sa_remove_member(_id uuid, _consultant uuid, _reason text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE uid uuid := auth.uid(); r text := public.sa_role(_id, uid); self boolean := public.sa_consultant_of(uid) = _consultant; a public.sa_agreements;
+BEGIN
+  SELECT * INTO a FROM public.sa_agreements WHERE id = _id FOR UPDATE;
+  IF NOT (r = 'client' OR (r = 'team' AND self)) THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
+  IF _consultant = a.consultant_id THEN RAISE EXCEPTION 'sa_forbidden: the lead leaves through termination or a replacement' USING ERRCODE = '42501'; END IF;
+  IF char_length(btrim(COALESCE(_reason, ''))) < 5 OR NOT public.sa_text_ok(_reason) THEN RAISE EXCEPTION 'sa_reason_required' USING ERRCODE = '22023'; END IF;
+  UPDATE public.sa_members SET status = 'ended', ended_at = now(), end_reason = left(_reason, 500)
+   WHERE agreement_id = _id AND consultant_id = _consultant AND status IN ('invited', 'active', 'declined');
   IF NOT FOUND THEN RAISE EXCEPTION 'sa_not_found' USING ERRCODE = 'P0002'; END IF;
-  PERFORM public.sa_event(_id, CASE WHEN _accept THEN 'member_joined' ELSE 'member_declined' END, uid);
+  PERFORM public.sa_event(_id, CASE WHEN self THEN 'member_left' ELSE 'member_removed' END, uid, jsonb_build_object('consultant', _consultant));
+  PERFORM public.sa_audit_log(uid, 'member_removed', _id, jsonb_build_object('consultant', _consultant, 'reason', left(_reason, 300)));
+  IF NOT self THEN
+    PERFORM public.sa_notify(_id, public.sa_user_of(_consultant), 'Crew place ended: ' || a.name, 'انتهاء مكانك في الفريق: ' || a.name,
+      'The client ended your place in this support crew.', 'أنهى العميل مكانك في فريق الدعم هذا.', 'consultant', true, 'removed:' || _id || ':' || _consultant || ':' || now());
+  END IF;
+  PERFORM public.sa_try_activate(_id);
+END $$;
+
+-- A crew member accepts the place AND the agreement's SLA snapshot (checkbox + typed name), or declines.
+DROP FUNCTION IF EXISTS public.sa_member_respond(uuid, boolean);
+CREATE OR REPLACE FUNCTION public.sa_member_respond(_id uuid, _accept boolean, _sla_accepted boolean, _typed_name text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE uid uuid := auth.uid(); cid uuid := public.sa_consultant_of(uid); a public.sa_agreements; m public.sa_members; s jsonb := public.sa_settings();
+BEGIN
+  SELECT * INTO a FROM public.sa_agreements WHERE id = _id;
+  SELECT * INTO m FROM public.sa_members x WHERE x.agreement_id = _id AND x.consultant_id = cid AND x.status = 'invited' FOR UPDATE;
+  IF m.id IS NULL OR a.status NOT IN ('agreed', 'active', 'renewal_due', 'suspended') THEN RAISE EXCEPTION 'sa_not_found' USING ERRCODE = 'P0002'; END IF;
+  IF _accept THEN
+    IF _sla_accepted IS NOT TRUE THEN RAISE EXCEPTION 'sa_sla_acceptance_required' USING ERRCODE = '22023'; END IF;
+    IF char_length(btrim(COALESCE(_typed_name, ''))) < 2 OR NOT public.sa_text_ok(_typed_name) THEN RAISE EXCEPTION 'sa_name_required' USING ERRCODE = '22023'; END IF;
+    UPDATE public.sa_members SET status = 'active', accepted_at = now(), sla_policy_id = NULLIF(a.terms -> 'sla' ->> 'policy_id', '')::uuid,
+           sla_version = NULLIF(a.terms -> 'sla' ->> 'version', '')::int, sla_hash = a.terms -> 'sla' ->> 'hash', sla_accepted_at = now() WHERE id = m.id;
+    INSERT INTO public.sa_member_acceptances (agreement_id, consultant_id, user_id, member_role, terms_version, terms_hash, sla_policy_id, sla_version, sla_hash, sla_summary, typed_name, legal_draft)
+    VALUES (_id, cid, uid, m.member_role, a.version, (SELECT v.content_hash FROM public.sa_versions v WHERE v.agreement_id = _id AND v.version = a.version),
+            NULLIF(a.terms -> 'sla' ->> 'policy_id', '')::uuid, NULLIF(a.terms -> 'sla' ->> 'version', '')::int, a.terms -> 'sla' ->> 'hash',
+            COALESCE(a.terms -> 'sla' ->> 'summary', ''), left(btrim(_typed_name), 120), COALESCE((s ->> 'draft_legal_flag')::boolean, true));
+  ELSE
+    UPDATE public.sa_members SET status = 'declined' WHERE id = m.id;
+  END IF;
+  PERFORM public.sa_event(_id, CASE WHEN _accept THEN 'member_joined' ELSE 'member_declined' END, uid, jsonb_build_object('role', m.member_role));
+  PERFORM public.sa_audit_log(uid, CASE WHEN _accept THEN 'member_accept' ELSE 'member_decline' END, _id, jsonb_build_object('role', m.member_role));
+  PERFORM public.sa_notify(_id, a.client_id, CASE WHEN _accept THEN 'Crew member accepted: ' ELSE 'Crew member declined: ' END || a.name,
+    CASE WHEN _accept THEN 'قبل عضو في الفريق: ' ELSE 'اعتذر عضو في الفريق: ' END || a.name,
+    CASE WHEN _accept THEN 'A crew member accepted the place and the SLA.' ELSE 'A crew member declined. Invite someone else or mark the place as optional.' END,
+    CASE WHEN _accept THEN 'قبل عضو في الفريق مكانه واتفاقية مستوى الخدمة.' ELSE 'اعتذر عضو في الفريق. ادعُ شخصاً آخر أو اجعل المكان اختيارياً.' END,
+    'client', NOT _accept, 'member_resp:' || m.id || ':' || _accept);
+  RETURN jsonb_build_object('activated', public.sa_try_activate(_id));
 END $$;
 
 -- Replacing the lead mid-term: client asks -> admin approves -> new consultant accepts; the rate is kept.
