@@ -155,6 +155,7 @@ export const BLOCKED_REASONS = {
   client_information_not_submitted: r('admin', "Wait for the client to submit their information first.", "انتظر حتى يرسل العميل معلوماته أولًا."),
   reply_recipient_unavailable: r('admin', "A reply needs a user account or consent to receive an email; check the contact details.", "يتطلب الرد حساب مستخدم أو موافقة على تلقي بريد إلكتروني؛ تحقّق من بيانات الاتصال."),
   ai_learning_disabled: r('admin', "Enable AI learning before generating drafts.", "فعّل التعلّم بالذكاء الاصطناعي قبل إنشاء المسودات."),
+  company_admin_only: r('access', 'Only company owners and administrators can do this. Ask a company administrator.', 'يمكن فقط لمالكي الشركة ومسؤوليها القيام بذلك. اطلب ذلك من أحد مسؤولي الشركة.'),
   choose_two_versions: r('form', "Select exactly two versions to compare.", "حدّد نسختين بالضبط للمقارنة."),
   coverage_not_allowed: r('admin', "Choose a coverage mode allowed by the administrator.", "اختر نمط تغطية يسمح به المسؤول."),
 } satisfies Record<string, ReasonDef>;
