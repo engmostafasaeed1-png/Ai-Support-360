@@ -402,11 +402,16 @@ BEGIN
   -- SA34 an agreement ticket runs on the agreement SLA (header chip) and the lead's SLA acceptance is recorded for it.
   IF pol IS NOT NULL THEN
     PERFORM pg_temp.as_user(NULL);
+    UPDATE public.platform_settings SET value = value || '{"enabled": true}'::jsonb WHERE key = 'sla_policies';   -- fixture: SLA feature on
     INSERT INTO public.tickets (client_id, tenant_id, title, sap_module, status, urgency) VALUES (oa, ta, 'Bank statement import', 'FI', 'new', 'medium') RETURNING id INTO doc;
     PERFORM pg_temp.as_user(oa);
     r := public.sa_attach_ticket(doc, a3);
-    IF NOT (r ->> 'linked')::boolean OR NOT ((public.sa_ticket_tags(ARRAY[doc]) -> 0 ->> 'sla_applied')::boolean) THEN RAISE EXCEPTION 'SA34 agreement sla %', r; END IF;
-    IF NOT EXISTS (SELECT 1 FROM public.sla_acceptances x WHERE x.ticket_id = doc AND x.consultant_id = kc) THEN RAISE EXCEPTION 'SA34 lead acceptance % % %', (SELECT jsonb_agg(to_jsonb(m)) FROM public.sa_members m WHERE m.agreement_id = a3), (SELECT (terms -> 'sla') - 'body' FROM public.sa_agreements WHERE id = a3), (SELECT jsonb_agg(to_jsonb(s) - 'data') FROM public.sla_ticket_snapshots s WHERE s.ticket_id = doc); END IF;
+    IF NOT COALESCE((r ->> 'linked')::boolean, false) OR NOT COALESCE((public.sa_ticket_tags(ARRAY[doc]) -> 0 ->> 'sla_applied')::boolean, false) THEN RAISE EXCEPTION 'SA34 agreement sla %', r; END IF;
+    IF NOT EXISTS (SELECT 1 FROM public.sla_acceptances x WHERE x.ticket_id = doc AND x.consultant_id = kc) THEN RAISE EXCEPTION 'SA34 lead acceptance'; END IF;
+    -- a ticket of the same client NOT under the agreement keeps the normal flow ("Platform SLA") and no automatic acceptance
+    PERFORM pg_temp.as_user(NULL);
+    INSERT INTO public.tickets (client_id, tenant_id, title, sap_module, status, urgency) VALUES (oa, ta, 'Other question', 'FI', 'new', 'low') RETURNING id INTO d3;
+    IF EXISTS (SELECT 1 FROM public.sla_acceptances x WHERE x.ticket_id = d3) OR jsonb_array_length(public.sa_ticket_tags(ARRAY[d3])) <> 0 THEN RAISE EXCEPTION 'SA34 normal ticket'; END IF;
   END IF;
 
   -- SA35 crew changes: only the client; the lead cannot be removed; a member may leave with a reason.
