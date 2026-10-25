@@ -82,7 +82,7 @@ export default function NDAViewDialog({ nda, onClose, onDownload }: NDAViewDialo
 
             <div className="border rounded-lg p-4">
               <p className="text-xs text-muted-foreground mb-2">{t('admin.nda_signature', 'Signature')}</p>
-              {nda.signature_type === 'draw' ? (
+              {nda.signature_data?.startsWith('data:image') ? (
                 <img src={nda.signature_data} alt="Signature" className="max-h-24 border rounded" />
               ) : (
                 <p className="text-xl font-serif italic text-foreground">{nda.signature_data}</p>
