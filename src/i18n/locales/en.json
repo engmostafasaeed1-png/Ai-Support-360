@@ -5591,6 +5591,12 @@
     "already_in": "Leave your current partner first.",
     "admin_tab": "Partner companies",
     "admin_hint": "Turn on only after you have checked the company. Partners can invite consultants and manage their availability.",
-    "admin_not_ready": "Partner companies become available once the partner database update is applied."
+    "admin_not_ready": "Partner companies become available once the partner database update is applied.",
+    "demo_switch": "Demo data",
+    "demo_banner": "Demo data - not real consultants",
+    "demo_toast": "Demo: nothing is saved",
+    "d_modules": "Modules / versions",
+    "admin_demo": "Demo",
+    "admin_partner": "Partner"
   }
 }

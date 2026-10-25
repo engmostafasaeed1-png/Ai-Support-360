@@ -176,3 +176,25 @@ REVOKE ALL ON FUNCTION public.partner_enabled(), public.partner_tenant_for(uuid)
 GRANT EXECUTE ON FUNCTION public.partner_am_i(), public.admin_set_tenant_partner(uuid, boolean), public.partner_invite_resource(text),
   public.partner_my_links(), public.partner_respond(uuid, boolean), public.partner_leave(), public.partner_overview(),
   public.partner_resource_overview(uuid), public.partner_set_availability(uuid[], availability_status, integer, timestamptz, timestamptz) TO authenticated;
+
+-- ── Demo mode (sample data lives only in the browser; no rows, no users, no e-mails) ──
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS demo_partner boolean NOT NULL DEFAULT false;
+
+-- What the /partner page may show: real data (partner managers) and the demo switch default.
+CREATE OR REPLACE FUNCTION public.partner_context() RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT jsonb_build_object(
+    'partner', partner_tenant_for(auth.uid()) IS NOT NULL,
+    'demo_default', coalesce((SELECT demo_partner FROM tenants WHERE id = partner_tenant_for(auth.uid())), false),
+    'admin', has_role(auth.uid(), 'admin') OR has_role(auth.uid(), 'super_admin'))
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_set_tenant_demo_partner(_tenant uuid, _on boolean) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NOT (has_role(auth.uid(), 'admin') OR has_role(auth.uid(), 'super_admin')) THEN RAISE EXCEPTION 'permission_missing'; END IF;
+  UPDATE tenants SET demo_partner = _on, updated_at = now() WHERE id = _tenant;
+  INSERT INTO audit_logs (user_id, action, entity_type, entity_id, metadata)
+  VALUES (auth.uid(), 'partner_demo_flag', 'tenant', _tenant, jsonb_build_object('demo_partner', _on));
+END $$;
+
+REVOKE ALL ON FUNCTION public.partner_context(), public.admin_set_tenant_demo_partner(uuid, boolean) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.partner_context(), public.admin_set_tenant_demo_partner(uuid, boolean) TO authenticated;
