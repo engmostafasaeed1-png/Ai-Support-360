@@ -6,7 +6,7 @@
  * database rules or edge functions raise on purpose is kept as it is.
  */
 
-import { reasonFromError, resolveReason } from './blockedReasons';
+import { BLOCKED_REASONS, reasonFromError, resolveReason } from './blockedReasons';
 
 /** Page language without importing i18n (keeps this helper usable in tests and outside React). */
 function pageLang(): 'en' | 'ar' {
@@ -20,9 +20,11 @@ function pageLang(): 'en' | 'ar' {
 export function blockedRefusalText(error: unknown, lang: 'en' | 'ar' = pageLang()): string | null {
   const reason = reasonFromError(error);
   if (!reason) return null;
-  const r = resolveReason(reason, lang);
-  if (!r.nextLabel) return r.message;
-  return lang === 'ar' ? `${r.message} الخطوة التالية: ${r.nextLabel}.` : `${r.message} Next step: ${r.nextLabel}.`;
+  const { message } = resolveReason(reason, lang);
+  // a toast has no link, so the step is named in words (the dimmed button itself offers the link)
+  const step = (BLOCKED_REASONS[reason.key] as { next?: Record<'en' | 'ar', string> }).next?.[lang];
+  if (!step) return message;
+  return lang === 'ar' ? `${message} الخطوة التالية: ${step}.` : `${message} Next step: ${step}.`;
 }
 
 const NETWORK_TEXT =
