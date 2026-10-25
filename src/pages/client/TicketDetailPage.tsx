@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import TicketOutcomeControl from '@/components/client/TicketOutcomeControl';
 import { useTranslation } from 'react-i18next';
 import ClientRatingChip from '@/components/consultant/ClientRatingChip';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
