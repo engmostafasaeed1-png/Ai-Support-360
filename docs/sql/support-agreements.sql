@@ -26,6 +26,16 @@
 --     no-activity (bypass) alert to administrators.
 --   * Tables have RLS on and no browser grants; everything goes through SECURITY DEFINER functions with fixed
 --     search_path and role checks. Rates are returned only to the parties and administrators.
+--   * Owner requirements (2026-10-25): every agreement has a client-chosen NAME (unique per client company, editable
+--     only in Draft) and a REFERENCE "SA-<year>-<6 digits>" shown in lists, tags, notices, e-mails, invoices and PDFs;
+--     agreements belong to the client company; each keeps an immutable snapshot of its SLA version (body + hash);
+--     the client composes the CREW (lead + functional/technical/basis/backup members, capacity, working hours, backup
+--     cover) and every required member accepts the place + SLA and signs the NDA before the agreement starts
+--     (sa_confirmation); the agreement SLA applies to its tickets only while Active ("SLA starts when the crew is
+--     confirmed"); AGREEMENT DOCUMENTS (private bucket 'agreement-documents', versions, NDA gate, download log, no
+--     passwords/secrets); company-only statement recipients and escalation contacts.
+--   * Needs at apply time: a private storage bucket 'agreement-documents' (created with the platform storage tool,
+--     not by SQL), and docs/sql/sla-policies.sql for the SLA snapshot (without it only the policy reference is kept).
 -- =====================================================================================================================
 
 -- ------------------------------------------------------------------------------------------------ settings
