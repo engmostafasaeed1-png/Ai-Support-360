@@ -519,6 +519,9 @@ serve(async (req) => {
         // (returns nothing to anyone outside that client/company, administrators included). Absent until the SQL is applied.
         optional(() => callerClient.rpc("client_match_preferences", { _tenant_id: parsed.data.ticket_id ? null : tenantArg, _ticket_id: parsed.data.ticket_id ?? null })),
       ]);
+      // Support agreements: share of the week reserved by availability commitments (absent until the SQL is applied).
+      const reservedRows = await optional(() => supabase.rpc("sa_reserved_shares", { _consultant_ids: consultants.map((c) => c.id) }));
+      const reservedShare = new Map<string, number>(((reservedRows ?? []) as any[]).map((r) => [r.consultant_id, Number(r.share) || 0]));
       const prefs = (clientPrefs && typeof clientPrefs === "object" ? clientPrefs : {}) as { favourites?: unknown; blocked?: unknown };
       const idList = (v: unknown) => new Set((Array.isArray(v) ? v : []).filter((x): x is string => typeof x === "string"));
       const favouriteSet = idList(prefs.favourites);
@@ -555,6 +558,7 @@ serve(async (req) => {
           verification_status: c.verification_status,
           active: !inactiveSet.has(c.id) && c.profile_visible !== false,
           availability_status: c.availability_status,
+          ...(reservedShare.has(c.id) ? { reserved_share: reservedShare.get(c.id) } : {}),
           skills: e.skills.map((s: any) => ({ module: s.module, years: s.years, certified: s.certified })),
           certifications: e.certifications.map((x: any) => ({ name: x.name, verified: x.verified, expired: x.expired })),
           project_modules: e.project_history.flatMap((p: any) => p.modules ?? []),
