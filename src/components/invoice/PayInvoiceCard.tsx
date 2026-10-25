@@ -289,7 +289,7 @@ export function PayInvoiceCard({ payment, compact = false, actionsContainer, can
       </div>
       {compact && actionsContainer && bankOpen && canReport && createPortal(
         payment.client_reported_at ? (
-          <Button disabled className="h-auto min-h-10 whitespace-normal py-2 text-xs">
+          <Button reason="pending_admin_review" className="h-auto min-h-10 whitespace-normal py-2 text-xs">
             Payment reported on {format(new Date(payment.client_reported_at), 'MMM d, yyyy')} - waiting for confirmation
           </Button>
         ) : (

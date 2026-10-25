@@ -11,11 +11,14 @@ import { Badge } from '@/components/ui/badge';
 import { APP_ROLES, MIN_REASON, checkRoleChange, reasonOk, type UserRow } from '@/lib/userAdmin';
 import { callRpc } from '@/hooks/useUserAdmin';
 import { roleLabel } from './labels';
+import type { BlockedInput } from '@/lib/blockedReasons';
 
 /** Confirmation with an optional required reason. */
-export function ReasonDialog({ open, title, description, confirmLabel, destructive, needsReason, busy, onClose, onConfirm, children, canConfirm = true }: {
+export function ReasonDialog({ open, title, description, confirmLabel, destructive, needsReason, busy, onClose, onConfirm, children, canConfirm = true, blockedReason }: {
   open: boolean; title: string; description: ReactNode; confirmLabel: string; destructive?: boolean; needsReason?: boolean;
   busy?: boolean; onClose: () => void; onConfirm: (reason: string) => void; children?: ReactNode; canConfirm?: boolean;
+  /** Why confirming is not possible yet (shown on the dimmed button); defaults to "fill in the required fields". */
+  blockedReason?: BlockedInput;
 }) {
   const { t } = useTranslation();
   const id = useId();
@@ -39,7 +42,7 @@ export function ReasonDialog({ open, title, description, confirmLabel, destructi
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>{t('common.cancel', 'Cancel')}</Button>
-            <Button type="submit" variant={destructive ? 'destructive' : 'default'} busy={busy} disabled={!canConfirm}>{confirmLabel}</Button>
+            <Button type="submit" variant={destructive ? 'destructive' : 'default'} busy={busy} reason={!canConfirm && (blockedReason || 'fill_required_fields')}>{confirmLabel}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

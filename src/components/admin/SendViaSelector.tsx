@@ -40,7 +40,7 @@ export default function SendViaSelector({ value, onChange, info, idPrefix, chann
         {PRESET_ORDER.map((p) => {
           const usable = presetUsable(p, info);
           return (
-            <button key={p} type="button" disabled={!usable || disabled} aria-pressed={current === p}
+            <button key={p} type="button" /* disabled-ok: each unavailable channel lists its reason right below; whole picker follows the parent's disabled */ disabled={!usable || disabled} aria-pressed={current === p}
               onClick={() => onChange(presetSelection(p, info))}
               className={cn('rounded-full border px-2.5 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50',
                 current === p ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background hover:bg-muted')}>

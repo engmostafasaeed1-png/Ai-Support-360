@@ -139,7 +139,7 @@ function BulkConfirm({ open, preview, title, needsReason, busy, onClose, onConfi
   const counts = (preview?.skipped ?? []).reduce<Record<string, number>>((a, s) => ({ ...a, [s.reason]: (a[s.reason] ?? 0) + 1 }), {});
   return (
     <ReasonDialog open={open} busy={busy} needsReason={needsReason} destructive={needsReason} onClose={onClose} title={title}
-      canConfirm={(preview?.eligible.length ?? 0) > 0}
+      canConfirm={(preview?.eligible.length ?? 0) > 0} blockedReason="no_eligible_recipients"
       description={t('um.bulk_will_change', '{{n}} people will be changed.', { n: preview?.eligible.length ?? 0 })}
       confirmLabel={t('um.confirm_n', 'Confirm for {{n}}', { n: preview?.eligible.length ?? 0 })} onConfirm={(r) => (!needsReason || reasonOk(r)) && onConfirm(r)}>
       {Object.keys(counts).length > 0 && (

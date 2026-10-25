@@ -98,7 +98,11 @@ export function PlanCheckoutDialog() {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={subscribe} busy={busy} disabled={!quote || !!quoteErr || (!!applied && !!quote?.voucher_error)}>
+          <Button onClick={subscribe} busy={busy} hint="inline" reason={[
+            !!quoteErr && { key: 'invalid_value', message: quoteErr },
+            !!applied && !!quote?.voucher_error && { key: 'invalid_value', message: quote.voucher_error },
+            !quote && !quoteErr && { key: 'fill_required_fields', message: 'Enter a ticket count to see the price.' },
+          ]}>
             {busy ? 'Submitting…' : 'Subscribe'}
           </Button>
         </DialogFooter>
