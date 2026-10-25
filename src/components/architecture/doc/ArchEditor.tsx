@@ -29,7 +29,8 @@ import DiagramBlocks from './DiagramBlocks';
 import TracePicker from './TracePicker';
 import ArchVersions from './ArchVersions';
 import ArchAttachDialog from './ArchAttachDialog';
-import ArchAiDialog, { type AiChange } from './ArchAiDialog';
+import ArchAiDialog from './ArchAiDialog';
+import type { AiChange } from '@/lib/architecture/aiChanges';
 import { archCommentApi, draftOf, metaOf, refOf } from './archShared';
 import { NoSecretsWarning } from '../LandscapeRegister';
 
@@ -204,7 +205,7 @@ export default function ArchEditor({ state, onReload }: { state: ArchState; onRe
               <SelectContent>{allowedStatuses(doc.status, latestVersion).map((s) => <SelectItem key={s} value={s}>{t(`arch.status.${s}`)}</SelectItem>)}</SelectContent>
             </Select>
           )}
-          {doc.status === 'archived' && writable === false && state.role !== 'consultant' && (
+          {doc.status === 'archived' && (state.role === 'client' || state.role === 'admin') && (
             <Button size="sm" variant="outline" onClick={() => setStatusDlg('draft')}>{t('arch.editor.unarchive')}</Button>
           )}
           <div className="space-y-1">

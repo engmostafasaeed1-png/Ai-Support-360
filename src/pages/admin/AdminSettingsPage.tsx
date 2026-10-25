@@ -5,6 +5,7 @@ import AssignmentRemindersCard from '@/components/admin/AssignmentRemindersCard'
 import NotificationPauseAdminCard from '@/components/admin/NotificationPauseAdminCard';
 import SocialSigninSettingsCard from '@/components/admin/SocialSigninSettingsCard';
 import BrdSettingsCard from '@/components/admin/BrdSettingsCard';
+import ArchSettingsCard from '@/components/admin/ArchSettingsCard';
 import TrackingSettingsCard from '@/components/tracking/TrackingSettingsCard';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -122,6 +123,7 @@ export default function AdminSettingsPage() {
 
         <SocialSigninSettingsCard settings={settings} loading={loading} updateSetting={updateSetting} />
         <BrdSettingsCard />
+        <ArchSettingsCard />
         <TrackingSettingsCard />
 
         {/* Portal Layout Card */}

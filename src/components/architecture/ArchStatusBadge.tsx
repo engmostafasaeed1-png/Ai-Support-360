@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 
 const TONE: Record<ArchStatus, string> = {
   draft: 'bg-muted text-muted-foreground border-border',
-  in_review: 'bg-accent/15 text-accent-foreground border-accent/30',
+  in_review: 'bg-accent/10 text-accent border-accent/40',
   approved: 'bg-primary/10 text-primary border-primary/30',
   superseded: 'bg-secondary text-secondary-foreground border-border',
   archived: 'bg-muted text-muted-foreground border-dashed border-border',

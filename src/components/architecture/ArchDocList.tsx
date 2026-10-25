@@ -29,7 +29,7 @@ export default function ArchDocList({ group, rows, loading, error, search, canCr
   const ar = i18n.language?.startsWith('ar');
   const [f, setF] = useState<ArchFilters>(DEFAULT_FILTERS);
   const [view, setView] = useState<'cards' | 'table'>('cards');
-  const all = rows ?? [];
+  const all = useMemo(() => rows ?? [], [rows]);
   const mine = all.filter((r) => inGroup(r, group));
   const list = useMemo(() => filterDocs(all, group, { ...f, search }), [all, group, f, search]);
   const modules = moduleOptions(mine);

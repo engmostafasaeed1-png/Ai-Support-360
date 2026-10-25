@@ -122,3 +122,6 @@
 - [x] Feature Z "Programme rules" hub on Refer & earn (sticky scroll-spy nav, 7 sections, live checklist, tier ladder, payment timeline, rules, simulator + pure tested math, PDF, admin plain-text section notes, EN/AR, tests)
 - [x] Refer & earn page upgrade: header/sidebar pill + dot, policy cards + terms status, journey counts + next action, per-referral funnel chips, reward-line breakdown table (filters/sort/search/pages/CSV), earnings summary + chart, payouts + history, docs/sql/referral-tracking.sql (unapplied) + tests, Arabic
 - [x] Switch on Refer & earn tracking: docs/sql/referral-tracking.sql applied with Feature Z (Oct 22); checks passed on a copy of the database structure
+
+- [x] Solution Architecture made real (wizard, editor with versions/diff/restore, traceability, diagrams, comments, PDF, attach to ticket, landscape register, real timeline and ticket links, AI assist, admin switches OFF by default, EN/AR, tests); SQL prepared + 20 rolled-back checks passed on a private copy (Oct 25)
+- [ ] Solution Architecture SQL: owner reviews and applies docs/sql/solution-architecture.sql, runs docs/sql/solution-architecture.test.sql, then switches it on in Admin settings

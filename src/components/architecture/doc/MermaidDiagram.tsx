@@ -19,7 +19,7 @@ export default function MermaidDiagram({ source, caption }: { source: string; ca
   return (
     <figure className="space-y-1">
       <div className="overflow-x-auto rounded-xl border border-border bg-card p-2">
-        <svg role="img" aria-label={label} width={layout.width} height={layout.height} viewBox={`0 0 ${layout.width} ${layout.height}`} className="max-w-full h-auto text-foreground" dir="ltr">
+        <svg role="img" aria-label={label} width={layout.width} height={layout.height} viewBox={`0 0 ${layout.width} ${layout.height}`} className="max-w-full h-auto text-foreground">
           <defs>
             <marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path d="M0 0L10 5L0 10z" className="fill-muted-foreground" />

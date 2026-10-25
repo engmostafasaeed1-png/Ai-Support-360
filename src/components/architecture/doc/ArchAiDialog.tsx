@@ -9,30 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { sanitizeBrdHtml } from '@/lib/brd/sanitize';
 import { runArchAi, type ArchAiAction, type ArchAiResult } from '@/lib/architecture/api';
-import { SECTION_TITLES, componentTargets, htmlIsEmpty, type ArchContent, type ArchSectionKey } from '../../../../supabase/functions/_shared/archModel';
+import type { AiReport } from '@/lib/brd/api';
+import { SECTION_TITLES, type ArchContent, type ArchSectionKey } from '../../../../supabase/functions/_shared/archModel';
+import { proposedChanges, type AiChange } from '@/lib/architecture/aiChanges';
 import type { ArchListRow } from '@/lib/architecture/api';
-
-/** One proposed change: which section, new text, and whether it replaces text the client already wrote. */
-export interface AiChange { key: ArchSectionKey; html: string; trace: Array<{ ticket_ref: string; req_id: string }>; replaces: boolean }
-
-/** Turns an AI result into proposed section changes (pure, unit-tested). */
-export function proposedChanges(result: ArchAiResult, content: ArchContent): AiChange[] {
-  const cur = (k: ArchSectionKey) => content.sections.find((s) => s.key === k);
-  if (result.kind === 'draft') {
-    return result.sections.flatMap((s) => {
-      const c = cur(s.key as ArchSectionKey);
-      return c && !htmlIsEmpty(s.html) ? [{ key: c.key, html: s.html, trace: s.trace, replaces: !htmlIsEmpty(c.html) }] : [];
-    });
-  }
-  if (result.kind === 'components') {
-    const tg = componentTargets(content.type);
-    const out: AiChange[] = [];
-    if (tg.components && !htmlIsEmpty(result.components)) out.push({ key: tg.components, html: result.components, trace: [], replaces: !htmlIsEmpty(cur(tg.components)?.html ?? '') });
-    if (tg.integrations && !htmlIsEmpty(result.integrations)) out.push({ key: tg.integrations, html: result.integrations, trace: [], replaces: !htmlIsEmpty(cur(tg.integrations)?.html ?? '') });
-    return out;
-  }
-  return [];
-}
 
 /**
  * AI assist (only when the owner switched AI on). Never writes on its own: it shows what it would change; sections
@@ -48,7 +28,7 @@ export default function ArchAiDialog({ open, onOpenChange, docId, content, links
   const [action, setAction] = useState<ArchAiAction>('arch_draft');
   const [ticket, setTicket] = useState<string>(links[0]?.ticket_id ?? 'none');
   const [step, setStep] = useState<string | null>(null);
-  const [result, setResult] = useState<ArchAiResult | null>(null);
+  const [result, setResult] = useState<(ArchAiResult & { report: AiReport }) | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pick, setPick] = useState<Record<string, boolean>>({});
   const ac = useRef<AbortController | null>(null);
@@ -57,7 +37,7 @@ export default function ArchAiDialog({ open, onOpenChange, docId, content, links
   const run = async () => {
     setResult(null); setError(null); setStep('reading');
     ac.current = new AbortController();
-    const r = await runArchAi({ action, docId, ticketId: ticket === 'none' ? null : ticket, content, language: lang }, (s) => setStep(s.step), ac.current.signal);
+    const r = await runArchAi({ action, docId, ticketId: ticket === 'none' ? null : ticket, content, language: lang }, (s) => setStep(s), ac.current.signal);
     setStep(null);
     if (r.error) { setError(r.error.code === 'doc_limit' || r.error.code === 'org_limit' ? t('arch.ai.limit') : r.error.code === 'ai_off' ? t('arch.ai.off') : r.error.message); return; }
     if (r.result) {
