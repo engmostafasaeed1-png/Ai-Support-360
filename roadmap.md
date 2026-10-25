@@ -4,8 +4,8 @@
 - [x] Support agreements (Oct 25, extension of SLA policies) built and OFF: inventory, request/apply/counter/accept with immutable rate records, three commitment models, lifecycle + daily job, ticket link with agreed rate + SLA, usage, PDF summary, anti-bypass alert, admin settings, EN/AR, tests (26 SQL checks). SQL docs/sql/support-agreements.sql + test, NOT applied.
 - [x] SLA policies SQL live (Oct 25, switch OFF; 30/30 checks passed rolled back); consultant SLA box on Requests page.
 - [x] Support agreements owner requirements (Oct 25): name + SA reference, company SLA snapshot, client crew + team confirmation, SLA only when Active, agreement documents, one settings form; 36 SQL checks pass on a private copy.
-- [ ] Apply support-agreements.sql + create the private 'agreement-documents' bucket: waits for the owner's review of the SQL.
-- [ ] Switch on support agreements: waits for the owner (after publishing) and the open decisions in docs/support-agreements.md (lower fee for long commitments, legal wording).
+- [x] Published; support-agreements.sql live byte-identical (migrations 0105-0107, md5 c04f06c8…), private 'agreement-documents' bucket, 36/36 checks passed rolled back on live; SLA policies and support agreements switched ON (Oct 25, owner request), admin review + DRAFT legal flag stay ON.
+- [ ] Owner decisions still open: lower fee for long commitments, lawyer's legal/liability wording (then switch the DRAFT flag off).
 
 - [x] BRD approval by the assigned consultant (Oct 24): rounds per version + fingerprint, approve (read tick) / request changes / decline, superseded/withdrawn, lead-only or all members, no-material-change carry-over, Off/Recommended (default)/Required gate on confirmation, work logs and timesheets, admin waiver, team step + stage step + timeline, header/list chips and filters, notices + e-mails (EN/AR, previews, test send), reminders/client notice/escalation, approval record PDF, tests. docs/sql/ticket-brd-approval.sql + test (26/26 on a private copy), NOT applied.
 - [ ] Switch on BRD approval: awaits the owner applying docs/sql/ticket-brd-approval.sql and choosing the approval rule.

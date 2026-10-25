@@ -1,10 +1,11 @@
 # Support agreements (long-term support commitments)
 
-Status: built, switched OFF. `docs/sql/sla-policies.sql` is LIVE (Oct 25, switch OFF). `docs/sql/support-agreements.sql`
-(+ `support-agreements.test.sql`, 36 rolled-back checks, all passing on a private copy rebuilt from the migration history,
-together with the 30 SLA checks; the file loads twice cleanly) is prepared and NOT applied - the owner reviews it first.
-At apply time also create the private storage bucket `agreement-documents` (platform storage tool, not SQL), then switch on
-in Admin > System > Support agreements.
+Status (Oct 25): LIVE and switched ON at the owner's request after publishing. `docs/sql/sla-policies.sql` is live
+(migrations 0103-0104) and SLA policies are ON. `docs/sql/support-agreements.sql` is live byte-identical as migrations
+0105-0107 (md5 c04f06c82781b0556b4aa622a8911b3e; the file header line "NOT APPLIED" is kept so the file stays identical).
+The private storage bucket `agreement-documents` (20 MB) exists. `support-agreements.test.sql`: 36/36 checks passed on the
+live database in one cancelled transaction (the bucket-creation fixture line was skipped because the bucket exists).
+Admin review of first-time agreements and the "DRAFT - pending legal review" flag stay ON.
 
 ## 1. Inventory (what exists today and what is reused)
 
