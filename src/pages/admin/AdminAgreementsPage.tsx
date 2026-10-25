@@ -137,7 +137,8 @@ export default function AdminAgreementsPage() {
             </CardContent></Card>
           <Card className="rounded-2xl"><CardHeader><CardTitle className="text-base">{t('agreements.admin.limits')}</CardTitle></CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-3">
-              {(['rate_min', 'rate_max', 'max_multiplier', 'inactivity_weeks', 'min_term_months', 'max_notice_days', 'application_limit_per_day'] as const).map((k) => (
+              {(['rate_min', 'rate_max', 'max_multiplier', 'inactivity_weeks', 'min_term_months', 'max_notice_days', 'application_limit_per_day',
+                'crew_max', 'contacts_max', 'doc_max_mb', 'docs_per_agreement'] as const).map((k) => (
                 <div key={k} className="space-y-1.5"><Label htmlFor={`s-${k}`}>{t(`agreements.admin.s.${k}`)}</Label><Input id={`s-${k}`} type="number" value={draft[k]} onChange={(e) => set(k, Number(e.target.value))} /></div>
               ))}
               <div className="space-y-1.5"><Label htmlFor="s-rem">{t('agreements.admin.s.renewal_reminder_days')}</Label>
