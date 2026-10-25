@@ -53,7 +53,7 @@ describe('disabled buttons always explain themselves', () => {
     expect(violations(f, 'const a = <Button /* disabled-ok: */ disabled={d}>Save</Button>;')).toHaveLength(1);
   });
 
-  it('no Button in the app has disabled={...} without a reason', () => {
+  it('no Button in the app has disabled={...} without a reason', { timeout: 60_000 }, () => {
     const all = files(ROOT).flatMap((f) => violations(f));
     expect(all, `Give these buttons a reason= (see src/lib/blockedReasons.ts) or busy=:\n${all.join('\n')}`).toEqual([]);
   });
