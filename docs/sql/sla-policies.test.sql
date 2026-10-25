@@ -275,7 +275,7 @@ BEGIN
   PERFORM pg_temp.as_user(NULL);
   UPDATE public.tickets SET sla_breached = false, sla_deadline = now() - interval '1 hour' WHERE id = t2;
   PERFORM public.flag_sla_breaches();
-  IF EXISTS (SELECT 1 FROM public.notifications WHERE title = 'SLA breached' AND body LIKE '%Interface down%') THEN RAISE EXCEPTION 'SL25 duplicate legacy notice'; END IF;
+  IF EXISTS (SELECT 1 FROM public.notifications nn WHERE nn.title = 'SLA breached' AND nn.body LIKE '%Interface down%') THEN RAISE EXCEPTION 'SL25 duplicate legacy notice'; END IF;
 
   -- SL26 extra contacts: free-mail or non-member addresses are refused; registered company members on the domain pass.
   PERFORM pg_temp.as_user(oa);
