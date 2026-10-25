@@ -518,6 +518,175 @@ RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT CASE WHEN (SELECT p.preferred_language FROM public.profiles p WHERE p.user_id = _user LIMIT 1) = 'ar' THEN 'ar' ELSE 'en' END
 $$;
 
+-- No passwords or access secrets in agreement texts and document titles/notes ("password: ...", "api key = ...", keys).
+CREATE OR REPLACE FUNCTION public.sa_secret_ok(_t text)
+RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path = public AS $$
+  SELECT _t IS NULL OR (_t !~* '\m(pass(word|wort|wd)?|pwd|kennwort|secret|api[ _-]?key|access[ _-]?key|token|client[ _-]?secret)\s*[:=]'
+                        AND _t !~ '(كلمة\s*(المرور|السر))\s*[:=]' AND _t !~ '-----BEGIN [A-Z ]*PRIVATE KEY')
+$$;
+
+-- ------------------------------------------------------------------------------------------------ name + reference number
+-- Every agreement gets a reference "SA-<year>-<6 digits>" when it is created; the reference and the owner never
+-- change and the client-chosen name can only change while the agreement is a Draft. Names are unique per client
+-- company (own-account clients: per client) among agreements that are not archived.
+CREATE SEQUENCE IF NOT EXISTS public.sa_reference_seq;
+REVOKE ALL ON SEQUENCE public.sa_reference_seq FROM PUBLIC;
+DO $$ BEGIN EXECUTE 'REVOKE ALL ON SEQUENCE public.sa_reference_seq FROM anon, authenticated'; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+CREATE OR REPLACE FUNCTION public.sa_guard_agreement()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    NEW.reference := 'SA-' || to_char(now() AT TIME ZONE 'UTC', 'YYYY') || '-' || lpad(nextval('public.sa_reference_seq')::text, 6, '0');
+    NEW.name := btrim(NEW.name);
+    RETURN NEW;
+  END IF;
+  IF NEW.reference IS DISTINCT FROM OLD.reference OR NEW.tenant_id IS DISTINCT FROM OLD.tenant_id OR NEW.client_id IS DISTINCT FROM OLD.client_id THEN
+    RAISE EXCEPTION 'sa_immutable: reference and owner never change' USING ERRCODE = '42501';
+  END IF;
+  IF NEW.name IS DISTINCT FROM OLD.name AND OLD.status <> 'draft' THEN
+    RAISE EXCEPTION 'sa_name_locked: the name can only change in Draft' USING ERRCODE = '55000';
+  END IF;
+  RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS sa_guard_agreement ON public.sa_agreements;
+CREATE TRIGGER sa_guard_agreement BEFORE INSERT OR UPDATE ON public.sa_agreements FOR EACH ROW EXECUTE FUNCTION public.sa_guard_agreement();
+CREATE UNIQUE INDEX IF NOT EXISTS sa_agreements_name_per_client ON public.sa_agreements (COALESCE(tenant_id, client_id), lower(btrim(name))) WHERE status <> 'archived';
+
+CREATE OR REPLACE FUNCTION public.sa_name_taken(_tenant uuid, _client uuid, _name text, _except uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM public.sa_agreements a WHERE COALESCE(a.tenant_id, a.client_id) = COALESCE(_tenant, _client)
+                   AND lower(btrim(a.name)) = lower(btrim(COALESCE(_name, ''))) AND a.status <> 'archived' AND a.id IS DISTINCT FROM _except)
+$$;
+
+-- "Name (SA-2026-000012)" for notices, invoices and e-mails.
+CREATE OR REPLACE FUNCTION public.sa_label(_id uuid)
+RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT a.name || COALESCE(' (' || a.reference || ')', '') FROM public.sa_agreements a WHERE a.id = _id
+$$;
+
+-- Person shown in document version and download lists (consultants: the public name format only).
+CREATE OR REPLACE FUNCTION public.sa_user_label(_uid uuid)
+RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT COALESCE((SELECT public.consultant_public_name(c.id) FROM public.consultants c WHERE c.user_id = _uid LIMIT 1),
+                  (SELECT NULLIF(btrim(p.display_name), '') FROM public.profiles p WHERE p.user_id = _uid LIMIT 1), '—')
+$$;
+
+-- ------------------------------------------------------------------------------------------------ company contacts
+-- A statement recipient or escalation contact must be the client himself or an accepted member of the client company.
+CREATE OR REPLACE FUNCTION public.sa_company_user(_tenant uuid, _client uuid, _email text)
+RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT u.id FROM auth.users u
+   WHERE lower(u.email) = lower(btrim(COALESCE(_email, '')))
+     AND (u.id = _client OR (_tenant IS NOT NULL AND EXISTS (SELECT 1 FROM public.tenant_members m WHERE m.tenant_id = _tenant AND m.user_id = u.id AND m.accepted_at IS NOT NULL)))
+   LIMIT 1
+$$;
+
+CREATE OR REPLACE FUNCTION public.sa_contact_problems(_tenant uuid, _client uuid, _t jsonb)
+RETURNS text[] LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE s jsonb := public.sa_settings(); mx int := COALESCE((s ->> 'contacts_max')::int, 5); out text[] := '{}'; e jsonb; x text;
+BEGIN
+  IF jsonb_typeof(COALESCE(_t -> 'statement_recipients', '[]'::jsonb)) <> 'array' OR jsonb_array_length(COALESCE(_t -> 'statement_recipients', '[]'::jsonb)) > mx THEN
+    out := array_append(out, 'recipients_max');
+  ELSE
+    FOR x IN SELECT jsonb_array_elements_text(COALESCE(_t -> 'statement_recipients', '[]'::jsonb)) LOOP
+      IF public.sa_company_user(_tenant, _client, x) IS NULL THEN out := array_append(out, 'recipient_outside'); END IF;
+    END LOOP;
+  END IF;
+  IF jsonb_typeof(COALESCE(_t -> 'escalation_contacts', '[]'::jsonb)) <> 'array' OR jsonb_array_length(COALESCE(_t -> 'escalation_contacts', '[]'::jsonb)) > mx THEN
+    out := array_append(out, 'escalation_max');
+  ELSE
+    FOR e IN SELECT jsonb_array_elements(COALESCE(_t -> 'escalation_contacts', '[]'::jsonb)) LOOP
+      IF public.sa_company_user(_tenant, _client, e ->> 'email') IS NULL THEN out := array_append(out, 'escalation_outside'); END IF;
+      IF COALESCE(e ->> 'level', '') NOT IN ('1', '2', '3') THEN out := array_append(out, 'escalation_level'); END IF;
+      IF char_length(COALESCE(e ->> 'title', '')) > 80 OR NOT public.sa_text_ok(e ->> 'title') THEN out := array_append(out, 'escalation_title'); END IF;
+    END LOOP;
+  END IF;
+  RETURN ARRAY(SELECT DISTINCT unnest(out));
+END $$;
+
+-- ------------------------------------------------------------------------------------------------ SLA snapshot
+CREATE OR REPLACE FUNCTION public.sa_fmt_min(_m numeric)
+RETURNS text LANGUAGE sql IMMUTABLE SET search_path = public AS $$
+  SELECT CASE WHEN _m IS NULL THEN '-' WHEN _m < 60 THEN round(_m) || ' min' WHEN _m % 1440 = 0 THEN (_m / 1440)::int || ' d'
+              WHEN _m % 60 = 0 THEN (_m / 60)::int || ' h' ELSE floor(_m / 60)::int || ' h ' || (_m % 60)::int || ' min' END
+$$;
+
+-- The SLA the agreement is agreed with: one of the client's ACTIVE policies (own company), an active template or the
+-- platform default, always its active version. The full version body and its hash are copied into the terms, so the
+-- agreement keeps an immutable snapshot (part of the terms hash both sides accept). No policy = platform default SLA.
+CREATE OR REPLACE FUNCTION public.sa_resolve_sla(_tenant uuid, _client uuid, _sla jsonb)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE pid uuid; p record; body jsonb; hash text; summary text;
+BEGIN
+  BEGIN pid := NULLIF(_sla ->> 'policy_id', '')::uuid; EXCEPTION WHEN OTHERS THEN RAISE EXCEPTION 'sa_sla_invalid' USING ERRCODE = '22023'; END;
+  IF pid IS NULL THEN
+    RETURN jsonb_build_object('policy_id', NULL, 'version', NULL, 'source', 'platform', 'name', NULL, 'summary', '');
+  END IF;
+  IF to_regclass('public.sla_policies') IS NULL THEN   -- SLA policies not installed: keep the reference only
+    RETURN jsonb_build_object('policy_id', pid, 'version', NULLIF(_sla ->> 'version', '')::int, 'source', 'reference', 'name', left(_sla ->> 'name', 120),
+                              'summary', left(COALESCE(_sla ->> 'summary', ''), 1000));
+  END IF;
+  EXECUTE 'SELECT p.scope, p.tenant_id, p.client_id, p.status, p.active_version, p.name FROM public.sla_policies p WHERE p.id = $1' INTO p USING pid;
+  IF p.scope IS NULL OR p.status <> 'active' OR p.active_version IS NULL
+     OR (p.scope = 'client' AND NOT ((_tenant IS NOT NULL AND p.tenant_id = _tenant) OR (p.tenant_id IS NULL AND p.client_id = _client))) THEN
+    RAISE EXCEPTION 'sa_sla_invalid: choose an active SLA policy of your company or a template' USING ERRCODE = '22023';
+  END IF;
+  EXECUTE 'SELECT v.body, v.content_hash FROM public.sla_policy_versions v WHERE v.policy_id = $1 AND v.version = $2' INTO body, hash USING pid, p.active_version;
+  IF body IS NULL THEN RAISE EXCEPTION 'sa_sla_invalid' USING ERRCODE = '22023'; END IF;
+  SELECT string_agg(k || ': response ' || public.sa_fmt_min((body -> 'severities' -> k ->> 'response_min')::numeric)
+                    || ', resolution ' || public.sa_fmt_min((body -> 'severities' -> k ->> 'resolution_min')::numeric), '; ' ORDER BY k)
+    INTO summary FROM unnest(ARRAY['S1', 'S2', 'S3', 'S4']) k WHERE body -> 'severities' ? k;
+  RETURN jsonb_build_object('policy_id', pid, 'version', p.active_version, 'source', p.scope, 'name', p.name, 'hash', hash, 'body', body,
+                            'summary', left(p.name || ' (v' || p.active_version || ')' || COALESCE(': ' || summary, ''), 1000));
+END $$;
+
+-- ------------------------------------------------------------------------------------------------ crew
+-- terms.team = [{consultant_id, role, capacity_hours_per_week, working_hours {timezone, days, from, to}, backup_for, required}]
+-- Lead entry only for the selected lead consultant; verified consultants only; never one the client blocked.
+CREATE OR REPLACE FUNCTION public.sa_crew_problems(_tenant uuid, _client uuid, _team jsonb, _lead uuid)
+RETURNS text[] LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE s jsonb := public.sa_settings(); e jsonb; out text[] := '{}'; ids uuid[] := '{}'; cid uuid; b uuid; wh jsonb;
+BEGIN
+  IF _team IS NULL OR jsonb_typeof(_team) = 'null' THEN RETURN '{}'; END IF;
+  IF jsonb_typeof(_team) <> 'array' THEN RETURN ARRAY['crew_member']; END IF;
+  IF jsonb_array_length(_team) > COALESCE((s ->> 'crew_max')::int, 6) THEN out := array_append(out, 'crew_size'); END IF;
+  FOR e IN SELECT x FROM jsonb_array_elements(_team) x LOOP
+    BEGIN cid := (e ->> 'consultant_id')::uuid; EXCEPTION WHEN OTHERS THEN cid := NULL; END;
+    IF cid IS NULL OR NOT EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = cid AND c.verification_status::text = 'verified') THEN
+      out := array_append(out, 'crew_member'); CONTINUE;
+    END IF;
+    IF cid = ANY (ids) THEN out := array_append(out, 'crew_duplicate'); END IF;
+    ids := array_append(ids, cid);
+    IF COALESCE(e ->> 'role', '') NOT IN ('lead', 'functional', 'technical', 'basis', 'backup', 'support')
+       OR ((e ->> 'role' = 'lead') IS DISTINCT FROM (cid = _lead AND _lead IS NOT NULL)) THEN
+      out := array_append(out, 'crew_role');
+    END IF;
+    IF jsonb_typeof(e -> 'capacity_hours_per_week') = 'number' AND (e ->> 'capacity_hours_per_week')::numeric NOT BETWEEN 0 AND 60 THEN out := array_append(out, 'crew_capacity'); END IF;
+    wh := COALESCE(e -> 'working_hours', '{}'::jsonb);
+    IF jsonb_typeof(wh) <> 'object' OR char_length(COALESCE(wh ->> 'timezone', '')) > 64
+       OR (wh ? 'from' AND COALESCE(wh ->> 'from', '') !~ '^([01]\d|2[0-3]):[0-5]\d$') OR (wh ? 'to' AND COALESCE(wh ->> 'to', '') !~ '^([01]\d|2[0-3]):[0-5]\d$')
+       OR (wh ? 'days' AND (jsonb_typeof(wh -> 'days') <> 'array' OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(wh -> 'days') d WHERE d !~ '^[1-7]$'))) THEN
+      out := array_append(out, 'crew_hours');
+    END IF;
+    IF EXISTS (SELECT 1 FROM public.client_consultant_blocks k WHERE k.consultant_id = cid
+                 AND ((_tenant IS NOT NULL AND k.tenant_id = _tenant) OR (k.tenant_id IS NULL AND k.owner_user_id = _client))) THEN
+      out := array_append(out, 'crew_blocked');
+    END IF;
+  END LOOP;
+  FOR e IN SELECT x FROM jsonb_array_elements(_team) x WHERE NULLIF(x ->> 'backup_for', '') IS NOT NULL LOOP
+    BEGIN b := (e ->> 'backup_for')::uuid; EXCEPTION WHEN OTHERS THEN b := NULL; END;
+    IF b IS NULL OR NOT (b = ANY (ids) OR b = _lead) OR b::text = e ->> 'consultant_id' THEN out := array_append(out, 'crew_backup'); END IF;
+  END LOOP;
+  RETURN ARRAY(SELECT DISTINCT unnest(out));
+END $$;
+
+CREATE OR REPLACE FUNCTION public.sa_member_nda_ok(_client uuid, _consultant uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM public.nda_agreements n WHERE n.consultant_id = _consultant AND n.client_id = _client
+                   AND n.revoked_at IS NULL AND n.signed_at IS NOT NULL AND n.client_signed_at IS NOT NULL)
+$$;
+
 CREATE OR REPLACE FUNCTION public.sa_transition_allowed(_from text, _to text)
 RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path = public AS $$
   SELECT (_from, _to) IN (('draft', 'open'), ('draft', 'archived'), ('open', 'negotiating'), ('open', 'draft'), ('open', 'archived'),
