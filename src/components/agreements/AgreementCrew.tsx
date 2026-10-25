@@ -26,6 +26,7 @@ import {
   CREW_PICK_ROLES, crewProblems, newCrewEntry, saErrorCode,
   type CrewEntry, type CrewRole, type SaSettings, type WorkingHours,
 } from '@/lib/agreements/model';
+import NDASigningModal from '@/components/consultant/NDASigningModal';
 import { fmtDate } from './AgreementBits';
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7] as const;
@@ -147,6 +148,9 @@ const ITEM_ICON = (ok: boolean) => (ok ? <CheckCircle2 className="h-4 w-4 shrink
 /** "Team confirmation" checklist: what still blocks the start, and each member's place / SLA / NDA status. */
 export function TeamConfirmation({ a, lang }: { a: api.SaDetail; lang: 'en' | 'ar' }) {
   const { t } = useTranslation();
+  const refresh = useRefreshAgreements();
+  const [ndaOpen, setNdaOpen] = useState(false);
+  const myId = a.role === 'lead' ? a.consultant_id ?? null : a.role === 'team' ? a.my_member?.consultant_id ?? null : null;
   const c = a.confirmation;
   if (!c) return null;
   const live = ['active', 'renewal_due', 'suspended'].includes(a.status);
@@ -186,7 +190,15 @@ export function TeamConfirmation({ a, lang }: { a: api.SaDetail; lang: 'en' | 'a
           </table>
         </div>
         {a.terms?.nda_required && c.members.some((m) => m.status === 'active' && !m.nda_ok) && (
-          <p className="text-xs text-muted-foreground">{t('agreements.confirm.ndaHow')} <Link className="text-primary underline-offset-2 hover:underline" to={a.role === 'lead' || a.role === 'team' ? '/consultant/nda' : '/client/nda'}>{t('agreements.confirm.ndaLink')}</Link></p>
+          myId && a.client_id && c.members.some((m) => m.consultant_id === myId && m.status === 'active' && !m.nda_ok) ? (
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span>{t('agreements.confirm.ndaYours')}</span>
+              <Button size="sm" variant="outline" onClick={() => setNdaOpen(true)}>{t('agreements.confirm.ndaSign')}</Button></div>
+          ) : ['client', 'client_member'].includes(a.role) ? (
+            <p className="text-xs text-muted-foreground">{t('agreements.confirm.ndaClient')} <Link className="text-primary underline-offset-2 hover:underline" to="/client/contracts">{t('agreements.confirm.ndaLink')}</Link></p>
+          ) : <p className="text-xs text-muted-foreground">{t('agreements.confirm.ndaHow')}</p>
+        )}
+        {myId && a.client_id && ndaOpen && (
+          <NDASigningModal open={ndaOpen} onOpenChange={setNdaOpen} consultantId={myId} clientId={a.client_id} onSigned={() => { setNdaOpen(false); refresh(); }} />
         )}
       </CardContent>
     </Card>

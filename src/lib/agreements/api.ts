@@ -61,7 +61,7 @@ export interface SaDetail {
   // Applicants only
   my_application?: SaApplication | null;
   // Parties and admins only
-  terms?: SaTerms; version?: number; content_hash?: string | null; consultant_id?: string | null; consultant_name?: string | null;
+  terms?: SaTerms; version?: number; content_hash?: string | null; client_id?: string; consultant_id?: string | null; consultant_name?: string | null;
   admin_review?: 'not_needed' | 'pending' | 'approved' | 'rejected'; agreed_at?: string | null; started_at?: string | null; start_date?: string | null; end_date?: string | null;
   auto_renew?: { client: boolean; consultant: boolean };
   termination?: { by: string; reason: string; end: string; handover_until: string | null; handover_note: string | null } | null;
