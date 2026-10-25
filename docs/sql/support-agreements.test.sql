@@ -133,7 +133,7 @@ BEGIN
   IF (SELECT status FROM public.sa_agreements WHERE id = aid) <> 'agreed' THEN RAISE EXCEPTION 'SA11 needs NDA'; END IF;
   PERFORM pg_temp.as_user(NULL);
   INSERT INTO public.nda_agreements (consultant_id, client_id, signature_data, nda_content, signed_at, client_signed_at) VALUES (kc, oa, 'sig', 'nda', now(), now());
-  IF NOT public.sa_try_activate(aid) OR (SELECT status FROM public.sa_agreements WHERE id = aid) <> 'active' THEN RAISE EXCEPTION 'SA11 active'; END IF;
+  IF NOT public.sa_try_activate(aid) OR (SELECT status FROM public.sa_agreements WHERE id = aid) <> 'active' THEN RAISE EXCEPTION 'SA11 active % % % %', (SELECT status||'/'||admin_review||'/'||start_date FROM public.sa_agreements WHERE id = aid), (SELECT count(*) FROM public.nda_agreements WHERE consultant_id = kc), (SELECT public.sa_nda_ok(x) FROM public.sa_agreements x WHERE x.id = aid), (SELECT string_agg(signed_at::text||'|'||coalesce(client_signed_at::text,'-')||'|'||coalesce(revoked_at::text,'-'),';') FROM public.nda_agreements WHERE consultant_id = kc); END IF;
 
   -- SA12 a ticket under the agreement gets the agreed rate and a direct request to the lead (no bidding);
   --      a module outside the scope stays a normal ticket.
