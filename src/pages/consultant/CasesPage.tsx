@@ -7,6 +7,8 @@ import { useConsultantCases } from '@/hooks/useConsultantCases';
 import { useTrackingList } from '@/hooks/useTrackingList';
 import TrackingListControls, { TrackingRowChips } from '@/components/tracking/TrackingListControls';
 import { SlaFilterBar, SlaRowChip, useSlaList } from '@/components/sla/SlaListControls';
+import { AgreementTagChip } from '@/components/agreements/AgreementBits';
+import { useAgreementTags } from '@/hooks/useAgreements';
 import { useBrdApprovalList } from '@/hooks/useBrdApproval';
 import { BrdApprovalFilterButton, BrdApprovalRowChip } from '@/components/brd/approval/BrdApprovalListControls';
 import { sortByApproval } from '@/lib/brdApproval';
@@ -88,6 +90,7 @@ export default function CasesPage() {
   };
 
   const sla = useSlaList(cases || []);
+  const agreementTags = useAgreementTags((cases || []).map((x: { id: string }) => x.id));
   const filtered = sla.apply(sortByApproval(tt.apply((cases || []).filter((c) => {
     const matchSearch = c.title.toLowerCase().includes(search.toLowerCase()) || c.client.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'all' || c.status === statusFilter;
@@ -174,6 +177,7 @@ export default function CasesPage() {
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
                           {tt.active && <TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} />}
                           {sla.on && <SlaRowChip state={sla.map.get(ticket.id)} atRiskPct={sla.atRisk} />}
+                          {agreementTags.get(ticket.id) && <AgreementTagChip name={agreementTags.get(ticket.id)!.name} />}
                           <BrdApprovalRowChip row={approvals.get(ticket.id)} />
                         </div>
                       )}

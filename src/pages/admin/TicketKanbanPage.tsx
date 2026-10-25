@@ -11,6 +11,8 @@ import SendMatchDialog from '@/components/admin/SendMatchDialog';
 import { useTrackingList } from '@/hooks/useTrackingList';
 import TrackingListControls, { TrackingRowChips } from '@/components/tracking/TrackingListControls';
 import { SlaFilterBar, SlaRowChip, useSlaList } from '@/components/sla/SlaListControls';
+import { AgreementTagChip } from '@/components/agreements/AgreementBits';
+import { useAgreementTags } from '@/hooks/useAgreements';
 
 const urgencyColors: Record<string, string> = {
   low: 'bg-green-500/10 text-green-600 border-green-500/20',
@@ -36,6 +38,7 @@ export default function TicketKanbanPage() {
   const allTickets = useMemo(() => Object.values(ticketData as Record<string, Array<{ id: string }>>).flat(), [ticketData]);
   const tt = useTrackingList(allTickets, 'admin');
   const sla = useSlaList(allTickets);
+  const agreementTags = useAgreementTags(allTickets.map((x: { id: string }) => x.id));
 
   return (
     <div className="space-y-6">
@@ -87,6 +90,7 @@ export default function TicketKanbanPage() {
                         <p className="text-xs text-muted-foreground mt-2">{ticket.client}</p>
                         {tt.active && <div className="mt-2"><TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} /></div>}
                         {sla.on && <div className="mt-1"><SlaRowChip state={sla.map.get(ticket.id)} atRiskPct={sla.atRisk} /></div>}
+                        {agreementTags.get(ticket.id) && <div className="mt-1"><AgreementTagChip name={agreementTags.get(ticket.id)!.name} /></div>}
                         <div className="flex gap-1.5 mt-2">
                           <Button
                             size="sm"
