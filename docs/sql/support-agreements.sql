@@ -1004,8 +1004,8 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public 
 DECLARE uid uuid := auth.uid();
 BEGIN
   IF public.sa_consultant_of(uid) IS NULL THEN RETURN '[]'::jsonb; END IF;
-  RETURN COALESCE((SELECT jsonb_agg(jsonb_build_object('id', a.id, 'name', a.name, 'request', a.request - CASE WHEN COALESCE((a.request ->> 'show_budget')::boolean, false) THEN '' ELSE 'budget' END,
-      'modules', to_jsonb(public.sa_modules(a)), 'model', a.terms ->> 'model', 'term', a.terms -> 'term', 'sla', a.terms -> 'sla', 'deadline', a.deadline,
+  RETURN COALESCE((SELECT jsonb_agg(jsonb_build_object('id', a.id, 'name', a.name, 'reference', a.reference, 'request', a.request - CASE WHEN COALESCE((a.request ->> 'show_budget')::boolean, false) THEN '' ELSE 'budget' END,
+      'modules', to_jsonb(public.sa_modules(a)), 'model', a.terms ->> 'model', 'term', a.terms -> 'term', 'sla', (a.terms -> 'sla') - 'body', 'deadline', a.deadline,
       'invited', EXISTS (SELECT 1 FROM public.sa_invites i WHERE i.agreement_id = a.id AND i.consultant_id = public.sa_consultant_of(uid)),
       'applied', EXISTS (SELECT 1 FROM public.sa_applications p WHERE p.agreement_id = a.id AND p.consultant_id = public.sa_consultant_of(uid)),
       'role', public.sa_role(a.id, uid)) ORDER BY a.deadline NULLS LAST)
@@ -1302,6 +1302,7 @@ DECLARE uid uuid := auth.uid();
 BEGIN
   IF public.sa_role(_id, uid) NOT IN ('lead', 'admin') THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
   IF NOT public.sa_text_ok(_note) OR char_length(btrim(COALESCE(_note, ''))) < 10 THEN RAISE EXCEPTION 'sa_note_required' USING ERRCODE = '22023'; END IF;
+  IF NOT public.sa_secret_ok(_note) THEN RAISE EXCEPTION 'sa_secret_details' USING ERRCODE = '22023'; END IF;
   UPDATE public.sa_agreements SET handover_note = left(_note, 4000) WHERE id = _id AND termination_end IS NOT NULL;
   IF NOT FOUND THEN RAISE EXCEPTION 'sa_not_terminating' USING ERRCODE = '55000'; END IF;
   PERFORM public.sa_event(_id, 'handover_note', uid);
@@ -1407,7 +1408,11 @@ BEGIN
   UPDATE public.sa_replacements SET status = CASE WHEN _accept THEN 'done' ELSE 'declined' END, done_at = now() WHERE id = _replacement;
   IF _accept THEN
     UPDATE public.sa_members SET status = 'ended', ended_at = now() WHERE agreement_id = x.agreement_id AND consultant_id = x.from_consultant AND status = 'active';
-    INSERT INTO public.sa_members (agreement_id, consultant_id, member_role, status) VALUES (x.agreement_id, x.to_consultant, 'lead', 'active') ON CONFLICT DO NOTHING;
+    UPDATE public.sa_members SET member_role = 'lead', status = 'active', accepted_at = COALESCE(accepted_at, now())
+     WHERE agreement_id = x.agreement_id AND consultant_id = x.to_consultant AND status IN ('invited', 'active', 'declined');
+    IF NOT FOUND THEN
+      INSERT INTO public.sa_members (agreement_id, consultant_id, member_role, status, accepted_at) VALUES (x.agreement_id, x.to_consultant, 'lead', 'active', now());
+    END IF;
     UPDATE public.sa_agreements SET consultant_id = x.to_consultant WHERE id = x.agreement_id;
     PERFORM public.sa_event(x.agreement_id, 'lead_replaced', uid);
     PERFORM public.sa_audit_log(uid, 'lead_replaced', x.agreement_id, jsonb_build_object('from', x.from_consultant, 'to', x.to_consultant));
@@ -1425,6 +1430,7 @@ BEGIN
   ELSE RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
   IF cid IS NULL THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
   IF NOT public.sa_text_ok(_body) THEN RAISE EXCEPTION 'sa_contact_details' USING ERRCODE = '22023'; END IF;
+  IF NOT public.sa_secret_ok(_body) THEN RAISE EXCEPTION 'sa_secret_details' USING ERRCODE = '22023'; END IF;
   IF NOT public.sa_rate_ok('sa_msg:' || uid, 60, 3600) THEN RAISE EXCEPTION 'sa_rate_limited' USING ERRCODE = '53400'; END IF;
   INSERT INTO public.sa_messages (agreement_id, consultant_id, sender_id, sender_role, body)
   VALUES (_id, cid, uid, CASE WHEN r = 'client' THEN 'client' ELSE 'consultant' END, left(btrim(_body), 2000)) RETURNING sa_messages.id INTO new_id;
@@ -1471,12 +1477,12 @@ BEGIN
     UPDATE public.ticket_rates SET status = 'replaced' WHERE ticket_id = _ticket AND consultant_id = a.consultant_id AND status IN ('proposed', 'approved');
     INSERT INTO public.ticket_rates (ticket_id, consultant_id, hourly_rate, currency, status, source, proposed_by, decided_by, decided_at, decision_note, base_rate, surcharge_percent)
     VALUES (_ticket, a.consultant_id, rate, rr.currency, 'approved', 'agreement', public.sa_user_of(a.consultant_id), t.client_id, now(),
-            left('Support agreement "' || a.name || '" (rate record ' || rr.seq || ')', 500),
+            left('Support agreement "' || a.name || '" (' || a.reference || ', rate record ' || rr.seq || ')', 500),
             CASE WHEN rate <> rr.hourly_rate THEN rr.hourly_rate END, CASE WHEN rate <> rr.hourly_rate THEN round((rate / rr.hourly_rate - 1) * 100, 2) END);
   END IF;
   BEGIN
     INSERT INTO public.ticket_match_requests (ticket_id, consultant_id, sent_by, status, message)
-    VALUES (_ticket, a.consultant_id, t.client_id, 'pending', left('Support agreement: ' || a.name, 500));
+    VALUES (_ticket, a.consultant_id, t.client_id, 'pending', left('Support agreement: ' || a.name || ' (' || a.reference || ')', 500));
   EXCEPTION WHEN OTHERS THEN
     RAISE WARNING 'Agreement request to the lead consultant skipped: %', SQLERRM;
   END;
@@ -1539,7 +1545,8 @@ CREATE TRIGGER sa_activity AFTER INSERT OR UPDATE OF status ON public.ticket_tim
 -- Agreements a client may use on the new-request form ("Use my support agreement").
 CREATE OR REPLACE FUNCTION public.sa_usable(_tenant uuid DEFAULT NULL)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT COALESCE(jsonb_agg(jsonb_build_object('id', a.id, 'name', a.name, 'modules', to_jsonb(public.sa_modules(a)))), '[]'::jsonb)
+  SELECT COALESCE(jsonb_agg(jsonb_build_object('id', a.id, 'name', a.name, 'reference', a.reference, 'modules', to_jsonb(public.sa_modules(a)),
+                                              'sla_name', a.terms -> 'sla' ->> 'name')), '[]'::jsonb)
     FROM public.sa_agreements a
    WHERE public.sa_enabled() AND a.status IN ('active', 'renewal_due') AND (a.termination_end IS NULL OR a.termination_end >= current_date)
      AND ((_tenant IS NOT NULL AND a.tenant_id = _tenant AND public.sa_role(a.id, auth.uid()) IN ('client', 'client_member'))
@@ -1637,7 +1644,8 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public 
 DECLARE uid uuid := auth.uid(); cid uuid := public.sa_consultant_of(uid);
 BEGIN
   RETURN jsonb_build_object('enabled', public.sa_enabled(), 'settings', public.sa_settings() - 'rate_caps',
-    'agreements', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', a.id, 'name', a.name, 'status', a.status, 'role', public.sa_role(a.id, uid), 'modules', to_jsonb(public.sa_modules(a)),
+    'agreements', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', a.id, 'name', a.name, 'reference', a.reference, 'status', a.status, 'role', public.sa_role(a.id, uid), 'modules', to_jsonb(public.sa_modules(a)),
+        'crew', (SELECT jsonb_build_object('members', count(*), 'confirmed', count(*) FILTER (WHERE m.status = 'active' AND m.sla_accepted_at IS NOT NULL)) FROM public.sa_members m WHERE m.agreement_id = a.id AND m.status IN ('invited', 'active', 'declined')),
         'model', a.terms ->> 'model', 'start_date', COALESCE(a.start_date, NULLIF(a.terms -> 'term' ->> 'start_date', '')::date), 'end_date', COALESCE(a.end_date, NULLIF(a.terms -> 'term' ->> 'end_date', '')::date),
         'applications', CASE WHEN public.sa_role(a.id, uid) IN ('client', 'client_member', 'admin') THEN (SELECT count(*) FROM public.sa_applications p WHERE p.agreement_id = a.id AND p.status IN ('pending', 'shortlisted', 'selected')) END,
         'updated_at', a.updated_at) ORDER BY a.updated_at DESC)
@@ -1647,7 +1655,7 @@ BEGIN
         OR (cid IS NOT NULL AND (a.consultant_id = cid AND a.status NOT IN ('draft', 'open')
              OR EXISTS (SELECT 1 FROM public.sa_members m WHERE m.agreement_id = a.id AND m.consultant_id = cid AND m.status IN ('invited', 'active'))
              OR EXISTS (SELECT 1 FROM public.sa_applications p WHERE p.agreement_id = a.id AND p.consultant_id = cid)))), '[]'::jsonb),
-    'replacements', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', x.id, 'agreement_id', x.agreement_id, 'name', a.name)) FROM public.sa_replacements x JOIN public.sa_agreements a ON a.id = x.agreement_id
+    'replacements', COALESCE((SELECT jsonb_agg(jsonb_build_object('id', x.id, 'agreement_id', x.agreement_id, 'name', a.name, 'reference', a.reference)) FROM public.sa_replacements x JOIN public.sa_agreements a ON a.id = x.agreement_id
                       WHERE x.status = 'pending_consultant' AND x.to_consultant = cid), '[]'::jsonb));
 END $$;
 
@@ -1659,7 +1667,8 @@ BEGIN
   IF NOT public.sa_is_admin(uid) THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
   FOR k IN SELECT jsonb_object_keys(COALESCE(_value, '{}'::jsonb)) LOOP
     IF k IN ('enabled', 'needs_admin_review', 'draft_legal_flag', 'models_enabled', 'rate_min', 'rate_max', 'rate_caps', 'service_fee_percent', 'max_multiplier',
-             'renewal_reminder_days', 'inactivity_weeks', 'min_term_months', 'max_notice_days', 'handover_days', 'allow_prepayment', 'allow_forfeit', 'application_limit_per_day') THEN
+             'renewal_reminder_days', 'inactivity_weeks', 'min_term_months', 'max_notice_days', 'handover_days', 'allow_prepayment', 'allow_forfeit', 'application_limit_per_day',
+             'crew_max', 'contacts_max', 'doc_max_mb', 'docs_per_agreement') THEN
       v := v || jsonb_build_object(k, _value -> k);
     END IF;
   END LOOP;
@@ -1692,7 +1701,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public 
 DECLARE uid uuid := auth.uid();
 BEGIN
   IF NOT public.sa_is_admin(uid) THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
-  RETURN COALESCE((SELECT jsonb_agg(jsonb_build_object('id', a.id, 'name', a.name, 'status', a.status, 'admin_review', a.admin_review,
+  RETURN COALESCE((SELECT jsonb_agg(jsonb_build_object('id', a.id, 'name', a.name, 'reference', a.reference, 'status', a.status, 'admin_review', a.admin_review,
       'company', COALESCE((SELECT t.name FROM public.tenants t WHERE t.id = a.tenant_id), (SELECT cp.company_name FROM public.client_profiles cp WHERE cp.user_id = a.client_id LIMIT 1)),
       'consultant', (SELECT p.display_name FROM public.consultants c JOIN public.profiles p ON p.user_id = c.user_id WHERE c.id = a.consultant_id LIMIT 1),
       'rate', (SELECT jsonb_build_object('hourly_rate', x.hourly_rate, 'currency', x.currency) FROM public.sa_rate_on(a.id, current_date) x WHERE x.id IS NOT NULL),
@@ -1752,7 +1761,7 @@ BEGIN
     INSERT INTO public.payments (client_id, consultant_id, tenant_id, amount, currency, vat_amount, status, kind, reference, description, due_date, pricing_model,
                                  base_amount, service_fee_percent, service_fee_amount, processing_fee_percent, processing_fee_amount, vat_percent)
     VALUES (a.client_id, a.consultant_id, a.tenant_id, sub + vat, rr.currency, vat, 'pending', 'invoice', 'agreement:' || _id || ':' || to_char(m0, 'YYYY-MM'),
-            left('Support agreement "' || a.name || '" ' || to_char(m0, 'YYYY-MM') || ': ' || (res ->> 'charge_hours') || ' committed hours not used'
+            left('Support agreement "' || a.name || '" (' || a.reference || ') ' || to_char(m0, 'YYYY-MM') || ': ' || (res ->> 'charge_hours') || ' committed hours not used'
                  || CASE WHEN (res ->> 'overage_hours')::numeric > 0 THEN ', overage difference for ' || (res ->> 'overage_hours') || ' h' ELSE '' END, 500),
             now() + interval '14 days', 'v2', base, svc, sf, public.payment_processing_fee_percent(), pf, public.payment_vat_percent())
     RETURNING id INTO pid;
@@ -1765,6 +1774,7 @@ BEGIN
     'Hours used ' || used || ' of ' || committed || ' committed.' || CASE WHEN base > 0 THEN ' An invoice for the unused committed hours was created.' ELSE '' END,
     'الساعات المستخدمة ' || used || ' من ' || committed || ' ملتزم بها.' || CASE WHEN base > 0 THEN ' أُنشئت فاتورة للساعات الملتزم بها غير المستخدمة.' ELSE '' END,
     true, 'statement:' || _id || ':' || to_char(m0, 'YYYY-MM'));
+  PERFORM public.sa_notify_statement(_id, m0);
   RETURN res || jsonb_build_object('base', base, 'payment_id', pid);
 END $$;
 
@@ -1829,7 +1839,7 @@ BEGIN
         FOR tk IN SELECT st.ticket_id FROM public.sa_tickets st JOIN public.tickets t ON t.id = st.ticket_id WHERE st.agreement_id = a.id AND t.status::text NOT IN ('resolved', 'closed') LOOP
           UPDATE public.ticket_rates SET status = 'replaced' WHERE ticket_id = tk AND consultant_id = a.consultant_id AND status = 'approved';
           INSERT INTO public.ticket_rates (ticket_id, consultant_id, hourly_rate, currency, status, source, decided_at, decision_note)
-          VALUES (tk, a.consultant_id, rr.hourly_rate, rr.currency, 'approved', 'agreement', now(), 'Support agreement rate change from ' || rr.effective_from);
+          VALUES (tk, a.consultant_id, rr.hourly_rate, rr.currency, 'approved', 'agreement', now(), 'Support agreement ' || a.reference || ' rate change from ' || rr.effective_from);
         END LOOP;
         PERFORM public.sa_event(a.id, 'rate_in_force', NULL, jsonb_build_object('seq', rr.seq, 'effective_from', rr.effective_from));
       END IF;
