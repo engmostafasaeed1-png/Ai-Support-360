@@ -12,6 +12,7 @@ import { useTrackingList } from '@/hooks/useTrackingList';
 import TrackingListControls, { TrackingRowChips } from '@/components/tracking/TrackingListControls';
 import { useBrdApprovalList } from '@/hooks/useBrdApproval';
 import { BrdApprovalFilterButton, BrdApprovalRowChip } from '@/components/brd/approval/BrdApprovalListControls';
+import { SlaFilterBar, SlaRowChip, useSlaList } from '@/components/sla/SlaListControls';
 import {
   Search, TicketPlus, Ticket, ChevronDown, ChevronUp,
   Clock, User, Calendar, Tag, Video, MessageSquare, Monitor,
@@ -68,14 +69,15 @@ export default function TicketsPage() {
   const navigate = useNavigate();
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const filtered = tt.apply((tickets || []).filter((t) => {
+  const sla = useSlaList(tickets || []);
+  const filtered = sla.apply(tt.apply((tickets || []).filter((t) => {
     const matchSearch =
       t.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       t.sap_module.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       (t.description || '').toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchStatus = statusFilter === 'all' || t.status === statusFilter;
     return matchSearch && matchStatus && (!awaitingApproval || !!approvals.get(t.id)?.waiting_consultant);
-  }));
+  })));
 
   const virtualizer = useVirtualizer({
     count: filtered.length,
@@ -127,6 +129,7 @@ export default function TicketsPage() {
           saved={tt.saved} saveCurrent={tt.saveCurrent} removeSaved={tt.removeSaved} />
       )}
       <BrdApprovalFilterButton rows={approvals} kind="waiting_consultant" active={awaitingApproval} onToggle={() => setAwaitingApproval((v) => !v)} />
+      <SlaFilterBar ctl={sla} />
 
       {isLoading ? (
         <div className="space-y-3">
@@ -188,6 +191,7 @@ export default function TicketsPage() {
                             )}
                             <TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} />
                             <BrdApprovalRowChip row={approvals.get(ticket.id)} />
+                            {sla.on && <SlaRowChip state={sla.map.get(ticket.id)} atRiskPct={sla.atRisk} />}
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
