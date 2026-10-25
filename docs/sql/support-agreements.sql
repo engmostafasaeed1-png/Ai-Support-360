@@ -1060,7 +1060,10 @@ BEGIN
   t := a.terms || jsonb_build_object('model', p.model,
          'rate', COALESCE(a.terms -> 'rate', '{}'::jsonb) || jsonb_build_object('hourly_rate', p.hourly_rate, 'currency', p.currency),
          'capacity_hours_per_week', COALESCE(to_jsonb(p.capacity_hours_per_week), a.terms -> 'capacity_hours_per_week'),
-         'team', jsonb_build_array(jsonb_build_object('consultant_id', p.consultant_id, 'role', 'lead')));
+         -- the selected consultant becomes the lead; the crew the client planned stays (without the new lead)
+         'team', jsonb_build_array(jsonb_build_object('consultant_id', p.consultant_id, 'role', 'lead', 'required', true, 'capacity_hours_per_week', p.capacity_hours_per_week))
+                 || COALESCE((SELECT jsonb_agg(e) FROM jsonb_array_elements(COALESCE(a.terms -> 'team', '[]'::jsonb)) e
+                               WHERE e ->> 'consultant_id' <> p.consultant_id::text AND COALESCE(e ->> 'role', '') <> 'lead'), '[]'::jsonb));
   UPDATE public.sa_agreements SET consultant_id = p.consultant_id, application_id = p.id WHERE id = a.id;
   UPDATE public.sa_applications SET status = 'selected', updated_at = now() WHERE id = p.id;
   PERFORM public.sa_set_status(a.id, 'negotiating', uid, jsonb_build_object('application', p.id));
@@ -1094,6 +1097,13 @@ BEGIN
   IF NOT public.sa_rate_ok('sa_offer:' || uid, 20, 86400) THEN RAISE EXCEPTION 'sa_rate_limited' USING ERRCODE = '53400'; END IF;
   IF NOT public.sa_text_ok(_note) THEN RAISE EXCEPTION 'sa_contact_details' USING ERRCODE = '22023'; END IF;
   probs := public.sa_terms_problems(public.sa_apply_patch(a.terms, _patch));
+  IF _patch ? 'team' THEN   -- the crew is composed by the client; the lead must stay in it
+    IF r <> 'client' THEN RAISE EXCEPTION 'sa_forbidden: only the client changes the crew' USING ERRCODE = '42501'; END IF;
+    probs := probs || public.sa_crew_problems(a.tenant_id, a.client_id, _patch -> 'team', a.consultant_id);
+    IF NOT EXISTS (SELECT 1 FROM jsonb_array_elements(_patch -> 'team') e WHERE e ->> 'consultant_id' = a.consultant_id::text AND e ->> 'role' = 'lead') THEN
+      probs := array_append(probs, 'crew_lead_missing');
+    END IF;
+  END IF;
   IF cardinality(probs) > 0 THEN RAISE EXCEPTION 'sa_terms_invalid: %', array_to_string(probs, ',') USING ERRCODE = '22023'; END IF;
   UPDATE public.sa_offers SET status = 'superseded' WHERE agreement_id = _id AND status = 'open';
   INSERT INTO public.sa_offers (agreement_id, by_role, by_user, patch, note) VALUES (_id, public.sa_party(r), uid, _patch, left(COALESCE(_note, ''), 1000))
@@ -1132,7 +1142,7 @@ END $$;
 -- accepted the same version the agreement is Agreed: immutable agreed rate record, other applications declined.
 CREATE OR REPLACE FUNCTION public.sa_accept_terms(_id uuid, _version integer, _hash text, _typed_name text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE uid uuid := auth.uid(); a public.sa_agreements; r text := public.sa_role(_id, uid); v public.sa_versions; probs text[]; first_pair boolean; rid uuid; s jsonb := public.sa_settings();
+DECLARE uid uuid := auth.uid(); a public.sa_agreements; r text := public.sa_role(_id, uid); v public.sa_versions; probs text[]; first_pair boolean; rid uuid; s jsonb := public.sa_settings(); e jsonb;
 BEGIN
   SELECT * INTO a FROM public.sa_agreements WHERE id = _id FOR UPDATE;
   IF r NOT IN ('client', 'lead') OR a.status <> 'negotiating' THEN RAISE EXCEPTION 'sa_forbidden' USING ERRCODE = '42501'; END IF;
