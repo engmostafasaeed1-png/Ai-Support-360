@@ -117,6 +117,7 @@ export const clientNavGroups: NavGroup[] = [
       { key: 'reports', icon: PieChart, path: '/client/reports' },
       { key: 'sla', icon: ShieldCheck, path: '/client/sla' },
       { key: 'agreements', icon: Handshake, path: '/client/agreements', fallback: 'Support agreements', visibleSetting: 'support_agreements_visible' },
+      { key: 'partner_portal', icon: Building, path: '/client/partner', fallback: 'Partner portal', visibleSetting: 'partner_portal' },
       { key: 'activity_log', icon: Radio, path: '/client/activity-log' },
     ],
   },

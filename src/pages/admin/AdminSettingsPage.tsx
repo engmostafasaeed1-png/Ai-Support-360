@@ -49,6 +49,12 @@ const GENERAL = [
     hint: 'Off (default): the page is hidden from client menus and search, and its address leads to the client dashboard. Administrators can still open it by address for review; it shows example data only.',
   },
   {
+    key: 'partner_portal',
+    labelKey: 'admin.settings_partner_portal',
+    label: 'Partner portal',
+    hint: 'Off (default): no company sees the Partner portal. On: companies you marked as partners (Users > Partner companies) can invite consultants and manage their availability.',
+  },
+  {
     key: 'meeting_external_invites',
     labelKey: 'admin.settings_meeting_external',
     label: 'Allow external e-mail attendees in meetings',

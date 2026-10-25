@@ -193,6 +193,7 @@ const MeetingJoinEventsExportPage = lazyWithRetry(() => import("./pages/admin/Me
 const AdminSettingsPage = lazyWithRetry(() => import("./pages/admin/AdminSettingsPage.tsx"), 'AdminSettingsPage');
 const AdminSlaPage = lazyWithRetry(() => import("./pages/admin/AdminSlaPage.tsx"), 'AdminSlaPage');
 const AdminAgreementsPage = lazyWithRetry(() => import("./pages/admin/AdminAgreementsPage.tsx"), 'AdminAgreementsPage');
+const PartnerPortalPage = lazyWithRetry(() => import("./pages/partner/PartnerPortalPage.tsx"), 'PartnerPortalPage');
 const AgreementsListPage = lazyWithRetry(() => import("./pages/agreements/AgreementsListPage.tsx"), 'AgreementsListPage');
 const AgreementDetailPage = lazyWithRetry(() => import("./pages/agreements/AgreementDetailPage.tsx"), 'AgreementDetailPage');
 const NDAManagementPage = lazyWithRetry(() => import("./pages/admin/NDAManagementPage.tsx"), 'NDAManagementPage');
@@ -417,6 +418,7 @@ const App = () => (
               <Route path="satisfaction" element={<SatisfactionPage />} />
             </Route>
             <Route path="/client/companies" element={<ProtectedRoute requiredRole="client"><CompanySelectorPage /></ProtectedRoute>} />
+            <Route path="/partner" element={<Navigate to="/client/partner" replace />} />
             <Route path="/client" element={<ProtectedRoute requiredRole="client"><ErrorBoundary><ClientLayout /></ErrorBoundary></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
               <Route path="timeline" element={<TimelinePage />} />
@@ -458,6 +460,7 @@ const App = () => (
               <Route path="contracts" element={<ContractsPage />} />
               <Route path="support" element={<SupportPage />} />
               <Route path="pm-tickets" element={<ProjectManagementTicketsPage />} />
+              <Route path="partner" element={<PageVisibilityGate setting="partner_portal" redirectTo="/client"><PartnerPortalPage /></PageVisibilityGate>} />
               <Route path="solution-architecture" element={<PageVisibilityGate setting="solution_architecture_visible" redirectTo="/client"><SolutionArchitecturePage /></PageVisibilityGate>} />
               <Route path="changes" element={<ChangeManagementPage />} />
               
