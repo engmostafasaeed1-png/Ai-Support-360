@@ -182,7 +182,7 @@ export function bankMonth(month: string, carried: Bucket[], used: number, t: Ban
     expired = r2(expired + b.hours - keep);
   }
   const chargeHours = t.unused === 'charge' ? expired : 0;
-  return { carried_out: next, expired_hours: expired, charge_hours: chargeHours, overage_hours: overage, available: r2(buckets.reduce((n, b) => n, 0) + carried.reduce((n, b) => n + b.hours, 0) + t.hours_per_month) };
+  return { carried_out: next, expired_hours: expired, charge_hours: chargeHours, overage_hours: overage, available: r2(carried.reduce((n, b) => n + Math.max(0, b.hours), 0) + t.hours_per_month) };
 }
 
 /** Settlement amount (before fees/VAT) for a bank month: expired committed hours + overage rate difference. */
