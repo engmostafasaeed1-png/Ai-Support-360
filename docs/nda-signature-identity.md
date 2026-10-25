@@ -1,7 +1,6 @@
 # Strict NDA signing with signer identity
 
-Status: built; database file `docs/sql/nda-signature-identity.sql` (+ `.test.sql`) is prepared and **not applied** (owner review).
-Until it is applied every screen keeps today's signing (the new screens appear only when `nda_signing_settings` exists).
+Status: live since 2026-10-25 (applied as migration 0108, byte-identical to `docs/sql/nda-signature-identity.sql`; secret `NDA_ID_ENCRYPTION_KEY` set; app published).
 
 ## How signing works today (inventory)
 

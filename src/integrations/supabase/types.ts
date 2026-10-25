@@ -5751,6 +5751,210 @@ export type Database = {
           },
         ]
       }
+      nda_identity_access_log: {
+        Row: {
+          actor: string
+          actor_role: string
+          created_at: string
+          id: string
+          identity_id: string
+          reason: string
+          signature_id: string
+        }
+        Insert: {
+          actor: string
+          actor_role: string
+          created_at?: string
+          id?: string
+          identity_id: string
+          reason: string
+          signature_id: string
+        }
+        Update: {
+          actor?: string
+          actor_role?: string
+          created_at?: string
+          id?: string
+          identity_id?: string
+          reason?: string
+          signature_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nda_identity_access_log_identity_id_fkey"
+            columns: ["identity_id"]
+            isOneToOne: false
+            referencedRelation: "nda_signatory_identity"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nda_signatory_identity: {
+        Row: {
+          anonymised_at: string | null
+          anonymised_reason: string | null
+          created_at: string
+          id: string
+          id_cipher: string | null
+          id_country: string
+          id_masked: string
+          id_type: string
+          signature_id: string
+          user_id: string
+        }
+        Insert: {
+          anonymised_at?: string | null
+          anonymised_reason?: string | null
+          created_at?: string
+          id?: string
+          id_cipher?: string | null
+          id_country: string
+          id_masked: string
+          id_type: string
+          signature_id: string
+          user_id: string
+        }
+        Update: {
+          anonymised_at?: string | null
+          anonymised_reason?: string | null
+          created_at?: string
+          id?: string
+          id_cipher?: string | null
+          id_country?: string
+          id_masked?: string
+          id_type?: string
+          signature_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nda_signatory_identity_signature_id_fkey"
+            columns: ["signature_id"]
+            isOneToOne: true
+            referencedRelation: "nda_signatures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nda_signature_events: {
+        Row: {
+          action: string
+          actor: string | null
+          client_id: string | null
+          consultant_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+          nda_id: string | null
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          client_id?: string | null
+          consultant_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          nda_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          client_id?: string | null
+          consultant_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          nda_id?: string | null
+        }
+        Relationships: []
+      }
+      nda_signatures: {
+        Row: {
+          captured_at: string
+          company_name: string | null
+          document_hash: string
+          id: string
+          id_country: string
+          id_masked: string
+          id_type: string
+          image_bytes: number
+          image_height: number
+          image_path: string
+          image_sha256: string
+          image_width: number
+          ip_address: string | null
+          job_title: string | null
+          kind: string
+          method: string
+          nda_id: string
+          party: string
+          signed_at: string
+          signer_name: string
+          signer_user_id: string
+          stroke_metrics: Json
+          user_agent_hash: string | null
+        }
+        Insert: {
+          captured_at?: string
+          company_name?: string | null
+          document_hash: string
+          id?: string
+          id_country: string
+          id_masked: string
+          id_type: string
+          image_bytes: number
+          image_height: number
+          image_path: string
+          image_sha256: string
+          image_width: number
+          ip_address?: string | null
+          job_title?: string | null
+          kind?: string
+          method: string
+          nda_id: string
+          party: string
+          signed_at: string
+          signer_name: string
+          signer_user_id: string
+          stroke_metrics?: Json
+          user_agent_hash?: string | null
+        }
+        Update: {
+          captured_at?: string
+          company_name?: string | null
+          document_hash?: string
+          id?: string
+          id_country?: string
+          id_masked?: string
+          id_type?: string
+          image_bytes?: number
+          image_height?: number
+          image_path?: string
+          image_sha256?: string
+          image_width?: number
+          ip_address?: string | null
+          job_title?: string | null
+          kind?: string
+          method?: string
+          nda_id?: string
+          party?: string
+          signed_at?: string
+          signer_name?: string
+          signer_user_id?: string
+          stroke_metrics?: Json
+          user_agent_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nda_signatures_nda_id_fkey"
+            columns: ["nda_id"]
+            isOneToOne: false
+            referencedRelation: "nda_agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_pause_events: {
         Row: {
           action: string
@@ -17382,6 +17586,55 @@ export type Database = {
       }
       my_responsiveness: { Args: never; Returns: Json }
       my_success: { Args: never; Returns: Json }
+      nda_admin_access_log: { Args: { _signature: string }; Returns: Json }
+      nda_admin_set_signing_settings: {
+        Args: { _patch: Json; _reason?: string }
+        Returns: Json
+      }
+      nda_admin_signatures: {
+        Args: { _limit?: number; _q?: string }
+        Returns: Json
+      }
+      nda_doc_hash: { Args: { _content: string }; Returns: string }
+      nda_identity_cipher_for: {
+        Args: { _actor: string; _reason: string; _signature: string }
+        Returns: Json
+      }
+      nda_identity_erase_user: {
+        Args: { _reason?: string; _user: string }
+        Returns: number
+      }
+      nda_identity_retention_sweep: { Args: never; Returns: number }
+      nda_is_admin: { Args: { _uid: string }; Returns: boolean }
+      nda_log_download: { Args: { _nda: string }; Returns: boolean }
+      nda_masked_ok: {
+        Args: { _masked: string; _type: string }
+        Returns: boolean
+      }
+      nda_name_ok: { Args: { _name: string }; Returns: boolean }
+      nda_party_display: {
+        Args: { _nda: string; _party: string; _viewer: string }
+        Returns: string
+      }
+      nda_party_of: { Args: { _nda: string; _uid: string }; Returns: string }
+      nda_png_info: { Args: { _b: string }; Returns: Json }
+      nda_reminder_record: {
+        Args: {
+          _actor: string
+          _client?: string
+          _consultant?: string
+          _nda?: string
+        }
+        Returns: Json
+      }
+      nda_sig_settings: { Args: never; Returns: Json }
+      nda_sign_record: { Args: { _actor: string; _p: Json }; Returns: Json }
+      nda_signature_status: {
+        Args: { _client?: string; _consultant?: string; _nda?: string }
+        Returns: Json
+      }
+      nda_signing_settings: { Args: never; Returns: Json }
+      nda_text_ok: { Args: { _t: string }; Returns: boolean }
       new_bid_blocked_by_profile: {
         Args: { _cid: string; _ticket: string }
         Returns: boolean
