@@ -24,15 +24,15 @@ Until it is applied every screen keeps today's signing (the new screens appear o
 
 `NDA_ID_ENCRYPTION_KEY` — a random value of at least 32 characters, added as a backend secret (never pasted in chat). Without it signing refuses with "being set up". The key encrypts with AES-256-GCM (key derived per signer with HKDF); rotating it makes older numbers unreadable, so keep it.
 
-## Settings and defaults (`platform_settings` key `nda_signing`)
+## Settings and defaults (`platform_settings` key `nda_signature`, Admin › NDA › NDA signatures)
 
 | Setting | Default |
 |---|---|
 | `allow_typed_signature` (`nda_allow_typed_signature`) | OFF |
-| `store_ip_address` | OFF (privacy trade-off: IP helps prove origin but is extra personal data) |
-| `identity_retention_years` (after the NDA ends) | 5 |
+| `store_ip` | OFF (privacy trade-off: IP helps prove origin but is extra personal data) |
+| `id_retention_years` (after the NDA is revoked/ends; 1–30) | 5 |
 | `reminder_hours` (never below 24) | 24 |
-| Signature: min stroke length / box share | 150 px path, 15 % width and 12 % height of the pad |
+| Signature: minimum on a 600 × 200 pad | 10 points, 150 px of ink, 60 px wide and 15 px tall (empty, dot and tiny signatures are refused) |
 | PNG | real PNG only (magic bytes + IHDR), ≤ 300 KB, no SVG |
 
 ## Lawyer: privacy policy wording suggestion
@@ -43,9 +43,9 @@ Until it is applied every screen keeps today's signing (the new screens appear o
 
 - **Client signer:** open Contracts → an NDA signed by the consultant shows "Review and sign" (also on the ticket NDA box and the agreement team checklist). Sign stays disabled with inline messages until signature, two-word name, ID type/country/number, job title, company and both ticks are valid. After signing: "Fully signed" + download; PDF shows both signature images, printed names, masked IDs, hashes and the footer.
 - **Consultant signer:** from a request, ticket, agreement crew or *NDA agreements* page, draw, enter name and passport → "You signed on …", "Waiting for the client", "Send a reminder" (second press within 24 h refused). Client receives in-app + e-mail "<name> signed the NDA, your signature is needed".
-- **Other party:** sees name + masked ID only; the ID table and full number are not readable (SQL checks ND07–ND09).
+- **Other party:** sees name + masked ID only; the ID table and full number are not readable (SQL checks ND09, ND11).
 - **Admin:** Admin › NDA → NDA signatures: masked list, "Show full ID" needs a reason, is logged and hides after 60 s; settings (typed signature, IP, retention, reminder hours) saved with a reason.
-- **Legacy NDA:** shows "Signed (legacy signature, no ID collected)" and an optional "Add my signature details"; ticket access, BRD, team engagement, SLA and support-agreement gates keep treating it as signed (SQL checks ND12–ND14).
+- **Legacy NDA:** shows "Signed (legacy signature, no ID collected)" and an optional "Add my signature details"; ticket access, BRD, team engagement, SLA and support-agreement gates keep treating it as signed (SQL check ND12); double submits are idempotent (ND06); reminders once per 24 h (ND13).
 - Automated: `src/lib/ndaSignature.test.ts` (signature/ID/name/masking/PNG/state/encryption/PDF/e-mail), `src/test/ndaSigningScreens.test.tsx`, `docs/sql/nda-signature-identity.test.sql` (22 rolled-back checks).
 
 ## Limitations
