@@ -18058,7 +18058,37 @@ export type Database = {
       ri_parse_ids: { Args: { _payload: Json }; Returns: string[] }
       ri_rate_text: { Args: { _n: number }; Returns: string }
       ri_run_summary: { Args: { _run: string }; Returns: Json }
+      sa_accept_terms: {
+        Args: {
+          _hash: string
+          _id: string
+          _typed_name: string
+          _version: number
+        }
+        Returns: Json
+      }
+      sa_admin_decide_replacement: {
+        Args: { _approve: boolean; _note: string; _replacement: string }
+        Returns: undefined
+      }
+      sa_apply: {
+        Args: {
+          _availability: string
+          _capacity: number
+          _currency: string
+          _id: string
+          _message: string
+          _model: string
+          _rate: number
+          _sla_accepted: boolean
+        }
+        Returns: string
+      }
       sa_apply_patch: { Args: { _patch: Json; _terms: Json }; Returns: Json }
+      sa_attach_ticket: {
+        Args: { _agreement: string; _ticket: string }
+        Returns: Json
+      }
       sa_audit_log: {
         Args: { _action: string; _actor: string; _detail?: Json; _id: string }
         Returns: undefined
@@ -18087,9 +18117,17 @@ export type Database = {
         Args: { _client: string; _t: Json; _tenant: string }
         Returns: string[]
       }
+      sa_create: {
+        Args: { _request: Json; _tenant: string; _terms: Json }
+        Returns: string
+      }
       sa_crew_problems: {
         Args: { _client: string; _lead: string; _team: Json; _tenant: string }
         Returns: string[]
+      }
+      sa_decide_rate_change: {
+        Args: { _accept: boolean; _change: string }
+        Returns: undefined
       }
       sa_default_settings: { Args: never; Returns: Json }
       sa_enabled: { Args: never; Returns: boolean }
@@ -18098,12 +18136,41 @@ export type Database = {
         Returns: undefined
       }
       sa_fmt_min: { Args: { _m: number }; Returns: string }
+      sa_handover_note: {
+        Args: { _id: string; _note: string }
+        Returns: undefined
+      }
+      sa_invite_member: {
+        Args: {
+          _backup_for: string
+          _capacity: number
+          _consultant: string
+          _id: string
+          _required: boolean
+          _role: string
+          _working_hours: Json
+        }
+        Returns: undefined
+      }
       sa_is_admin: { Args: { _uid: string }; Returns: boolean }
       sa_label: { Args: { _id: string }; Returns: string }
       sa_lang: { Args: { _user: string }; Returns: string }
+      sa_link_ticket: {
+        Args: { _actor: string; _agreement: string; _ticket: string }
+        Returns: boolean
+      }
       sa_member_nda_ok: {
         Args: { _client: string; _consultant: string }
         Returns: boolean
+      }
+      sa_member_respond: {
+        Args: {
+          _accept: boolean
+          _id: string
+          _sla_accepted: boolean
+          _typed_name: string
+        }
+        Returns: Json
       }
       sa_modules: {
         Args: { _a: Database["public"]["Tables"]["sa_agreements"]["Row"] }
@@ -18144,6 +18211,10 @@ export type Database = {
         Args: { _body: string; _id: string; _key: string; _title: string }
         Returns: undefined
       }
+      sa_notify_member_invite: {
+        Args: { _consultant: string; _id: string }
+        Returns: undefined
+      }
       sa_notify_parties: {
         Args: {
           _body_ar: string
@@ -18156,7 +18227,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      sa_offer: {
+        Args: { _id: string; _note?: string; _patch: Json }
+        Returns: string
+      }
+      sa_opportunities: { Args: never; Returns: Json }
       sa_party: { Args: { _role: string }; Returns: string }
+      sa_post_message: {
+        Args: { _body: string; _consultant: string; _id: string }
+        Returns: string
+      }
       sa_prepare_terms: {
         Args: {
           _client: string
@@ -18164,6 +18244,27 @@ export type Database = {
           _request: Json
           _tenant: string
           _terms: Json
+        }
+        Returns: Json
+      }
+      sa_propose_rate_change: {
+        Args: {
+          _effective: string
+          _id: string
+          _ooh: number
+          _overage: number
+          _rate: number
+          _reason: string
+          _s1: number
+        }
+        Returns: string
+      }
+      sa_publish: {
+        Args: {
+          _deadline: string
+          _id: string
+          _invite: string[]
+          _invite_only: boolean
         }
         Returns: Json
       }
@@ -18208,20 +18309,54 @@ export type Database = {
         }
         Returns: string[]
       }
+      sa_record_crew_sla: { Args: { _ticket: string }; Returns: undefined }
+      sa_remove_member: {
+        Args: { _consultant: string; _id: string; _reason: string }
+        Returns: undefined
+      }
+      sa_reopen: { Args: { _id: string; _reason: string }; Returns: undefined }
+      sa_replacement_accept: {
+        Args: { _accept: boolean; _replacement: string }
+        Returns: undefined
+      }
+      sa_request_replacement: {
+        Args: { _id: string; _reason: string; _to: string }
+        Returns: string
+      }
+      sa_request_termination: {
+        Args: { _id: string; _reason: string }
+        Returns: string
+      }
       sa_resolve_sla: {
         Args: { _client: string; _sla: Json; _tenant: string }
         Returns: Json
       }
+      sa_respond_offer: {
+        Args: { _accept: boolean; _offer: string }
+        Returns: number
+      }
+      sa_resume: { Args: { _id: string }; Returns: undefined }
       sa_role: { Args: { _id: string; _uid: string }; Returns: string }
+      sa_save_draft: {
+        Args: { _id: string; _request: Json; _terms: Json }
+        Returns: undefined
+      }
       sa_secret_ok: { Args: { _t: string }; Returns: boolean }
+      sa_select_application: { Args: { _application: string }; Returns: number }
       sa_service_fee_percent: { Args: never; Returns: number }
+      sa_set_auto_renew: { Args: { _id: string; _on: boolean }; Returns: Json }
       sa_set_status: {
         Args: { _actor: string; _data?: Json; _id: string; _to: string }
         Returns: undefined
       }
       sa_settings: { Args: never; Returns: Json }
+      sa_suspend: {
+        Args: { _id: string; _reason: string; _until: string }
+        Returns: undefined
+      }
       sa_terms_problems: { Args: { _t: Json }; Returns: string[] }
       sa_text_ok: { Args: { _t: string }; Returns: boolean }
+      sa_ticket_live_agreement: { Args: { _ticket: string }; Returns: string }
       sa_ticket_sla: {
         Args: { _ticket: string }
         Returns: {
@@ -18229,12 +18364,32 @@ export type Database = {
           version: number
         }[]
       }
+      sa_ticket_tags: { Args: { _tickets: string[] }; Returns: Json }
+      sa_ticket_uses_agreement_sla: {
+        Args: { _policy: string; _ticket: string; _version: number }
+        Returns: boolean
+      }
       sa_transition_allowed: {
         Args: { _from: string; _to: string }
         Returns: boolean
       }
+      sa_try_activate: { Args: { _id: string }; Returns: boolean }
+      sa_update_member: {
+        Args: {
+          _backup_for: string
+          _capacity: number
+          _consultant: string
+          _id: string
+          _required: boolean
+          _role: string
+          _working_hours: Json
+        }
+        Returns: undefined
+      }
+      sa_usable: { Args: { _tenant?: string }; Returns: Json }
       sa_user_label: { Args: { _uid: string }; Returns: string }
       sa_user_of: { Args: { _consultant: string }; Returns: string }
+      sa_withdraw_application: { Args: { _id: string }; Returns: undefined }
       safe_insert_notification: {
         Args: {
           _body: string
