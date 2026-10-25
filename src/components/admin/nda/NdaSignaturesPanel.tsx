@@ -84,7 +84,7 @@ export default function NdaSignaturesPanel() {
                                   <p className="font-mono text-muted-foreground" dir="ltr">{t(`ndaSign.idType.${sig.id_type}`)} · {sig.id_country} · {sig.id_masked}</p>
                                   <p className="text-muted-foreground">{fmt(sig.signed_at, lang)} · {sig.method === 'typed' ? t('ndaSign.admin.typed') : t('ndaSign.admin.drawn')}{sig.kind === 'supplement' ? ` · ${t('ndaSign.card.detailsAddedLater')}` : ''}</p>
                                   <div className="flex flex-wrap gap-1.5 pt-1">
-                                    <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]" disabled={sig.anonymised} onClick={() => setReveal(sig)}>
+                                    <Button size="sm" variant="outline" className="h-7 gap-1 text-[11px]" reason={sig.anonymised && 'signature_anonymised'} onClick={() => setReveal(sig)}>
                                       <Eye className="h-3 w-3" aria-hidden /> {sig.anonymised ? t('ndaSign.admin.anonymised') : t('ndaSign.admin.showFull')}
                                     </Button>
                                     <Button size="sm" variant="ghost" className="h-7 gap-1 text-[11px]" onClick={() => setLogFor(sig)}>
@@ -156,7 +156,7 @@ function SettingsCard({ onSaved }: { onSaved(): void }) {
           <div className="space-y-1"><Label htmlFor="nda-set-reason">{t('ndaSign.admin.reason')}</Label>
             <Input id="nda-set-reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={300} /></div>
         )}
-        <div className="flex justify-end"><Button onClick={save} busy={busy} disabled={!dirty || !valid}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden />}{t('ndaSign.admin.save')}</Button></div>
+        <div className="flex justify-end"><Button onClick={save} busy={busy} reason={[!dirty && 'nothing_changed', !valid && 'fix_errors_first']}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden />}{t('ndaSign.admin.save')}</Button></div>
       </CardContent>
     </Card>
   );
@@ -200,7 +200,7 @@ function RevealDialog({ sig, onClose }: { sig: Sig; onClose(): void }) {
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => { setValue(null); onClose(); }}>{t('common.close', 'Close')}</Button>
-          {!value && <Button onClick={go} busy={busy} disabled={reason.trim().length < 10}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden />}{t('ndaSign.admin.showFull')}</Button>}
+          {!value && <Button onClick={go} busy={busy} reason={reason.trim().length < 10 && { key: 'reason_required', params: { min: 10 } }}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden />}{t('ndaSign.admin.showFull')}</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

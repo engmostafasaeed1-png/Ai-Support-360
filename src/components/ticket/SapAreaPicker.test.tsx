@@ -62,7 +62,7 @@ describe('SapAreaPicker', () => {
     const twelve = Array.from({ length: MAX_SAP_AREAS }, (_, i) => `Custom area ${i + 1}`);
     render(<Harness initial={twelve} />);
     expect(screen.queryByText(/You can choose 12 areas at most/)).not.toBeNull();
-    expect((screen.getByRole('button', { name: /^Other/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: /^Other/ }) as HTMLButtonElement)).toBeBlocked();
   });
 
   it('says so when the search finds nothing', () => {

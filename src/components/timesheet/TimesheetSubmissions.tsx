@@ -269,7 +269,7 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
               aria-label="Comment on this timesheet"
               className="min-h-[44px] flex-1 text-xs"
             />
-            <Button size="sm" variant="outline" busy={busy} disabled={!commentText.trim()} onClick={() => void sendComment()} className="gap-1.5">
+            <Button size="sm" variant="outline" busy={busy} reason={!commentText.trim() && 'type_message_first'} onClick={() => void sendComment()} className="gap-1.5">
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
               Send comment
             </Button>
@@ -307,7 +307,7 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
           <Textarea value={note} onChange={e => setNote(e.target.value)} rows={4} maxLength={1000} placeholder="Tell the consultant what to change..." />
           <DialogFooter>
             <Button variant="ghost" onClick={closeDialog} busy={busy}>Cancel</Button>
-            <Button onClick={() => void respond(false)} busy={busy} disabled={note.trim().length < 3} className="gap-1.5">
+            <Button onClick={() => void respond(false)} busy={busy} reason={note.trim().length < 3 && { key: 'reason_required', params: { min: 3 } }} className="gap-1.5">
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
               Send to the consultant
             </Button>

@@ -311,7 +311,7 @@ function ReasonDialog({ open, onOpenChange, title, intro, confirm, min, onConfir
         </div>
         <DialogFooter className="gap-2">
           <Button variant="ghost" busy={busy} onClick={() => onOpenChange(false)}>{t('common.cancel', 'Cancel')}</Button>
-          <Button busy={busy} disabled={!ok} onClick={async () => { setBusy(true); const done = await onConfirm(reason.trim()); setBusy(false); if (done) onOpenChange(false); }} className="gap-1.5">
+          <Button busy={busy} reason={!ok && { key: 'reason_required', params: { min } }} onClick={async () => { setBusy(true); const done = await onConfirm(reason.trim()); setBusy(false); if (done) onOpenChange(false); }} className="gap-1.5">
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}{confirm}
           </Button>
         </DialogFooter>

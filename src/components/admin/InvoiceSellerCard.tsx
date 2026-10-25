@@ -108,7 +108,7 @@ export default function InvoiceSellerCard() {
           <p className="text-xs text-amber-700 dark:text-amber-400">No tax registration number is set yet. Ask your accountant whether your invoices must show it.</p>
         ) : null}
         <div className="flex justify-end">
-          <Button busy={save.isPending} disabled={!dirty} onClick={submit} className="gap-1.5">
+          <Button busy={save.isPending} reason={!dirty && 'nothing_changed'} onClick={submit} className="gap-1.5">
             {save.isPending ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null} Save seller details
           </Button>
         </div>

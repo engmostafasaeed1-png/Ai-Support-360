@@ -141,7 +141,7 @@ export default function KnowledgeDocumentsPanel({ ready }: { ready: boolean }) {
         </div>
         <div>
           <input ref={fileRef} type="file" accept={KNOWLEDGE_ACCEPT} className="sr-only" aria-label={t('ik.docs.upload', 'Upload document')} onChange={(e) => { pick(e.target.files?.[0] ?? null); e.target.value = ''; }} />
-          <Button onClick={() => fileRef.current?.click()} disabled={!ready}><Upload className="h-4 w-4 me-1.5" />{t('ik.docs.upload', 'Upload document')}</Button>
+          <Button onClick={() => fileRef.current?.click()} reason={!ready && 'feature_not_ready'}><Upload className="h-4 w-4 me-1.5" />{t('ik.docs.upload', 'Upload document')}</Button>
           <p className="text-[11px] text-muted-foreground mt-1">{t('ik.docs.types', 'PDF, DOCX, TXT or MD, up to 10 MB')}</p>
         </div>
       </CardHeader>
@@ -175,7 +175,7 @@ export default function KnowledgeDocumentsPanel({ ready }: { ready: boolean }) {
                     <Switch checked={d.enabled} disabled={working === d.id} onCheckedChange={(v) => toggle(d, v)} aria-label={t('ik.docs.enabled', 'Enabled')} />
                     {t('ik.docs.enabled', 'Enabled')}
                   </label>
-                  <Button size="sm" variant="outline" disabled={!d.chunk_count} onClick={() => setExcerptsOf(d)}><Eye className="h-3.5 w-3.5 me-1" />{t('ik.docs.excerpts', 'Preview excerpts')}</Button>
+                  <Button size="sm" variant="outline" reason={!d.chunk_count && 'no_data_yet'} onClick={() => setExcerptsOf(d)}><Eye className="h-3.5 w-3.5 me-1" />{t('ik.docs.excerpts', 'Preview excerpts')}</Button>
                   <Button size="sm" variant="outline" busy={working === d.id} onClick={() => reextract(d)}><RefreshCw className="h-3.5 w-3.5 me-1" />{t('ik.docs.reextract', 'Re-extract')}</Button>
                   <Button size="sm" variant="ghost" className="text-destructive" busy={working === d.id} onClick={() => setToDelete(d)} aria-label={t('ik.docs.delete', 'Delete')}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
@@ -224,7 +224,7 @@ export default function KnowledgeDocumentsPanel({ ready }: { ready: boolean }) {
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setOpen(false)} busy={busy}>{t('common.cancel', 'Cancel')}</Button>
-            <Button onClick={submit} busy={busy} disabled={!form.rights || !form.title.trim() || !form.sap_module.trim()}>
+            <Button onClick={submit} busy={busy} reason={[!form.rights && 'tick_confirmation_first', (!form.title.trim() || !form.sap_module.trim()) && 'fill_required_fields']}>
               {busy && <Loader2 className="h-4 w-4 me-1.5 animate-spin" />}{busy ? t('ik.upload.working', 'Uploading and reading…') : t('ik.docs.upload', 'Upload document')}
             </Button>
           </DialogFooter>
@@ -256,9 +256,9 @@ export default function KnowledgeDocumentsPanel({ ready }: { ready: boolean }) {
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel', 'Cancel')}</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={deleteReason.trim().length < 3} onClick={(e) => { e.preventDefault(); void remove(); }}>
+            <Button variant="destructive" reason={deleteReason.trim().length < 3 && { key: 'reason_required', params: { min: 3 } }} onClick={(e) => { e.preventDefault(); void remove(); }}>
               {t('ik.docs.delete', 'Delete')}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

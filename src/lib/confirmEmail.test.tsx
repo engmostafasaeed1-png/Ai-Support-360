@@ -59,7 +59,7 @@ describe('expired or used e-mail links', () => {
     render(<MemoryRouter><ConfirmLinkProblem initialEmail="someone@example.com" /></MemoryRouter>);
     fireEvent.click(screen.getByRole('button', { name: 'Send me a new confirmation e-mail' }));
     expect(await screen.findByText(/If this address is waiting for confirmation/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Send again in/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Send again in/ })).toBeBlocked();
     expect(localStorage.getItem('verification_resend_available_at')).toContain('someone@example.com');
     expect(resend).toHaveBeenCalledTimes(1);
     expect((resend.mock.calls[0][0] as any).type).toBe('signup');

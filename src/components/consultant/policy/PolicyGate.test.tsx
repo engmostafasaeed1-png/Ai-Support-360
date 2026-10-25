@@ -41,7 +41,7 @@ describe('policy pop-up', () => {
     wrap(<PolicyGate />);
     expect(await screen.findByRole('dialog')).toHaveTextContent('Please confirm the Consultant Service Policy');
     expect(markShown).toHaveBeenCalledWith(1);
-    expect(screen.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeBlocked();
   });
 
   it('once per sign-in after "Remind me later", and again at the next sign-in', async () => {
@@ -79,7 +79,7 @@ describe('registration step', () => {
     expect(screen.getByRole('heading', { name: 'Required step: Consultant Service Policy' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Full policy text' })).toHaveTextContent('Summary');
     const submit = screen.getByRole('button', { name: 'Accept the policy' });
-    expect(submit).toBeDisabled();
+    expect(submit).toBeBlocked();
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(submit);
     await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ version: 1, lang: 'en', source: 'registration' }));

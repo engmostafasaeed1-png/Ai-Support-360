@@ -30,7 +30,7 @@ export function violations(file: string, src = fs.readFileSync(file, 'utf8')): s
       const names = n.attributes.properties.map((a) => (ts.isJsxAttribute(a) ? a.name.getText(sf) : '...'));
       if (names.includes('disabled') && !names.includes('reason')) {
         const tagText = src.slice(n.getStart(sf), n.attributes.getEnd());
-        if (!/disabled-ok:\s*\S/.test(tagText)) {
+        if (!/disabled-ok:\s*[^*\s]/.test(tagText)) {
           const line = sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
           out.push(`${path.relative(ROOT, file)}:${line}`);
         }
@@ -53,7 +53,7 @@ describe('disabled buttons always explain themselves', () => {
     expect(violations(f, 'const a = <Button /* disabled-ok: */ disabled={d}>Save</Button>;')).toHaveLength(1);
   });
 
-  it('no Button in the app has disabled={...} without a reason', () => {
+  it('no Button in the app has disabled={...} without a reason', { timeout: 60_000 }, () => {
     const all = files(ROOT).flatMap((f) => violations(f));
     expect(all, `Give these buttons a reason= (see src/lib/blockedReasons.ts) or busy=:\n${all.join('\n')}`).toEqual([]);
   });

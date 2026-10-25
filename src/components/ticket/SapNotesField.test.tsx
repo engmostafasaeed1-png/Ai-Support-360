@@ -49,7 +49,7 @@ describe('SapNotesField', () => {
   it('stops at eight notes and says so', () => {
     const onChange = vi.fn();
     render(<SapNotesField value={EIGHT} onChange={onChange} />);
-    expect((screen.getByRole('button', { name: 'Add' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Add' }) as HTMLButtonElement)).toBeBlocked();
     const input = screen.getByLabelText(/SAP Notes you already tried/);
     fireEvent.change(input, { target: { value: '3012345' } });
     fireEvent.keyDown(input, { key: 'Enter' });

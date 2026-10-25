@@ -194,7 +194,7 @@ export default function ReferralInviteDialog({ open, onOpenChange, mode, ids, fi
               </ul>
             )}
             <DialogFooter className="gap-2 sm:gap-2">
-              <Button variant="outline" onClick={downloadCsv} disabled={!report.data?.rows?.length}><Download className="me-1 h-4 w-4" />{t('rinv.csv', 'Download report (CSV)')}</Button>
+              <Button variant="outline" onClick={downloadCsv} reason={!report.data?.rows?.length && 'nothing_to_export'}><Download className="me-1 h-4 w-4" />{t('rinv.csv', 'Download report (CSV)')}</Button>
               <Button onClick={() => onOpenChange(false)}>{t('common.close', 'Close')}</Button>
             </DialogFooter>
           </section>
@@ -258,8 +258,8 @@ export default function ReferralInviteDialog({ open, onOpenChange, mode, ids, fi
             )}
 
             <DialogFooter className="gap-2 sm:gap-2">
-              <Button variant="outline" onClick={() => void sendTest()} busy={busy} disabled={!installed || selected.length === 0}><ShieldCheck className="me-1 h-4 w-4" />{t('rinv.test', 'Send to me only')}</Button>
-              <Button onClick={() => void send()} disabled={!!blocker} className="gap-1">
+              <Button variant="outline" onClick={() => void sendTest()} busy={busy} reason={[!installed && 'feature_not_ready', selected.length === 0 && 'choose_option_first']} hint="inline"><ShieldCheck className="me-1 h-4 w-4" />{t('rinv.test', 'Send to me only')}</Button>
+              <Button onClick={() => void send()} reason={blocker && blocker !== 'busy' && { key: blocker === 'not_installed' ? 'feature_not_ready' : blocker === 'switched_off' ? 'feature_disabled_by_admin' : blocker === 'nobody' ? 'no_recipients' : blocker === 'too_many' ? 'too_many_recipients' : blocker === 'reason' ? 'reason_required' : blocker === 'confirm' ? 'tick_confirmation_first' : 'choose_option_first', params: { max: p?.max_recipients ?? 500, min: 10 }, message: blockerText[blocker] }} hint="inline" busy={blocker === 'busy'} className="gap-1">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 rtl:rotate-180" />}
                 {t('rinv.send_n', 'Send to {{n}}', { n: nf.format(reach) })}
               </Button>

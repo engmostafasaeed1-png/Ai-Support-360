@@ -304,7 +304,7 @@ export default function ComposeMessage({ settings, onSent }: { settings: BulkSet
               </TabsContent>
             </Tabs>
 
-            <Button onClick={runPreview} disabled={previewing}>{previewing ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Eye className="me-1 h-4 w-4" />}{t('bmsg.preview_recipients', 'Preview recipients')}</Button>
+            <Button onClick={runPreview} busy={previewing}>{previewing ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Eye className="me-1 h-4 w-4" />}{t('bmsg.preview_recipients', 'Preview recipients')}</Button>
 
             {preview && (
               <div className="space-y-3" aria-live="polite">
@@ -439,7 +439,7 @@ export default function ComposeMessage({ settings, onSent }: { settings: BulkSet
             )}
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={sendTest}><FlaskConical className="me-1 h-4 w-4" />{t('bmsg.send_test', 'Send me a test')}</Button>
-              <Button className="gradient-primary border-0" disabled={!canSend} onClick={submit}>
+              <Button className="gradient-primary border-0" reason={[!preview && { key: 'preview_first', onNext: () => void runPreview(), nextLabel: t('bmsg.preview_recipients', 'Preview recipients') }, count <= 0 && 'no_recipients', !category && 'choose_option_first', !ack && 'tick_confirmation_first', (!subjectEn.trim() || !bodyEn.trim()) && 'type_message_first', secrets.length > 0 && 'fix_errors_first', channels.size === 0 && 'choose_option_first', !timeOk && 'invalid_value', !linkOk && 'invalid_value', !confirmationOk(typed, count) && { key: 'type_to_confirm', params: { word: count } }, !settings.enabled && 'feature_disabled_by_admin']} hint="inline" busy={actions.create.isPending} onClick={submit}>
                 {actions.create.isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Send className="me-1 h-4 w-4" />}
                 {when === 'later' ? t('bmsg.schedule_n', 'Schedule for {{n}}', { n: count }) : t('bmsg.send_n', 'Send to {{n}}', { n: count })}
               </Button>

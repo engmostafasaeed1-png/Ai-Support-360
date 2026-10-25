@@ -88,7 +88,7 @@ export default function CriticalExtendDialog({ ticketId, view, open, onOpenChang
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button className="bg-red-600 text-white hover:bg-red-700" busy={extend.isPending} disabled={!!problem} onClick={send}>
+          <Button className="bg-red-600 text-white hover:bg-red-700" busy={extend.isPending} reason={!!problem && { key: 'invalid_value', message: problem }} onClick={send}>
             {extend.isPending ? 'Sending...' : 'Alert consultants again'}
           </Button>
         </DialogFooter>

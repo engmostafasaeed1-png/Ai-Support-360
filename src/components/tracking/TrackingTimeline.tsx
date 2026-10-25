@@ -56,8 +56,8 @@ export default function TrackingTimeline({ ticketId, ticketTitle, settings }: { 
           ))}
         </div>
         <div className="flex gap-1">
-          <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={exportCsv} disabled={!rows.length}><Download className="h-3.5 w-3.5" /> CSV</Button>
-          <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={exportPdf} busy={busy} disabled={!rows.length}>
+          <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={exportCsv} reason={!rows.length && 'nothing_to_export'}><Download className="h-3.5 w-3.5" /> CSV</Button>
+          <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={exportPdf} busy={busy} reason={!rows.length && 'nothing_to_export'}>
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />} PDF
           </Button>
         </div>

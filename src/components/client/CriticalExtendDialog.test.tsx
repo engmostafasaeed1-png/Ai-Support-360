@@ -46,9 +46,9 @@ describe('CriticalExtendDialog', () => {
   it('does not send a change that changes nothing', () => {
     render(<CriticalExtendDialog ticketId="t1" view={view()} open onOpenChange={() => {}} />);
     fireEvent.change(screen.getByLabelText('Add time'), { target: { value: '0' } });
-    expect(screen.getByText('Add minutes or raise the surcharge')).toBeTruthy();
+    expect(screen.getAllByText('Add minutes or raise the surcharge').length).toBeGreaterThan(0);
     const send = screen.getByRole('button', { name: 'Alert consultants again' }) as HTMLButtonElement;
-    expect(send.disabled).toBe(true);
+    expect(send).toBeBlocked();
     fireEvent.click(send);
     expect(state.mutate).not.toHaveBeenCalled();
   });

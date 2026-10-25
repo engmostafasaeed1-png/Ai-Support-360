@@ -391,7 +391,7 @@ export default function RequestBidDialog({ ticketId, ticketTitle, ticketModule, 
                 <Button variant="outline" className="flex-1 gap-2 text-xs" onClick={() => setIsEditing(true)}>
                   <Pencil className="w-3.5 h-3.5" /> Edit / Invite More
                 </Button>
-                <Button variant="outline" className="flex-1 gap-2 text-xs" onClick={handleCloseBids} disabled={closing}>
+                <Button variant="outline" className="flex-1 gap-2 text-xs" onClick={handleCloseBids} busy={closing}>
                   {closing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Gavel className="w-3.5 h-3.5" />}
                   Close Bidding
                 </Button>

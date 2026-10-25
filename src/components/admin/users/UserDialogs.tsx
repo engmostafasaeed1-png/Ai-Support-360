@@ -11,11 +11,14 @@ import { Badge } from '@/components/ui/badge';
 import { APP_ROLES, MIN_REASON, checkRoleChange, reasonOk, type UserRow } from '@/lib/userAdmin';
 import { callRpc } from '@/hooks/useUserAdmin';
 import { roleLabel } from './labels';
+import type { BlockedInput } from '@/lib/blockedReasons';
 
 /** Confirmation with an optional required reason. */
-export function ReasonDialog({ open, title, description, confirmLabel, destructive, needsReason, busy, onClose, onConfirm, children, canConfirm = true }: {
+export function ReasonDialog({ open, title, description, confirmLabel, destructive, needsReason, busy, onClose, onConfirm, children, canConfirm = true, blockedReason }: {
   open: boolean; title: string; description: ReactNode; confirmLabel: string; destructive?: boolean; needsReason?: boolean;
   busy?: boolean; onClose: () => void; onConfirm: (reason: string) => void; children?: ReactNode; canConfirm?: boolean;
+  /** Why confirming is not possible yet (shown on the dimmed button); defaults to "fill in the required fields". */
+  blockedReason?: BlockedInput;
 }) {
   const { t } = useTranslation();
   const id = useId();
@@ -39,7 +42,7 @@ export function ReasonDialog({ open, title, description, confirmLabel, destructi
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>{t('common.cancel', 'Cancel')}</Button>
-            <Button type="submit" variant={destructive ? 'destructive' : 'default'} busy={busy} disabled={!canConfirm}>{confirmLabel}</Button>
+            <Button type="submit" variant={destructive ? 'destructive' : 'default'} busy={busy} reason={!canConfirm && (blockedReason || 'fill_required_fields')}>{confirmLabel}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -72,7 +75,7 @@ export function EditProfileDialog({ user, phone, language, busy, onClose, onSave
             <Select value={lang} onValueChange={setLang}><SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="en">English</SelectItem><SelectItem value="ar">العربية</SelectItem></SelectContent></Select>
           </div>
-          <DialogFooter><Button type="button" variant="outline" onClick={onClose}>{t('common.cancel', 'Cancel')}</Button><Button type="submit" busy={busy} disabled={!name.trim() || phoneBad}>{t('common.save', 'Save')}</Button></DialogFooter>
+          <DialogFooter><Button type="button" variant="outline" onClick={onClose}>{t('common.cancel', 'Cancel')}</Button><Button type="submit" busy={busy} reason={[!name.trim() && 'fill_required_fields', phoneBad && { key: 'invalid_value', message: t('um.phone_invalid', 'Use digits, spaces, +, ( ) and - only.') }]}>{t('common.save', 'Save')}</Button></DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
@@ -123,7 +126,7 @@ export function RolesDialog({ user, actorId, actorRoles, superAdminCount, fourEy
         {!check.ok && check.error !== 'no_change' && <p className="text-xs text-destructive" role="alert">{msg[check.error]}</p>}
         <p className="text-xs text-muted-foreground">{t('um.roles_hint', 'A person can hold several roles. Changes are recorded and super admins are alerted about admin role changes.')}</p>
         <DialogFooter><Button variant="outline" onClick={onClose}>{t('common.cancel', 'Cancel')}</Button>
-          <Button busy={busy} disabled={!check.ok} onClick={() => onSave(roles, reason.trim())}>{t('common.save', 'Save')}</Button></DialogFooter>
+          <Button busy={busy} reason={!check.ok && { key: check.error === 'no_change' ? 'nothing_changed' : check.error === 'self' ? 'is_yourself' : check.error === 'reason' ? 'reason_required' : 'not_editable_now', params: { min: MIN_REASON }, message: check.error === 'no_change' ? undefined : msg[check.error] }} onClick={() => onSave(roles, reason.trim())}>{t('common.save', 'Save')}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -152,7 +155,7 @@ export function MessageDialog({ user, count, busy, onClose, onSend }: {
             <Input id="um-msg-link" value={link} dir="ltr" placeholder="/consultant/profile" onChange={(e) => setLink(e.target.value)} aria-invalid={linkBad} />
             {linkBad && <p className="text-xs text-destructive">{t('um.link_invalid', 'Use a page on this site starting with /.')}</p>}
           </div>
-          <DialogFooter><Button type="button" variant="outline" onClick={onClose}>{t('common.cancel', 'Cancel')}</Button><Button type="submit" busy={busy} disabled={!title.trim() || !body.trim() || linkBad}>{t('um.send', 'Send')}</Button></DialogFooter>
+          <DialogFooter><Button type="button" variant="outline" onClick={onClose}>{t('common.cancel', 'Cancel')}</Button><Button type="submit" busy={busy} reason={[(!title.trim() || !body.trim()) && 'type_message_first', linkBad && 'invalid_value']} hint="inline">{t('um.send', 'Send')}</Button></DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
@@ -226,7 +229,7 @@ export function MergeDialog({ user, busy, onClose, onMerge }: { user: UserRow; b
           <label className="flex items-start gap-2 text-sm"><Checkbox checked={ack} onCheckedChange={(v) => setAck(!!v)} />{t('um.merge_ack', 'I checked that both accounts belong to the same person.')}</label>
         </div>
         <DialogFooter><Button variant="outline" onClick={onClose}>{t('common.cancel', 'Cancel')}</Button>
-          <Button variant="destructive" busy={busy} disabled={!keep || !preview || !ack || !reasonOk(reason)} onClick={() => keep && onMerge(keep.id, reason.trim())}>{t('um.merge', 'Merge')}</Button></DialogFooter>
+          <Button variant="destructive" busy={busy} reason={[!keep && 'choose_option_first', !preview && 'preview_first', !ack && 'tick_confirmation_first', !reasonOk(reason) && { key: 'reason_required', params: { min: MIN_REASON } }]} onClick={() => keep && onMerge(keep.id, reason.trim())}>{t('um.merge', 'Merge')}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );

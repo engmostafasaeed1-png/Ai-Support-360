@@ -76,11 +76,11 @@ describe('TimesheetSubmissions as the client', () => {
     render(<TimesheetSubmissions {...props()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Request changes' }));
     const send = screen.getByRole('button', { name: 'Send to the consultant' }) as HTMLButtonElement;
-    expect(send.disabled).toBe(true);
+    expect(send).toBeBlocked();
     fireEvent.change(screen.getByPlaceholderText(/Tell the consultant what to change/), { target: { value: 'no' } });
-    expect(send.disabled).toBe(true);
+    expect(send).toBeBlocked();
     fireEvent.change(screen.getByPlaceholderText(/Tell the consultant what to change/), { target: { value: 'Please split the hours per day' } });
-    expect(send.disabled).toBe(false);
+    expect(send).toBeUnblocked();
     fireEvent.click(send);
     await waitFor(() => expect(mocks.rpc).toHaveBeenCalledTimes(1));
     expect(mocks.rpc.mock.calls[0][1]._approve).toBe(false);

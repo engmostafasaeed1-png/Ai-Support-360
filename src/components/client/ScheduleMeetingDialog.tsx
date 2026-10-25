@@ -414,7 +414,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
                   aria-describedby="external-email-help"
                   data-testid="external-email-input"
                 />
-                <Button size="sm" variant="outline" onClick={() => addExternalEmail()} className="h-8 text-xs gap-1" disabled={externalEmails.length >= MAX_EXTERNAL_INVITEES}>
+                <Button size="sm" variant="outline" onClick={() => addExternalEmail()} className="h-8 text-xs gap-1" reason={externalEmails.length >= MAX_EXTERNAL_INVITEES && { key: 'limit_reached', params: { max: MAX_EXTERNAL_INVITEES } }}>
                   <UserPlus className="w-3.5 h-3.5" /> Add
                 </Button>
               </div>
@@ -639,7 +639,7 @@ export default function ScheduleMeetingDialog({ open, onOpenChange, ticketId, ti
         <DialogFooter className="gap-2">
           {results ? <Button onClick={() => onOpenChange(false)}>{lang === 'ar' ? 'تم' : 'Done'}</Button> : <>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button className="gradient-primary border-0 gap-2" onClick={handleSchedule} busy={saving} disabled={problems.length > 0} aria-describedby={problems.length ? 'schedule-meeting-missing' : undefined}>
+          <Button className="gradient-primary border-0 gap-2" onClick={handleSchedule} busy={saving} reason={problems.length > 0 && { key: 'fix_errors_first', message: problems.join(' ') }} hint="inline" aria-describedby={problems.length ? 'schedule-meeting-missing' : undefined}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
             Schedule Meeting
           </Button>

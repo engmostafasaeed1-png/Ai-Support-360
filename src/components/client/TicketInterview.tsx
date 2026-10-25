@@ -265,7 +265,7 @@ export default function TicketInterview({ ticketId, consultantId, clientId, isCl
                 {interview.status === 'completed' && (
                   <>
                     {!hasReport && (
-                      <Button size="sm" className="gap-1.5 text-xs" onClick={() => analyzeInterview(interview.id)} disabled={analyzing}>
+                      <Button size="sm" className="gap-1.5 text-xs" onClick={() => analyzeInterview(interview.id)} busy={analyzing}>
                         {analyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
                         {analyzing ? 'Analyzing…' : 'AI Analysis'}
                       </Button>

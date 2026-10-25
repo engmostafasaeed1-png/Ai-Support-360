@@ -60,7 +60,7 @@ describe('ProfileFieldsSection', () => {
   it('saves only the changed rows', async () => {
     show();
     const row = await screen.findByTestId('rule-phone');
-    expect((screen.getByRole('button', { name: 'Save changes' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Save changes' }) as HTMLButtonElement)).toBeBlocked();
     fireEvent.click(within(row).getByRole('radio', { name: 'Required' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => expect(rpc).toHaveBeenCalledWith('admin_set_profile_field_rules', { _rules: [{ field_key: 'phone', mode: 'required' }], _enforce: null }));

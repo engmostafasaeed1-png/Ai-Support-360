@@ -175,7 +175,7 @@ export default function SlaTicketPanel({ ticketId }: { ticketId: string }) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDlg(null)}>{t('sla.action.cancel')}</Button>
-            <Button busy={act.isPending} disabled={((dlg === 'reclass' || dlg === 'propose') && note.trim().length < 3)} onClick={() => {
+            <Button busy={act.isPending} reason={(dlg === 'reclass' || dlg === 'propose') && note.trim().length < 3 && { key: 'reason_required', params: { min: 3 } }} onClick={() => {
               if (dlg === 'ack') void run(() => api.acknowledgeSla(ticketId, note, eta ? new Date(eta).toISOString() : null), t('sla.panel.acked'));
               if (dlg === 'workaround') void run(() => api.markWorkaround(ticketId, note), t('sla.panel.saved'));
               if (dlg === 'reclass') void run(() => api.reclassify(ticketId, sev, note), t('sla.panel.saved'));

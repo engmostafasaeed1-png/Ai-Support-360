@@ -102,7 +102,7 @@ export default function BrdAttachDialog({ open, onOpenChange, state, initialVers
         )}
         <DialogFooter className="gap-2">
           <Button variant="ghost" busy={busy} onClick={() => onOpenChange(false)}>{t('common.cancel', 'Cancel')}</Button>
-          <Button busy={busy} disabled={!version} onClick={go} className="gap-1.5">{busy && <Loader2 className="h-4 w-4 animate-spin" />}{t('brd.attach.confirm')}</Button>
+          <Button busy={busy} reason={!version && 'brd_not_submitted'} onClick={go} className="gap-1.5">{busy && <Loader2 className="h-4 w-4 animate-spin" />}{t('brd.attach.confirm')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

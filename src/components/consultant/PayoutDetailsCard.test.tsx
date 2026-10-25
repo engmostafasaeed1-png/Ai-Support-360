@@ -78,9 +78,9 @@ describe('PayoutDetailsCard', () => {
     fill(/^Bank \*/, 'Test Bank');
     fill(/^IBAN/, 'GB82WEST12345698765432');
     const saveBtn = screen.getByRole('button', { name: 'Save bank details' }) as HTMLButtonElement;
-    expect(saveBtn.disabled).toBe(true);
+    expect(saveBtn).toBeBlocked();
     fireEvent.click(screen.getByRole('checkbox'));
-    expect(saveBtn.disabled).toBe(false);
+    expect(saveBtn).toBeUnblocked();
     fireEvent.click(saveBtn);
     await waitFor(() => expect(h.rpc).toHaveBeenCalled());
     expect(h.rpc).toHaveBeenCalledWith('save_payout_details', {
@@ -97,7 +97,7 @@ describe('PayoutDetailsCard', () => {
     fill(/^IBAN/, 'GB82WEST12345698765433');
     fireEvent.click(screen.getByRole('checkbox'));
     expect(screen.getByText('The IBAN is not valid: check the letters and digits')).toBeTruthy();
-    expect((screen.getByRole('button', { name: 'Save bank details' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Save bank details' }) as HTMLButtonElement)).toBeBlocked();
   });
 
   it('shows the account-number rule next to the field and keeps saving disabled', async () => {
@@ -110,12 +110,12 @@ describe('PayoutDetailsCard', () => {
     expect(screen.getByText('The account number must have 4 to 34 letters, digits or dashes')).toBeTruthy();
     expect(screen.getByLabelText(/Account number/).getAttribute('aria-invalid')).toBe('true');
     const saveBtn = screen.getByRole('button', { name: 'Save bank details' }) as HTMLButtonElement;
-    expect(saveBtn.disabled).toBe(true);
+    expect(saveBtn).toBeBlocked();
     fill(/Account number/, '12_34');
     expect(screen.getByText('The account number must have 4 to 34 letters, digits or dashes')).toBeTruthy();
     fill(/Account number/, '1234-5678');
     expect(screen.queryByText('The account number must have 4 to 34 letters, digits or dashes')).toBeNull();
-    expect(saveBtn.disabled).toBe(false);
+    expect(saveBtn).toBeUnblocked();
     expect(h.rpc).not.toHaveBeenCalled();
   });
 

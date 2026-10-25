@@ -29,7 +29,7 @@ describe('CriticalServiceSettingsCard', () => {
     expect((screen.getByLabelText('Standard surcharge (%)') as HTMLInputElement).value).toBe('30');
     expect((screen.getByLabelText('Longest window a client can choose (minutes)') as HTMLInputElement).value).toBe('240');
     expect((screen.getByLabelText('Highest surcharge a client can choose (%)') as HTMLInputElement).value).toBe('100');
-    expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement)).toBeBlocked();
     expect(screen.getByText('Nothing to save.')).toBeTruthy();
   });
 
@@ -51,7 +51,7 @@ describe('CriticalServiceSettingsCard', () => {
     render(<CriticalServiceSettingsCard />);
     fireEvent.change(screen.getByLabelText('Standard reply window (minutes)'), { target: { value: '3' } });
     expect(screen.getByRole('alert').textContent).toBe('The reply window must be between 5 and 720 minutes');
-    expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement)).toBeBlocked();
     fireEvent.change(screen.getByLabelText('Standard reply window (minutes)'), { target: { value: '30' } });
     fireEvent.change(screen.getByLabelText('Highest surcharge a client can choose (%)'), { target: { value: '20' } });
     expect(screen.getByRole('alert').textContent).toMatch(/^The highest surcharge must be at least the standard surcharge/);

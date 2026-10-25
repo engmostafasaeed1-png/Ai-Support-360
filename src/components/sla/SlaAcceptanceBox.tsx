@@ -63,7 +63,7 @@ export default function SlaAcceptanceBox({ ticketId, context, onReadyChange }: {
             </div>
             <Textarea value={note} maxLength={500} rows={2} placeholder={t('sla.accept.counterNote')} onChange={(e) => setNote(e.target.value)} />
             <div className="flex gap-2">
-              <Button size="sm" busy={counter.isPending} disabled={!(Number(r) > 0 && Number(res) > Number(r))} onClick={async () => {
+              <Button size="sm" busy={counter.isPending} reason={!(Number(r) > 0 && Number(res) > Number(r)) && 'invalid_value'} onClick={async () => {
                 try {
                   await counter.mutateAsync({ r: Math.round(Number(r) * 60), res: Math.round(Number(res) * 60), note });
                   toast.success(t('sla.accept.counterSent')); setShowCounter(false);

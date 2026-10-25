@@ -22,6 +22,6 @@ export default function FoundingOverride({ consultantId }: { consultantId: strin
   };
   return <section className="space-y-2"><h3 className="font-semibold">{t('founding.badge','Founding Consultant')}</h3><FoundingBadge consultantId={consultantId} numbered />
     <Label htmlFor="founding-reason">{t('founding.reason','Reason (recorded in audit log)')}</Label><Input id="founding-reason" value={reason} maxLength={1000} onChange={e=>setReason(e.target.value)} />
-    <Button size="sm" variant="outline" busy={busy} disabled={!reason.trim()} onClick={change}>{awarded ? t('founding.revoke','Revoke badge') : t('founding.grant','Grant badge')}</Button>
+    <Button size="sm" variant="outline" busy={busy} reason={!reason.trim() && { key: 'field_required', params: { field: t('founding.reason', 'Reason (recorded in audit log)') }, onNext: () => document.getElementById('founding-reason')?.focus(), nextLabel: t('founding.reason', 'Reason (recorded in audit log)') }} onClick={change}>{awarded ? t('founding.revoke','Revoke badge') : t('founding.grant','Grant badge')}</Button>
   </section>;
 }

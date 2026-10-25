@@ -148,7 +148,7 @@ function ApprovalSwitch() {
         <Switch
           id="approval-required"
           checked={enabled}
-          busy={isLoading || save.isPending}
+          disabled={isLoading || save.isPending}
           onCheckedChange={(v) => (v ? save.mutate(true) : setConfirmOff(true))}
         />
       </CardContent>

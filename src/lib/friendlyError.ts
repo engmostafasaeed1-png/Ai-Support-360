@@ -6,6 +6,27 @@
  * database rules or edge functions raise on purpose is kept as it is.
  */
 
+import { BLOCKED_REASONS, reasonFromError, resolveReason } from './blockedReasons';
+
+/** Page language without importing i18n (keeps this helper usable in tests and outside React). */
+function pageLang(): 'en' | 'ar' {
+  return typeof document !== 'undefined' && document.documentElement.lang?.startsWith('ar') ? 'ar' : 'en';
+}
+
+/**
+ * A deliberate server refusal with a known code (sla_acceptance_required, brd_gate, nda_required, rate_limited, ...) in the
+ * same words as the dimmed-button catalogue, plus the next step. Null when the error is not such a refusal.
+ */
+export function blockedRefusalText(error: unknown, lang: 'en' | 'ar' = pageLang()): string | null {
+  const reason = reasonFromError(error);
+  if (!reason) return null;
+  const { message } = resolveReason(reason, lang);
+  // a toast has no link, so the step is named in words (the dimmed button itself offers the link)
+  const step = (BLOCKED_REASONS[reason.key] as { next?: Record<'en' | 'ar', string> }).next?.[lang];
+  if (!step) return message;
+  return lang === 'ar' ? `${message} الخطوة التالية: ${step}.` : `${message} Next step: ${step}.`;
+}
+
 const NETWORK_TEXT =
   /failed to fetch|networkerror|network error|network request failed|load failed|fetch failed|failed to send a request to the edge function|err_internet_disconnected|err_network/i;
 const TECHNICAL_TEXT =
@@ -38,6 +59,8 @@ export function friendlyErrorMessage(error: unknown, fallback = 'Something went 
   const raw = messageOf(error).trim();
   const name = nameOf(error);
   if (isNetworkError(error)) return 'We could not reach the server. Please check your connection and try again.';
+  const refusal = blockedRefusalText(error);
+  if (refusal) return refusal;
   if (name === 'FunctionsHttpError' || name === 'FunctionsRelayError' || /non-2xx status code/i.test(raw)) {
     return 'The service could not finish this request. Please try again in a moment.';
   }

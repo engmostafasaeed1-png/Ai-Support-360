@@ -274,7 +274,7 @@ function ClientRate({ name, state, canApprove, onChanged }: { name: string; stat
             <Button variant="ghost" onClick={() => setDeclineOpen(false)} busy={busy}>Cancel</Button>
             <Button
               variant="destructive"
-              busy={busy} disabled={reason.trim().length < 3}
+              busy={busy} reason={reason.trim().length < 3 && { key: 'reason_required', params: { min: 3 } }}
               onClick={() => proposed && void answer(proposed, false, reason.trim())}
               className="gap-1.5"
             >

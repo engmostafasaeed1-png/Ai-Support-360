@@ -34,7 +34,7 @@ describe('unconfirmed accounts in the Users console', () => {
   it('admins can resend the confirmation e-mail but cannot mark it confirmed', () => {
     renderAs(['admin']);
     expect(screen.getByTestId('um-unconfirmed')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Resend confirmation e-mail' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Resend confirmation e-mail' })).toBeUnblocked();
     expect(screen.queryByRole('button', { name: 'Mark e-mail as confirmed' })).toBeNull();
   });
 
@@ -58,8 +58,8 @@ describe('unconfirmed accounts in the Users console', () => {
   it('keeps the e-mail buttons disabled while the account id is unknown and sends nothing', () => {
     detail = { user: { ...rawUser, user_id: undefined } };
     renderAs(['super_admin']);
-    expect(screen.getByRole('button', { name: 'Resend confirmation e-mail' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Mark e-mail as confirmed' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Resend confirmation e-mail' })).toBeBlocked();
+    expect(screen.getByRole('button', { name: 'Mark e-mail as confirmed' })).toBeBlocked();
     expect(callEdge).not.toHaveBeenCalled();
   });
 });

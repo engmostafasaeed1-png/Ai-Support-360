@@ -218,7 +218,7 @@ describe('<VerificationTimeline />', () => {
         onResend={() => {}}
       />,
     );
-    expect(screen.getByRole('button', { name: /resend verification email/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /resend verification email/i })).toBeUnblocked();
   });
 
   it('disables the Resend CTA during cooldown', () => {
@@ -233,7 +233,7 @@ describe('<VerificationTimeline />', () => {
       />,
     );
     const btn = screen.getByRole('button', { name: /resend available in 42s/i });
-    expect(btn).toBeDisabled();
+    expect(btn).toBeBlocked();
   });
 });
 
@@ -282,8 +282,9 @@ describe('<VerificationTimeline /> accessibility', () => {
       />,
     );
     const btn = screen.getByRole('button', { name: /resend verification email/i });
-    expect(btn).toHaveAttribute('aria-busy', 'false');
-    expect(btn).toHaveAttribute('aria-disabled', 'false');
+    expect(btn).not.toHaveAttribute('aria-busy');
+    expect(btn).not.toHaveAttribute('aria-disabled', 'true');
+    expect(btn).toBeUnblocked();
   });
 
   it('Resend button reflects cooldown via aria-disabled and aria-label', () => {

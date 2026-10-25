@@ -156,6 +156,7 @@ export default function ClientNDAUpload() {
                 type="button"
                 role="radio"
                 aria-checked={selected}
+                /* disabled-ok: the card text itself says "Upload your document below to use it" */
                 disabled={o.v && !hasFile}
                 onClick={() => !selected && setChoice(o.v)}
                 className={`text-start p-3 rounded-xl border transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${selected ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40'}`}

@@ -148,7 +148,7 @@ export default function TicketTagsWatchers({ ticketId, isReadOnly = false }: Pro
               className="h-8 text-xs flex-1"
               onKeyDown={e => e.key === 'Enter' && handleAddTag()}
             />
-            <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={handleAddTag} disabled={adding}>
+            <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={handleAddTag} busy={adding}>
               <Plus className="w-3 h-3" /> Add
             </Button>
           </div>

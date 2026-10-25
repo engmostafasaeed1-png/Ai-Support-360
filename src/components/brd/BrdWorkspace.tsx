@@ -8,6 +8,7 @@ import {
   Save, FileDown, Share2, Sparkles, GripVertical, ChevronDown, Eye, EyeOff, Lock, Loader2, CheckCircle2, AlertTriangle, Wand2, Scissors, Brain,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BlockedHint } from '@/components/ui/guided-button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -244,7 +245,7 @@ export default function BrdWorkspace({ state, initial, initialRev, fresh, isAdmi
             </span>
           </div>
           {canWrite && (
-            <Button size="sm" className="gap-1.5" onClick={() => { setVStatus('draft'); setVersionOpen(true); }} disabled={problems.length > 0}>
+            <Button size="sm" className="gap-1.5" onClick={() => { setVStatus('draft'); setVersionOpen(true); }} reason={problems.length > 0 && 'fix_errors_first'} hint="inline">
               <Save className="h-4 w-4" /> {t('brd.versions.saveNew')}
             </Button>
           )}
@@ -259,7 +260,7 @@ export default function BrdWorkspace({ state, initial, initialRev, fresh, isAdmi
             </DropdownMenuContent>
           </DropdownMenu>
           {canWrite && (
-            <Button size="sm" variant="outline" className="gap-1.5" disabled={versions.length === 0} onClick={() => setAttachOpen(versions[0]?.version ?? null)}
+            <Button size="sm" variant="outline" className="gap-1.5" reason={versions.length === 0 && 'brd_not_submitted'} onClick={() => setAttachOpen(versions[0]?.version ?? null)}
               title={versions.length === 0 ? t('brd.attach.needVersion') : undefined}>
               <Share2 className="h-4 w-4" /> {t('brd.attach.button')}
             </Button>
@@ -349,6 +350,7 @@ export default function BrdWorkspace({ state, initial, initialRev, fresh, isAdmi
                               <DropdownMenuTrigger asChild><Button size="sm" variant="ghost" className="h-8 gap-1"><Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">{t('brd.ai.menu')}</span></Button></DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => setAi({ section: s.key, mode: 'regenerate', deep: false })}><Sparkles className="h-4 w-4 me-2" /> {t('brd.ai.mode_regenerate')}</DropdownMenuItem>
+                                {!s.html && <BlockedHint className="px-2 py-1.5" reason="fill_required_fields" />}
                                 <DropdownMenuItem disabled={!s.html} onClick={() => setAi({ section: s.key, mode: 'improve', deep: false })}><Wand2 className="h-4 w-4 me-2" /> {t('brd.ai.mode_improve')}</DropdownMenuItem>
                                 <DropdownMenuItem disabled={!s.html} onClick={() => setAi({ section: s.key, mode: 'shorter', deep: false })}><Scissors className="h-4 w-4 me-2" /> {t('brd.ai.mode_shorter')}</DropdownMenuItem>
                                 <DropdownMenuSeparator />
@@ -475,7 +477,7 @@ export default function BrdWorkspace({ state, initial, initialRev, fresh, isAdmi
           <blockquote dir={dir} className="border-s-2 border-accent ps-2 text-sm whitespace-pre-wrap">{suggestion?.suggested_text}</blockquote>
           <DialogFooter className="gap-2">
             <Button variant="ghost" onClick={() => setSuggestion(null)}>{t('common.cancel', 'Cancel')}</Button>
-            <Button disabled={readOnly} onClick={async () => {
+            <Button reason={readOnly && 'not_editable_now'} onClick={async () => {
               const c = suggestion!;
               const key = c.section_key as SectionKey;
               const cur = content.sections.find((s) => s.key === key);

@@ -126,7 +126,7 @@ describe('CertificateReview', () => {
 
   it('does not let anything be saved in the demo', () => {
     render(<CertificateReview certificates={CERTS} readOnly />);
-    expect((screen.getByRole('button', { name: 'Verify' }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole('button', { name: 'Remove verification' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Verify' }) as HTMLButtonElement)).toBeBlocked();
+    expect((screen.getByRole('button', { name: 'Remove verification' }) as HTMLButtonElement)).toBeBlocked();
   });
 });

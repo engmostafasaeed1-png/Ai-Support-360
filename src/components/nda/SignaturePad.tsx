@@ -202,10 +202,10 @@ const SignaturePad = forwardRef<SignaturePadHandle, Props>(function SignaturePad
         <span className="pointer-events-none absolute bottom-2 start-3 text-[11px] text-signature-ink/60">{hint}</span>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => { strokes.current = strokes.current.slice(0, -1); redraw(); emit(); }} disabled={disabled}>
+        <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => { strokes.current = strokes.current.slice(0, -1); redraw(); emit(); }} busy={disabled}>
           <Undo2 className="h-3.5 w-3.5" aria-hidden /> {undoLabel}
         </Button>
-        <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => { strokes.current = []; redraw(); emit(); }} disabled={disabled}>
+        <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => { strokes.current = []; redraw(); emit(); }} busy={disabled}>
           <Eraser className="h-3.5 w-3.5" aria-hidden /> {clearLabel}
         </Button>
       </div>

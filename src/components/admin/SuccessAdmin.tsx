@@ -161,7 +161,7 @@ export function SuccessAdminTab() {
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-3 pb-2">
           <CardTitle className="text-base">{ar ? 'مستويات النجاح' : 'Success levels'}</CardTitle>
-          <Button variant="outline" size="sm" onClick={recompute} disabled={recomputing}>
+          <Button variant="outline" size="sm" onClick={recompute} busy={recomputing}>
             {recomputing ? <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" /> : <RefreshCw className="me-1 h-4 w-4" aria-hidden="true" />}
             {ar ? 'أعد الحساب الآن' : 'Recalculate now'}
           </Button>
@@ -186,7 +186,7 @@ export function SuccessAdminTab() {
           </div>
           <p className="text-xs text-muted-foreground">{ar ? `الافتراضي: ${SUCCESS_DEFAULTS.bronze} / ${SUCCESS_DEFAULTS.silver} / ${SUCCESS_DEFAULTS.gold} / ${SUCCESS_DEFAULTS.platinum} ٪، والحد الأدنى ${SUCCESS_DEFAULTS.min_requests} طلبات. يجب أن تتزايد القيم.` : `Defaults: ${SUCCESS_DEFAULTS.bronze} / ${SUCCESS_DEFAULTS.silver} / ${SUCCESS_DEFAULTS.gold} / ${SUCCESS_DEFAULTS.platinum} %, minimum ${SUCCESS_DEFAULTS.min_requests} requests. Each level must be higher than the one before.`}</p>
           {problems.length > 0 && <p role="alert" className="text-xs text-destructive">{ar ? 'يرجى مراجعة القيم.' : 'Please check the values.'}</p>}
-          <Button onClick={save} busy={saving} disabled={problems.length > 0}>{saving && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}{ar ? 'حفظ' : 'Save'}</Button>
+          <Button onClick={save} busy={saving} reason={problems.length > 0 && 'fix_errors_first'}>{saving && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}{ar ? 'حفظ' : 'Save'}</Button>
         </CardContent>
       </Card>
       <Card>

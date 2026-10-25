@@ -164,7 +164,7 @@ export default function NDATemplateEditor() {
           />
         )}
         <div className="flex justify-end">
-          <Button onClick={handleSave} busy={saving} disabled={!isDirty || previewing} className="gap-2">
+          <Button onClick={handleSave} busy={saving} reason={[!isDirty && 'nothing_changed', previewing && { key: 'not_editable_now', onNext: () => { setPreviewing(false); setShowSampleEditor(false); }, nextLabel: t('admin.nda_edit', 'Edit') }]} className="gap-2">
             <Save className="w-4 h-4" />
             {saving ? t('common.saving', 'Saving...') : t('common.save', 'Save')}
           </Button>

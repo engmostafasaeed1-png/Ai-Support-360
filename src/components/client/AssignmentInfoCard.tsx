@@ -137,7 +137,7 @@ export default function AssignmentInfoCard({ row, ticketId, consultantName, canA
                     <Paperclip className="h-3.5 w-3.5" aria-hidden="true" /> {t('assignment_info.attach', 'Attach a file (optional)')}
                   </Button>
                 )}
-                <Button size="sm" className="ms-auto h-8 gap-1 text-xs" onClick={send} disabled={!canSend}>
+                <Button size="sm" className="ms-auto h-8 gap-1 text-xs" onClick={send} busy={answer.isPending} reason={[!text.trim() && 'type_message_first', hasContact && 'fix_errors_first', tooLong && { key: 'text_too_long', params: { max: ANSWER_MAX_TEXT } }]}>
                   {answer.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Send className="h-3.5 w-3.5" aria-hidden="true" />}
                   {t('assignment_info.send_answer', 'Send answer')}
                 </Button>

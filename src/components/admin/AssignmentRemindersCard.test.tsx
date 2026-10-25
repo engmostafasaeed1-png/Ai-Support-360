@@ -46,7 +46,7 @@ describe('AssignmentRemindersCard', () => {
     renderCard();
     fireEvent.change(screen.getByLabelText('Reminder 2 after (hours)'), { target: { value: '30' } });
     expect(screen.getByRole('alert').textContent).toMatch(/must come in order/);
-    expect(screen.getByRole('button', { name: 'Save timings' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save timings' })).toBeBlocked();
   });
 
   it('turns the reminders switch off', () => {

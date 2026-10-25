@@ -163,7 +163,7 @@ const ConsultantPolicySection = () => {
             <Label htmlFor="policy-grace-days">{t('admin.policy.graceDays', 'Days from first display before restrictions')}</Label>
             <Input id="policy-grace-days" type="number" min={0} max={MAX_POLICY_GRACE_DAYS} value={days} onChange={e => setDays(e.target.value)} className="w-28" disabled={!ready} />
           </div>
-          <Button onClick={() => saveGrace.mutate()} busy={saveGrace.isPending} disabled={!ready}>{t('common.save', 'Save')}</Button>
+          <Button onClick={() => saveGrace.mutate()} busy={saveGrace.isPending} reason={!ready && 'feature_not_ready'}>{t('common.save', 'Save')}</Button>
         </CardContent>
       </Card>
 
@@ -179,7 +179,7 @@ const ConsultantPolicySection = () => {
                 {(['accepted', 'grace', 'pending', 'blocked'] as const).map(s => <SelectItem key={s} value={s}>{STATE_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={exportCsv} disabled={!shown.length}><Download className="h-4 w-4" />{t('admin.policy.export', 'Export CSV')}</Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={exportCsv} reason={!shown.length && 'nothing_to_export'}><Download className="h-4 w-4" />{t('admin.policy.export', 'Export CSV')}</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -208,7 +208,7 @@ const ConsultantPolicySection = () => {
                         <TableCell className="text-xs">{r.last_reminder_at ? format(new Date(r.last_reminder_at), 'PP p') : '-'}</TableCell>
                         <TableCell>
                           {r.state !== 'accepted' && (
-                            <Button size="sm" variant="outline" className="gap-1" busy={remind.isPending} disabled={!ready} onClick={() => remind.mutate(r.consultant_id)}>
+                            <Button size="sm" variant="outline" className="gap-1" busy={remind.isPending} reason={!ready && 'feature_not_ready'} hint="inline" onClick={() => remind.mutate(r.consultant_id)}>
                               <Send className="h-3.5 w-3.5" />{t('admin.policy.sendReminder', 'Send reminder')}
                             </Button>
                           )}
@@ -225,7 +225,7 @@ const ConsultantPolicySection = () => {
       <Card className="rounded-2xl">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-2">
           <CardTitle className="text-base">{t('admin.policy.publishTitle', 'Publish a new version')}</CardTitle>
-          {!draft && <Button size="sm" onClick={startDraft} disabled={!ready || !current.data?.ready}>{t('admin.policy.startDraft', 'Edit the text for a new version')}</Button>}
+          {!draft && <Button size="sm" onClick={startDraft} reason={(!ready || !current.data?.ready) && 'feature_not_ready'}>{t('admin.policy.startDraft', 'Edit the text for a new version')}</Button>}
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">{t('admin.policy.publishHelp', 'Published versions cannot be changed. A new version asks every consultant to confirm again: new consultants at registration, existing consultants by pop-up, banner and e-mail. Format: "## " starts a section, "- " a list item.')}</p>

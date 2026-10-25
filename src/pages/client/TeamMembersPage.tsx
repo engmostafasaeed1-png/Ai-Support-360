@@ -118,7 +118,7 @@ export default function TeamMembersPage() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5" hint="inline" reason={!isOwnerOrAdmin && { key: 'permission_missing', message: 'Only company owners and administrators can invite people. Ask a company administrator to send the invitation.' }} title={isOwnerOrAdmin ? undefined : 'Only company owners and administrators can invite people'}>
+            <Button size="sm" className="gap-1.5" hint="inline" reason={!isOwnerOrAdmin && 'company_admin_only'}>
               <Plus className="w-4 h-4" />
               Invite
             </Button>

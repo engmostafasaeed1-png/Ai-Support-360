@@ -56,7 +56,7 @@ describe('SubmitTimesheetDialog', () => {
   it('can not be sent while something blocks it and says why', () => {
     render(<SubmitTimesheetDialog {...props({ blockReason: 'Your hourly rate for this ticket has not been approved yet.' })} />);
     expect(screen.getByRole('alert').textContent).toContain('has not been approved yet');
-    expect((screen.getByRole('button', { name: 'Submit for approval' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Submit for approval' }) as HTMLButtonElement)).toBeBlocked();
   });
 
   it('submits with the message', async () => {
