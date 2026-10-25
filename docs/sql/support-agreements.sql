@@ -399,7 +399,8 @@ DO $$
 DECLARE t text;
 BEGIN
   FOREACH t IN ARRAY ARRAY['sa_agreements', 'sa_invites', 'sa_applications', 'sa_offers', 'sa_versions', 'sa_acceptances', 'sa_rate_records',
-    'sa_rate_changes', 'sa_members', 'sa_replacements', 'sa_tickets', 'sa_months', 'sa_events', 'sa_messages', 'sa_notices', 'sa_email_queue', 'sa_audit'] LOOP
+    'sa_rate_changes', 'sa_members', 'sa_member_acceptances', 'sa_replacements', 'sa_tickets', 'sa_months', 'sa_events', 'sa_messages', 'sa_notices',
+    'sa_email_queue', 'sa_audit', 'sa_documents', 'sa_document_versions', 'sa_document_uploads', 'sa_document_access'] LOOP
     EXECUTE format('REVOKE ALL ON public.%I FROM PUBLIC, anon, authenticated', t);
     EXECUTE format('GRANT ALL ON public.%I TO service_role', t);
     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
@@ -417,7 +418,8 @@ END $$;
 DO $$
 DECLARE t text;
 BEGIN
-  FOREACH t IN ARRAY ARRAY['sa_versions', 'sa_acceptances', 'sa_rate_records', 'sa_events', 'sa_messages', 'sa_audit'] LOOP
+  FOREACH t IN ARRAY ARRAY['sa_versions', 'sa_acceptances', 'sa_rate_records', 'sa_events', 'sa_messages', 'sa_audit',
+                           'sa_member_acceptances', 'sa_document_versions', 'sa_document_access'] LOOP
     EXECUTE format('DROP TRIGGER IF EXISTS sa_append_only ON public.%I', t);
     EXECUTE format('CREATE TRIGGER sa_append_only BEFORE UPDATE OR DELETE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.sa_guard_append_only()', t);
   END LOOP;
