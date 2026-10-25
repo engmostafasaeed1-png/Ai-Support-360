@@ -176,7 +176,7 @@ export default function TimeSlotPicker({ slots, onChange, maxSlots = 5 }: Props)
               <Button
                 size="sm"
                 className="w-full text-xs"
-                disabled={!selectedDate}
+                reason={!selectedDate && 'choose_date_first'}
                 onClick={addSlot}
               >
                 {t('interview.confirm_slot', 'Add This Slot')}

@@ -146,7 +146,7 @@ export default function InterviewsPage() {
             Completing an AI interview is <strong>optional</strong>, but it earns you a verified badge + credibility credits clients can see.
           </p>
         </div>
-        <Button onClick={handleStartOptionalInterview} disabled={isStarting || isGuest || !!block}
+        <Button onClick={handleStartOptionalInterview} busy={isStarting || block === 'checking'} reason={[isGuest && 'sign_in_required', !!block && block !== 'checking' && { key: block === 'signed_out' ? 'sign_in_required' : 'profile_incomplete', message: blockText ? t(blockText.key, blockText.message) : undefined, to: blockText?.action?.to }]}
           aria-describedby={blockText ? 'interview-start-reason' : undefined} className="gradient-primary border-0 gap-2">
           {isStarting || block === 'checking' ? <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" /> : <Brain className="w-4 h-4" />}
           {aiPick ? t('interview.continue_ai', 'Continue AI Interview') : t('interview.start_ai', 'Start AI Interview')}
@@ -165,7 +165,7 @@ export default function InterviewsPage() {
         <div role="alert" className="flex flex-wrap items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           <AlertTriangle className="h-4 w-4" />
           <span>{t(ERROR_TEXT[startError].key, ERROR_TEXT[startError].message)}</span>
-          <Button size="sm" variant="outline" className="ms-auto" onClick={handleStartOptionalInterview} disabled={isStarting}>
+          <Button size="sm" variant="outline" className="ms-auto" onClick={handleStartOptionalInterview} busy={isStarting}>
             <RotateCcw className="me-1 h-4 w-4" /> {t('common.retry', 'Retry')}
           </Button>
         </div>

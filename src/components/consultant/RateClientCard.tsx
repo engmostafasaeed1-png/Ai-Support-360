@@ -162,7 +162,7 @@ export default function RateClientCard({ ticketId, consultantId, clientId }: Pro
               </div>
             </div>
             <div className="flex gap-2">
-              <Button type="button" onClick={submit} disabled={saving}>Submit rating</Button>
+              <Button type="button" onClick={submit} busy={saving}>Submit rating</Button>
               {editing && <Button type="button" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>}
             </div>
           </>

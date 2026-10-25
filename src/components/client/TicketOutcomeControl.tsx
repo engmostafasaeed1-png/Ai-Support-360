@@ -38,7 +38,7 @@ export default function TicketOutcomeControl({ ticketId, outcome, onChanged }: {
     return (
       <div className="flex flex-wrap items-center gap-2 text-xs" data-testid="ticket-outcome">
         <span className="rounded-full bg-destructive/10 px-2 py-0.5 font-medium text-destructive">{ar ? 'سجّلتَ أن هذا الطلب لم يُحل' : 'You marked this request as not solved'}</span>
-        <Button variant="ghost" size="sm" className="h-7 text-xs" disabled={busy} onClick={() => save(null)}>{ar ? 'تراجع' : 'Undo'}</Button>
+        <Button variant="ghost" size="sm" className="h-7 text-xs" busy={busy} onClick={() => save(null)}>{ar ? 'تراجع' : 'Undo'}</Button>
       </div>
     );
   }
@@ -51,7 +51,7 @@ export default function TicketOutcomeControl({ ticketId, outcome, onChanged }: {
           <p className="text-muted-foreground">{ar ? 'سيُحتسب هذا الطلب "غير محلول" في إحصاءات نجاح المستشار، ويمكنه طلب مراجعة من المسؤول.' : 'This request will count as "not solved" in the consultant\u2019s success statistics; the consultant can ask an administrator for a review.'}</p>
           <Textarea rows={2} maxLength={500} aria-label={ar ? 'السبب (اختياري)' : 'Reason (optional)'} placeholder={ar ? 'السبب (اختياري)' : 'Reason (optional)'} value={reason} onChange={(e) => setReason(e.target.value)} />
           <div className="flex gap-2">
-            <Button size="sm" className="h-7 text-xs" variant="destructive" disabled={busy} onClick={() => save('unresolved')}>{ar ? 'سجّل: لم يُحل' : 'Mark as not solved'}</Button>
+            <Button size="sm" className="h-7 text-xs" variant="destructive" busy={busy} onClick={() => save('unresolved')}>{ar ? 'سجّل: لم يُحل' : 'Mark as not solved'}</Button>
             <Button size="sm" className="h-7 text-xs" variant="ghost" onClick={() => setOpen(false)}>{ar ? 'إلغاء' : 'Cancel'}</Button>
           </div>
         </>

@@ -112,7 +112,7 @@ export default function OtherCompanyProfile() {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={save} disabled={saving || !isOwnerOrAdmin || !changed || !name.trim()} className="gradient-primary border-0 gap-2">
+        <Button onClick={save} busy={saving} disabled={!isOwnerOrAdmin || !changed || !name.trim()} className="gradient-primary border-0 gap-2">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Save company details
         </Button>

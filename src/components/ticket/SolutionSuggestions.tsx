@@ -285,13 +285,13 @@ export default function SolutionSuggestions({ title, description, areas, other, 
                     <div className="flex items-center gap-2 pt-1">
                       <span className="text-[11px] text-muted-foreground">Did this help?</span>
                       <Button
-                        variant="outline" size="sm" className="h-7 gap-1 text-xs" disabled={!!verdicts[i]}
+                        variant="outline" size="sm" className="h-7 gap-1 text-xs" reason={!!verdicts[i] && 'already_done'}
                         aria-pressed={verdicts[i] === 'helpful'} onClick={() => void rate(i, 'helpful')}
                       >
                         <ThumbsUp className="h-3 w-3" /> Helpful
                       </Button>
                       <Button
-                        variant="outline" size="sm" className="h-7 gap-1 text-xs" disabled={!!verdicts[i]}
+                        variant="outline" size="sm" className="h-7 gap-1 text-xs" reason={!!verdicts[i] && 'already_done'}
                         aria-pressed={verdicts[i] === 'not_helpful'} onClick={() => void rate(i, 'not_helpful')}
                       >
                         <ThumbsDown className="h-3 w-3" /> Not helpful
@@ -302,7 +302,7 @@ export default function SolutionSuggestions({ title, description, areas, other, 
                 {result.note && <p className="text-xs text-muted-foreground">{result.note}</p>}
                 <SapLinks result={result} />
                 <div className="flex flex-wrap items-center gap-2 border-t border-border/40 pt-3">
-                  <Button size="sm" className="gradient-primary gap-1.5 border-0" disabled={sending} onClick={() => void solved()}>
+                  <Button size="sm" className="gradient-primary gap-1.5 border-0" busy={sending} onClick={() => void solved()}>
                     {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                     This solved my problem
                   </Button>

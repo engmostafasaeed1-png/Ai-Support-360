@@ -241,11 +241,11 @@ export default function FeedbackDialog({ open, onOpenChange, signedIn }: Props) 
         <div className="flex flex-wrap gap-2">
           <input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" multiple className="sr-only" tabIndex={-1} aria-hidden="true"
             onChange={(e) => { void addFiles(Array.from(e.target.files ?? [])); e.target.value = ''; }} />
-          <Button type="button" variant="outline" size="sm" disabled={files.length >= FEEDBACK_LIMITS.files} onClick={() => fileInput.current?.click()}>
+          <Button type="button" variant="outline" size="sm" reason={files.length >= FEEDBACK_LIMITS.files && { key: 'limit_reached', params: { max: FEEDBACK_LIMITS.files } }} onClick={() => fileInput.current?.click()}>
             <ImagePlus aria-hidden="true" className="me-1.5 h-4 w-4" />{String(t('feedback.files.add', { defaultValue: 'Add image' }))}
           </Button>
           {canCaptureScreen() && !isMobile && (
-            <Button type="button" variant="outline" size="sm" disabled={capturing || files.length >= FEEDBACK_LIMITS.files} onClick={() => void onCapture()}>
+            <Button type="button" variant="outline" size="sm" busy={capturing} reason={files.length >= FEEDBACK_LIMITS.files && { key: 'limit_reached', params: { max: FEEDBACK_LIMITS.files } }} onClick={() => void onCapture()}>
               {capturing ? <Loader2 aria-hidden="true" className="me-1.5 h-4 w-4 animate-spin" /> : <Camera aria-hidden="true" className="me-1.5 h-4 w-4" />}
               {String(t('feedback.files.capture', { defaultValue: 'Capture this screen' }))}
             </Button>
@@ -313,7 +313,7 @@ export default function FeedbackDialog({ open, onOpenChange, signedIn }: Props) 
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{String(t('common.cancel', { defaultValue: 'Cancel' }))}</Button>
-        <Button type="submit" disabled={sending}>
+        <Button type="submit" busy={sending}>
           {sending && <Loader2 aria-hidden="true" className="me-1.5 h-4 w-4 animate-spin" />}
           {String(t('feedback.send', { defaultValue: 'Send' }))}
         </Button>

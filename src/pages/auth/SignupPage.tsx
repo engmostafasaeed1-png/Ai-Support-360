@@ -326,7 +326,7 @@ function SignupForm() {
           <CardFooter className="flex flex-col gap-3">
             <Button
               onClick={handleResend}
-              disabled={resending || resendCooldown > 0}
+              busy={resending} reason={resendCooldown > 0 && { key: 'rate_limit', params: { minutes: Math.max(1, Math.ceil(resendCooldown / 60)) } }}
               className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all"
             >
               {resending && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
@@ -441,12 +441,12 @@ function SignupForm() {
                 <a href="/consultant-policy" target="_blank" rel="noopener" className="text-primary underline">{t('footer.consultantPolicy', 'Consultant Service Policy')}</a>.
               </p>
             )}
-            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" disabled={loading}>
+            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" busy={loading}>
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {t('auth.signup_btn')}
             </Button>
             {googleEnabled && <>
-            <Button type="button" variant="outline" className="w-full h-11 rounded-xl" onClick={handleGoogleSignup} disabled={loading || googleLoading || !agreed} aria-describedby={!agreed ? 'google-terms-hint' : undefined}>
+            <Button type="button" variant="outline" className="w-full h-11 rounded-xl" onClick={handleGoogleSignup} busy={loading || googleLoading} reason={!agreed && 'tick_confirmation_first'} aria-describedby={!agreed ? 'google-terms-hint' : undefined}>
               {googleLoading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {t('auth.signup_google', 'Sign up with Google')}
             </Button>

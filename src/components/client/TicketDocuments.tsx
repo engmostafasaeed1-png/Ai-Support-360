@@ -107,7 +107,7 @@ export default function TicketDocuments({ ticketId }: { ticketId: string }) {
               size="sm"
               className="gradient-primary border-0 gap-1.5"
               onClick={() => fileInputRef.current?.click()}
-              disabled={uploadMutation.isPending}
+              busy={uploadMutation.isPending}
             >
               <Upload className="w-3.5 h-3.5" />
               {uploadMutation.isPending ? 'Uploading...' : 'Upload'}

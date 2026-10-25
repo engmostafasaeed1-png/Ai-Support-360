@@ -49,7 +49,7 @@ export default function MatchClarifyingQuestions({ questions, onSubmit, onSkip }
         </div>
       ))}
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" size="sm" disabled={!filled}>{ar ? 'تحديث الترشيحات' : 'Update matches'}</Button>
+        <Button type="submit" size="sm" reason={!filled && 'answer_required'}>{ar ? 'تحديث الترشيحات' : 'Update matches'}</Button>
         {onSkip && <Button type="button" size="sm" variant="ghost" onClick={onSkip}>{ar ? 'عرض الترشيحات على أي حال' : 'Show matches anyway'}</Button>}
       </div>
     </form>

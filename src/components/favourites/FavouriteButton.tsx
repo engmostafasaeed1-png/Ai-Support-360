@@ -105,7 +105,7 @@ export function BlockToggle({ consultantId, className }: { consultantId: string;
     }
   };
   return (
-    <button type="button" onClick={toggle} disabled={busy} aria-pressed={on} title={t('fav.blocked_hint')}
+    <button type="button" onClick={toggle} /* disabled-ok: busy */ disabled={busy} aria-busy={busy} aria-pressed={on} title={t('fav.blocked_hint')}
       className={cn('inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         on ? 'border-destructive/30 bg-destructive/10 text-destructive' : 'border-border text-muted-foreground hover:bg-muted', className)}>
       {on ? t('fav.blocked_on') : t('fav.block')}

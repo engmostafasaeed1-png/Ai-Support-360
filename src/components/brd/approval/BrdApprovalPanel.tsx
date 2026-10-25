@@ -144,7 +144,7 @@ export default function BrdApprovalPanel({ ticketId, state }: { ticketId: string
         )}
 
         {approvedRound && (
-          <Button size="sm" variant="ghost" className="h-8 gap-1.5 px-2 text-xs" onClick={exportRecord} disabled={exporting}>
+          <Button size="sm" variant="ghost" className="h-8 gap-1.5 px-2 text-xs" onClick={exportRecord} busy={exporting}>
             {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />} {t('brd.approval.record', { v: approvedRound.version })}
           </Button>
         )}
@@ -285,8 +285,8 @@ function AskDialog({ ticketId, version, allowNoChange, onClose, onDone }: { tick
           )}
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="ghost" disabled={busy} onClick={onClose}>{t('common.cancel', 'Cancel')}</Button>
-          <Button disabled={busy} onClick={go} className="gap-1.5">{busy && <Loader2 className="h-4 w-4 animate-spin" />}{t('brd.approval.askConfirm')}</Button>
+          <Button variant="ghost" busy={busy} onClick={onClose}>{t('common.cancel', 'Cancel')}</Button>
+          <Button busy={busy} onClick={go} className="gap-1.5">{busy && <Loader2 className="h-4 w-4 animate-spin" />}{t('brd.approval.askConfirm')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -310,8 +310,8 @@ function ReasonDialog({ open, onOpenChange, title, intro, confirm, min, onConfir
           <Textarea id="brd-appr-reason" value={reason} maxLength={500} rows={3} onChange={(e) => setReason(e.target.value)} />
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="ghost" disabled={busy} onClick={() => onOpenChange(false)}>{t('common.cancel', 'Cancel')}</Button>
-          <Button disabled={busy || !ok} onClick={async () => { setBusy(true); const done = await onConfirm(reason.trim()); setBusy(false); if (done) onOpenChange(false); }} className="gap-1.5">
+          <Button variant="ghost" busy={busy} onClick={() => onOpenChange(false)}>{t('common.cancel', 'Cancel')}</Button>
+          <Button busy={busy} disabled={!ok} onClick={async () => { setBusy(true); const done = await onConfirm(reason.trim()); setBusy(false); if (done) onOpenChange(false); }} className="gap-1.5">
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}{confirm}
           </Button>
         </DialogFooter>

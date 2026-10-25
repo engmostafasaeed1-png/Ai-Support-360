@@ -70,7 +70,7 @@ export default function ConfirmEmailPage() {
         <CardContent className="space-y-4">
           {(state === 'ready' || state === 'busy') && (
             <>
-              <Button onClick={confirm} disabled={state === 'busy'} aria-busy={state === 'busy'} className="h-12 w-full gradient-primary border-0 text-base">
+              <Button onClick={confirm} busy={state === 'busy'} aria-busy={state === 'busy'} className="h-12 w-full gradient-primary border-0 text-base">
                 {state === 'busy' && <Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden="true" />}
                 {t('auth.confirm.button', 'Confirm my e-mail')}
               </Button>

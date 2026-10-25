@@ -75,7 +75,7 @@ export default function BrdApprovalSettings({ draft, setDraft, onReady }: {
               <div className="flex flex-wrap items-center gap-2">
                 <Button size="sm" variant={preview.lang === 'en' ? 'default' : 'outline'} className="h-7 text-xs" onClick={() => setPreview({ ...preview, lang: 'en' })}>English</Button>
                 <Button size="sm" variant={preview.lang === 'ar' ? 'default' : 'outline'} className="h-7 text-xs" onClick={() => setPreview({ ...preview, lang: 'ar' })}>العربية</Button>
-                <Button size="sm" variant="outline" className="ms-auto h-7 gap-1 text-xs" disabled={sending} onClick={async () => {
+                <Button size="sm" variant="outline" className="ms-auto h-7 gap-1 text-xs" busy={sending} onClick={async () => {
                   setSending(true);
                   const r = await sendBrdApprovalTestEmail(preview.kind, preview.lang);
                   setSending(false);

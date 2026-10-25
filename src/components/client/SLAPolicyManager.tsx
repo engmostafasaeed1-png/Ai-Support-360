@@ -210,7 +210,7 @@ export default function SLAPolicyManager() {
               </div>
               <Button
                 className="w-full"
-                disabled={!form.name || saveMutation.isPending}
+                busy={saveMutation.isPending} disabled={!form.name}
                 onClick={() => saveMutation.mutate({ ...form, id: editId ?? undefined })}
               >
                 {saveMutation.isPending ? 'Saving…' : editId ? 'Update Policy' : 'Create Policy'}

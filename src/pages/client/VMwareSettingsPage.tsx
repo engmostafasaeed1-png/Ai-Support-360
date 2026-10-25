@@ -112,7 +112,7 @@ export default function ClientVMwareSettingsPage() {
                       size="sm"
                       className="w-full text-xs h-8"
                       variant={isActive ? 'outline' : plan.tier === 'pro' ? 'default' : 'secondary'}
-                      disabled={isActive || subscribe.isPending}
+                      busy={subscribe.isPending} reason={isActive && 'same_as_current'}
                       onClick={() => subscribe.mutate({ plan_id: plan.id, environment_id: selectedEnvId || undefined })}
                     >
                       {isActive ? '✓ Current Plan' : 'Subscribe'}
@@ -160,7 +160,7 @@ export default function ClientVMwareSettingsPage() {
                   size="sm"
                   className="w-full text-xs h-8"
                   variant="secondary"
-                  disabled={subscribe.isPending}
+                  busy={subscribe.isPending}
                   onClick={() => subscribe.mutate({ plan_id: 'payg', environment_id: selectedEnvId || undefined, billing_cycle: 'payg' })}
                 >
                   Enable Pay as you go

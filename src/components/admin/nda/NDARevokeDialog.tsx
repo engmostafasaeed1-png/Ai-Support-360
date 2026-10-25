@@ -32,7 +32,7 @@ export default function NDARevokeDialog({ nda, revoking, onClose, onConfirm }: N
           <AlertDialogAction
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             onClick={onConfirm}
-            disabled={revoking}
+            /* disabled-ok: busy */ disabled={revoking} aria-busy={revoking}
           >
             {revoking ? t('common.loading', 'Loading...') : t('admin.nda_revoke_confirm', 'Revoke NDA')}
           </AlertDialogAction>

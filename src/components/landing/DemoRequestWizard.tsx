@@ -379,7 +379,7 @@ export default function DemoRequestWizard({
             <Button
               variant="ghost"
               onClick={back}
-              disabled={step === 0 || submitting}
+              busy={submitting} reason={step === 0 && 'first_page'}
               className="rounded-xl"
             >
               <ArrowLeft className="w-4 h-4 me-1.5" /> Back
@@ -392,7 +392,7 @@ export default function DemoRequestWizard({
             {step < STEPS.length - 1 ? (
               <Button
                 onClick={next}
-                disabled={!canNext}
+                reason={!canNext && (step === 0 ? 'choose_option_first' : step === 1 ? (!time ? 'choose_option_first' : 'choose_time_first') : name.trim().length <= 1 ? { key: 'text_too_short', params: { min: 2 } } : 'invalid_email')}
                 className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-95 border-0 shadow-lg"
               >
                 Continue <ArrowRight className="w-4 h-4 ms-1.5" />
@@ -400,7 +400,8 @@ export default function DemoRequestWizard({
             ) : (
               <Button
                 onClick={submit}
-                disabled={!canNext || submitting}
+                hint="inline"
+                busy={submitting} reason={!canNext && (step === 0 ? 'choose_option_first' : step === 1 ? (!time ? 'choose_option_first' : 'choose_time_first') : name.trim().length <= 1 ? { key: 'text_too_short', params: { min: 2 } } : 'invalid_email')}
                 className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-95 border-0 shadow-lg"
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Send request <Send className="w-4 h-4 ms-1.5" /></>}
@@ -647,12 +648,12 @@ function ScheduleStep({
               {TIME_SLOTS.map((s) => {
                 const selected = slot === s;
                 return (
-                  <button
+                  <Button variant="ghost"
                     key={s}
                     type="button"
-                    disabled={!date || slotIsPast(s)}
+                    reason={[!date && 'choose_date_first', !!date && slotIsPast(s) && 'date_in_past']}
                     onClick={() => onSlotChange(s)}
-                    className={cn(
+                    className={cn('h-auto p-0 whitespace-normal', 
                       'h-9 rounded-lg text-xs font-semibold border transition-colors',
                       selected
                         ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20'
@@ -662,7 +663,7 @@ function ScheduleStep({
                     aria-pressed={selected}
                   >
                     {s}
-                  </button>
+                  </Button>
                 );
               })}
             </div>

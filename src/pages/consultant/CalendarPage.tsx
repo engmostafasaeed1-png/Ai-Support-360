@@ -164,7 +164,7 @@ function SessionCard({ s, now, onChanged }: { s: SessionData; now: number; onCha
             </Button>
           )}
           {showComplete && (
-            <Button size="sm" variant="outline" className="flex-1 text-xs h-8 gap-1" onClick={complete} disabled={busy !== null}>
+            <Button size="sm" variant="outline" className="flex-1 text-xs h-8 gap-1" onClick={complete} busy={busy !== null}>
               {busy === 'complete' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
               Mark completed
             </Button>
@@ -172,7 +172,7 @@ function SessionCard({ s, now, onChanged }: { s: SessionData; now: number; onCha
           {group === 'to_close' && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="sm" variant="outline" className="flex-1 text-xs h-8" disabled={busy !== null}>
+                <Button size="sm" variant="outline" className="flex-1 text-xs h-8" busy={busy !== null}>
                   It did not take place
                 </Button>
               </AlertDialogTrigger>

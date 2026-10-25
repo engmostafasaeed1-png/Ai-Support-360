@@ -198,7 +198,7 @@ export default function AgreementRequestForm({ settings, agreementId, status = '
                 {['rates', 'crew', 'escalation', 'documents'].includes(s) && <span className="ms-auto text-[10px] text-muted-foreground">{t('agreements.form.optional')}</span>}</a></li>
             ))}
           </ol>
-          <Button className="w-full" variant="outline" disabled={busy} onClick={async () => { const nid = await save(); if (nid) { toast.success(t('agreements.form.saved')); onSaved(nid, false); } }}>
+          <Button className="w-full" variant="outline" busy={busy} onClick={async () => { const nid = await save(); if (nid) { toast.success(t('agreements.form.saved')); onSaved(nid, false); } }}>
             {busy ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}{t('agreements.form.saveDraft')}</Button>
         </CardContent></Card>
       </nav>
@@ -392,9 +392,9 @@ export default function AgreementRequestForm({ settings, agreementId, status = '
           <ProtectionBox compact />
           <div className="flex flex-wrap justify-end gap-2">
             <Button variant="ghost" onClick={onCancel}>{t('agreements.cancel')}</Button>
-            <Button variant="outline" disabled={busy} onClick={async () => { const nid = await save(); if (nid) { toast.success(t('agreements.form.saved')); onSaved(nid, false); } }}>
+            <Button variant="outline" busy={busy} onClick={async () => { const nid = await save(); if (nid) { toast.success(t('agreements.form.saved')); onSaved(nid, false); } }}>
               {busy ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}{t('agreements.form.saveDraft')}</Button>
-            {status === 'draft' && <Button disabled={busy || !check.canPublish} onClick={() => setPublishOpen(true)}><Send className="me-1 h-4 w-4" />{t('agreements.form.publish')}</Button>}
+            {status === 'draft' && <Button busy={busy} disabled={!check.canPublish} onClick={() => setPublishOpen(true)}><Send className="me-1 h-4 w-4" />{t('agreements.form.publish')}</Button>}
           </div>
         </Section>
       </div>
@@ -423,7 +423,7 @@ export default function AgreementRequestForm({ settings, agreementId, status = '
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setPublishOpen(false)}>{t('agreements.cancel')}</Button>
-            <Button disabled={busy || (inviteOnly && !invite.length)} onClick={doPublish}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('agreements.form.publishNow')}</Button>
+            <Button busy={busy} disabled={(inviteOnly && !invite.length)} onClick={doPublish}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" />}{t('agreements.form.publishNow')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -242,7 +242,7 @@ export default function ClientOnboarding() {
             <ChevronRight className="w-4 h-4 rtl:rotate-180" />
           </Button>
         ) : (
-          <Button onClick={handleSubmit} disabled={submitting} className="gap-1.5">
+          <Button onClick={handleSubmit} busy={submitting} className="gap-1.5">
             {submitting ? t('common.loading') : t('client_onboarding.submit')}
           </Button>
         )}

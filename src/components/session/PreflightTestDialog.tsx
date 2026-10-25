@@ -667,11 +667,11 @@ export default function PreflightTestDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t('common.cancel', { defaultValue: 'Cancel' })}
           </Button>
-          <Button variant="ghost" onClick={restart} disabled={status === 'requesting'}>
+          <Button variant="ghost" onClick={restart} busy={status === 'requesting'}>
             <RefreshCw className="w-4 h-4 mr-1.5" aria-hidden="true" />
             {t('preflight.retest', { defaultValue: 'Re-test' })}
           </Button>
-          <Button onClick={handleProceed} disabled={proceedDisabled}>
+          <Button onClick={handleProceed} reason={proceedDisabled && { key: 'previous_step_incomplete', message: t('preflight.blocked_next', 'Finish the device check and enable a microphone or camera to continue.') }}>
             {joinLabel ?? t('preflight.join_now', { defaultValue: 'Join now' })}
           </Button>
         </DialogFooter>

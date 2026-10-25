@@ -156,8 +156,8 @@ export function ApproveWithItemsDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button className="gradient-primary border-0" onClick={submit} disabled={saving}>
+          <Button variant="ghost" onClick={onClose} busy={saving}>Cancel</Button>
+          <Button className="gradient-primary border-0" onClick={submit} busy={saving}>
             {saving ? 'Saving...' : 'Approve'}
           </Button>
         </DialogFooter>

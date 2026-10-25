@@ -305,7 +305,7 @@ function CreateMajorIncidentDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             onClick={handleSubmit}
-            disabled={saving}
+            busy={saving}
             className="bg-destructive text-destructive-foreground"
           >
             {saving ? 'Declaring...' : 'Declare Incident'}

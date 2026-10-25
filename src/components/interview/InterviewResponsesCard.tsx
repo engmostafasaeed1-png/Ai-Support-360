@@ -118,7 +118,7 @@ export default function InterviewResponsesCard({ sessionId, organizerId, people,
                           size="sm"
                           variant="outline"
                           className="ms-auto h-7 text-xs"
-                          disabled={busy !== null}
+                          busy={busy !== null}
                           onClick={() => run(`slot-${iso}`, { action: 'reschedule', scheduled_at: iso })}
                         >
                           {busy === `slot-${iso}` ? <Loader2 className="w-3 h-3 animate-spin me-1" /> : null} Use this time
@@ -149,7 +149,7 @@ export default function InterviewResponsesCard({ sessionId, organizerId, people,
                 <p className="text-[10px] text-muted-foreground">Separate several addresses with commas (up to 5 in each box). These addresses are used when you send the e-mails again or use a suggested time, and they are not saved.</p>
               </div>
             )}
-            <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => run('resend', { action: 'send' })}>
+            <Button size="sm" variant="secondary" busy={busy !== null} onClick={() => run('resend', { action: 'send' })}>
               {busy === 'resend' ? <Loader2 className="w-3.5 h-3.5 animate-spin me-1" /> : <Mail className="w-3.5 h-3.5 me-1" />} Send invitation e-mails again
             </Button>
             <p className="text-[10px] text-muted-foreground">Everyone gets a fresh e-mail; the buttons in earlier e-mails stop working.</p>

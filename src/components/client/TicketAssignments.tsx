@@ -393,7 +393,7 @@ function AddAssignmentDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleAssign} disabled={saving || !form.consultant_id} className="gradient-primary border-0">
+          <Button onClick={handleAssign} busy={saving} disabled={!form.consultant_id} className="gradient-primary border-0">
             {saving && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
             Assign
           </Button>

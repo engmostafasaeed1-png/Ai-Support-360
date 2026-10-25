@@ -54,7 +54,7 @@ export default function SolutionArchitecturePage() {
               className="pl-9 h-9 w-56"
             />
           </div>
-          <Button className="gradient-primary border-0 gap-1.5" disabled title="Not available yet: this page is a preview">
+          <Button className="gradient-primary border-0 gap-1.5" reason="feature_not_ready" title="Not available yet: this page is a preview">
             <Plus className="w-4 h-4" /> New Document
           </Button>
         </div>

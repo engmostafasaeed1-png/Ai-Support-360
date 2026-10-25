@@ -331,7 +331,7 @@ export default function SessionDetailPage() {
             {status === 'scheduled' && (
               <div className="flex items-center gap-2">
                 {sessionHasStarted && (
-                  <Button variant="outline" size="lg" className="gap-1.5" onClick={handleComplete} disabled={isCompleting}>
+                  <Button variant="outline" size="lg" className="gap-1.5" onClick={handleComplete} busy={isCompleting}>
                     <CheckCircle2 className="w-4 h-4" /> Mark as completed
                   </Button>
                 )}

@@ -93,7 +93,7 @@ export default function ReferralDashboard() {
               <SelectContent>{currencies.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
             </Select>
           )}
-          <Button size="sm" variant="outline" onClick={() => q.refetch()} disabled={q.isFetching}><RefreshCw className={cn('me-1 h-4 w-4', q.isFetching && 'animate-spin')} />{t('rdash.refresh', 'Refresh')}</Button>
+          <Button size="sm" variant="outline" onClick={() => q.refetch()} busy={q.isFetching}><RefreshCw className={cn('me-1 h-4 w-4', q.isFetching && 'animate-spin')} />{t('rdash.refresh', 'Refresh')}</Button>
         </div>
       </div>
 

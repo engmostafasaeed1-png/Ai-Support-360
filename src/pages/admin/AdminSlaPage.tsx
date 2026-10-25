@@ -128,7 +128,7 @@ export default function AdminSlaPage() {
                     </Select></label>
                 ))}
               </div>
-              <Button size="sm" disabled={busy} onClick={() => saveSettings({ severities: draft.severities, urgency_map: draft.urgency_map })}>{t('sla.admin.save')}</Button>
+              <Button size="sm" busy={busy} onClick={() => saveSettings({ severities: draft.severities, urgency_map: draft.urgency_map })}>{t('sla.admin.save')}</Button>
             </CardContent>
           </Card>
 
@@ -174,7 +174,7 @@ export default function AdminSlaPage() {
                 {CHANNELS.map((c) => <label key={c} className="flex items-center gap-1"><Checkbox checked={draft.channels_enabled[c]} onCheckedChange={(v) => setDraft({ ...draft, channels_enabled: { ...draft.channels_enabled, [c]: v === true } })} />{t(`sla.channel.${c}`)}</label>)}
                 <span className="text-muted-foreground">{t('sla.admin.noSms')}</span>
               </div>
-              <Button size="sm" disabled={busy} onClick={() => saveSettings({ bounds: draft.bounds, at_risk_pct: draft.at_risk_pct, compliance_alert_pct: draft.compliance_alert_pct, quiet_hours: draft.quiet_hours, require_acceptance: draft.require_acceptance, unpausable_allowed: draft.unpausable_allowed, channels_enabled: draft.channels_enabled })}>{t('sla.admin.save')}</Button>
+              <Button size="sm" busy={busy} onClick={() => saveSettings({ bounds: draft.bounds, at_risk_pct: draft.at_risk_pct, compliance_alert_pct: draft.compliance_alert_pct, quiet_hours: draft.quiet_hours, require_acceptance: draft.require_acceptance, unpausable_allowed: draft.unpausable_allowed, channels_enabled: draft.channels_enabled })}>{t('sla.admin.save')}</Button>
             </CardContent>
           </Card>
 
@@ -184,7 +184,7 @@ export default function AdminSlaPage() {
               <Select value={testKind} onValueChange={setTestKind}><SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
                 <SelectContent>{['reminder', 'escalation', 'breach', 'after_breach'].map((k) => <SelectItem key={k} value={k}>{t(`sla.template.${k}`)}</SelectItem>)}</SelectContent></Select>
               {(['en', 'ar'] as const).map((l) => (
-                <Button key={l} size="sm" variant="outline" disabled={busy} onClick={async () => {
+                <Button key={l} size="sm" variant="outline" busy={busy} onClick={async () => {
                   try { const r = await api.sendSlaTestEmail(testKind, l); if (r.ok) toast.success(t('sla.admin.testSent')); else toast.error(r.reason ?? t('sla.err.generic')); } catch (e) { toast.error(slaErrorText(t, e)); }
                 }}><Mail className="me-1 h-3.5 w-3.5" aria-hidden /> {t('sla.admin.testSend', { lang: l.toUpperCase() })}</Button>
               ))}
@@ -219,7 +219,7 @@ export default function AdminSlaPage() {
                 <div><Label>{t('sla.admin.day')}</Label><Input type="date" className="h-8" value={hDay} onChange={(e) => setHDay(e.target.value)} /></div>
                 <div><Label>{t('sla.admin.labelEn')}</Label><Input className="h-8" value={hEn} onChange={(e) => setHEn(e.target.value)} /></div>
                 <div><Label>{t('sla.admin.labelAr')}</Label><Input dir="rtl" className="h-8" value={hAr} onChange={(e) => setHAr(e.target.value)} /></div>
-                <Button size="sm" disabled={!hList || !hDay} onClick={async () => {
+                <Button size="sm" reason={[!hList && 'choose_option_first', !hDay && 'choose_date_first']} onClick={async () => {
                   try { await api.setHoliday(hList, hDay, hEn, hAr, false); setHDay(''); setHEn(''); setHAr(''); await holidays.refetch(); void qc.invalidateQueries({ queryKey: ['sla-settings'] }); } catch (e) { toast.error(slaErrorText(t, e)); }
                 }}>{t('sla.editor.add')}</Button>
               </div>
@@ -236,7 +236,7 @@ export default function AdminSlaPage() {
         <TabsContent value="compliance" className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             {[30, 90, 365].map((d) => <Button key={d} size="sm" variant={days === d ? 'default' : 'outline'} onClick={() => setDays(d)}>{t('sla.report.days', { count: d })}</Button>)}
-            <Button size="sm" variant="outline" className="ms-auto" disabled={!report.data?.breaches?.length} onClick={exportCsv}><Download className="me-1 h-3.5 w-3.5" aria-hidden /> {t('sla.admin.export')}</Button>
+            <Button size="sm" variant="outline" className="ms-auto" reason={!report.data?.breaches?.length && 'nothing_to_export'} onClick={exportCsv}><Download className="me-1 h-3.5 w-3.5" aria-hidden /> {t('sla.admin.export')}</Button>
           </div>
           {report.isLoading || !report.data ? <Skeleton className="h-40 w-full rounded-2xl" /> : (
             <>
@@ -268,7 +268,7 @@ export default function AdminSlaPage() {
             <CardContent className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 <Input className="h-8 max-w-sm" placeholder={t('sla.admin.ticketId')} value={simTicket} onChange={(e) => setSimTicket(e.target.value.trim())} aria-label={t('sla.admin.ticketId')} />
-                <Button size="sm" disabled={!/^[0-9a-f-]{36}$/i.test(simTicket)} onClick={async () => { try { setSim(await api.simulate(simTicket, null, null)); } catch (e) { toast.error(slaErrorText(t, e)); } }}>{t('sla.admin.simRun')}</Button>
+                <Button size="sm" reason={!/^[0-9a-f-]{36}$/i.test(simTicket) && 'invalid_value'} onClick={async () => { try { setSim(await api.simulate(simTicket, null, null)); } catch (e) { toast.error(slaErrorText(t, e)); } }}>{t('sla.admin.simRun')}</Button>
               </div>
               {sim && (
                 <div className="space-y-1 text-xs">

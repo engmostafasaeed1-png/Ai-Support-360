@@ -331,7 +331,7 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             className="gradient-primary border-0"
-            disabled={selected.size === 0 || sendMatch.isPending}
+            busy={sendMatch.isPending} disabled={selected.size === 0}
             onClick={handleSend}
           >
             <Send className="w-4 h-4 me-1" /> Send to {selected.size} Consultant{selected.size !== 1 ? 's' : ''}

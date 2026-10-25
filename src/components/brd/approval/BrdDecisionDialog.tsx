@@ -74,8 +74,8 @@ export default function BrdDecisionDialog({ open, onOpenChange, ticketId, versio
           {touched && problem && <p className="text-sm text-destructive" role="alert">{t(`brd.approval.problem.${problem}`, { min: 10, max: NOTE_MAX })}</p>}
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="ghost" disabled={busy} onClick={() => onOpenChange(false)}>{t('common.cancel', 'Cancel')}</Button>
-          <Button disabled={busy} onClick={go} variant={decision === 'declined' ? 'destructive' : 'default'} className="gap-1.5">
+          <Button variant="ghost" busy={busy} onClick={() => onOpenChange(false)}>{t('common.cancel', 'Cancel')}</Button>
+          <Button busy={busy} onClick={go} variant={decision === 'declined' ? 'destructive' : 'default'} className="gap-1.5">
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}{t(`brd.approval.action.${decision}`)}
           </Button>
         </DialogFooter>

@@ -94,7 +94,7 @@ export default function WorkDiaryPage() {
                 <label className="text-xs text-muted-foreground mb-1 block">What did you work on?</label>
                 <Textarea value={form.memo} onChange={e => setForm(f => ({ ...f, memo: e.target.value }))} placeholder="Describe your work..." />
               </div>
-              <Button onClick={handleSubmit} disabled={createEntry.isPending} className="w-full gradient-primary border-0">
+              <Button onClick={handleSubmit} busy={createEntry.isPending} className="w-full gradient-primary border-0">
                 {createEntry.isPending ? 'Saving...' : 'Save Entry'}
               </Button>
             </div>

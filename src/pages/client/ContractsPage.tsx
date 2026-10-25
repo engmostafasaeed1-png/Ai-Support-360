@@ -381,8 +381,8 @@ export default function ContractsPage() {
             They have to sign a new NDA before they can see your system details again. This does not remove them from your tickets; remove them from the ticket if you want that.
           </p>
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" size="sm" disabled={revoking} onClick={() => setRevokeContract(null)}>Cancel</Button>
-            <Button variant="destructive" size="sm" className="gap-1" disabled={revoking} onClick={revokeNda}>
+            <Button variant="outline" size="sm" busy={revoking} onClick={() => setRevokeContract(null)}>Cancel</Button>
+            <Button variant="destructive" size="sm" className="gap-1" busy={revoking} onClick={revokeNda}>
               <ShieldOff className="w-3.5 h-3.5" /> {revoking ? 'Revoking…' : 'Revoke NDA'}
             </Button>
           </div>

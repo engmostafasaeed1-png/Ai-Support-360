@@ -17,7 +17,7 @@ describe('WeeklyAvailabilityEditor', () => {
 
   it('preset fills the days and the live summary, then saves', async () => {
     render(<WeeklyAvailabilityEditor />);
-    expect(screen.getByTestId('availability-save')).toBeDisabled();
+    expect(screen.getByTestId('availability-save')).toHaveAttribute('aria-disabled', 'true');
     fireEvent.click(screen.getByTestId('preset-sun_thu'));
     expect(screen.getByTestId('availability-summary')).toHaveTextContent('Sun-Thu, 09:00-17:00 Riyadh time, 40 h/week');
     expect(screen.getByTestId('day-chip-0')).toHaveAttribute('aria-pressed', 'true');

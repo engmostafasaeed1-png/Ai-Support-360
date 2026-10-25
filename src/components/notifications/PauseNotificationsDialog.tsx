@@ -134,7 +134,7 @@ export default function PauseNotificationsDialog({ open, onOpenChange, initialDu
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel', 'Cancel')}</Button>
-          <Button className="gradient-primary border-0" onClick={submit} disabled={invalid || pauseNow.isPending}>
+          <Button className="gradient-primary border-0" onClick={submit} busy={pauseNow.isPending} reason={invalid && 'invalid_value'}>
             {pauseNow.isPending && <Loader2 className="me-1 h-4 w-4 animate-spin" />}
             {t('npause.confirm', 'Pause for {{d}}', { d: t(DURATION_LABEL[duration][0], DURATION_LABEL[duration][1]) })}
           </Button>

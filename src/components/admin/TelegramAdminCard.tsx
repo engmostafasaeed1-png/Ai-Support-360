@@ -84,16 +84,16 @@ export default function TelegramAdminCard() {
 
             <div className="flex flex-wrap gap-2">
               {step === 'connect' && (
-                <Button size="sm" onClick={() => setWebhook.mutate()} disabled={setWebhook.isPending} className="gap-1.5">
+                <Button size="sm" onClick={() => setWebhook.mutate()} busy={setWebhook.isPending} className="gap-1.5">
                   {setWebhook.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Connect the bot to the portal
                 </Button>
               )}
               {step === 'ready' && (
-                <Button size="sm" variant="outline" onClick={() => setWebhook.mutate()} disabled={setWebhook.isPending}>
+                <Button size="sm" variant="outline" onClick={() => setWebhook.mutate()} busy={setWebhook.isPending}>
                   {setWebhook.isPending && <Loader2 className="me-1 h-3.5 w-3.5 animate-spin" />} Connect again
                 </Button>
               )}
-              <Button size="sm" variant="ghost" onClick={() => statusQ.refetch()} disabled={statusQ.isFetching} className="gap-1.5">
+              <Button size="sm" variant="ghost" onClick={() => statusQ.refetch()} busy={statusQ.isFetching} className="gap-1.5">
                 <RefreshCw className="h-3.5 w-3.5" /> Refresh
               </Button>
             </div>

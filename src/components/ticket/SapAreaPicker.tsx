@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { useMemo, useState } from 'react';
 import { Check, ChevronDown, Search, Star, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -144,11 +145,11 @@ export default function SapAreaPicker({
                     const selected = hasArea(areas, area.name);
                     const blocked = !selected && atLimit;
                     return (
-                      <button
+                      <Button variant="ghost"
                         key={area.name}
                         type="button"
                         aria-pressed={selected}
-                        disabled={blocked}
+                        reason={blocked && { key: 'limit_reached', params: { max: MAX_SAP_AREAS } }}
                         title={area.hint}
                         onClick={() => onAreasChange(toggleArea(areas, area.name))}
                         className={`flex items-start gap-2 rounded-xl border p-2.5 text-start text-sm transition-all ${
@@ -162,13 +163,13 @@ export default function SapAreaPicker({
                             selected ? 'border-accent bg-accent text-accent-foreground' : 'border-border'
                           }`}
                         >
-                          {selected && <Check className="h-3 w-3" />}
+                          {selected && <Check className="h-auto rounded-none p-0 whitespace-normal h-3 w-3" />}
                         </span>
                         <span className="min-w-0">
                           <span className="block leading-snug">{area.name}</span>
                           <span className="line-clamp-1 block text-[11px] font-normal text-muted-foreground">{area.hint}</span>
                         </span>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -183,10 +184,10 @@ export default function SapAreaPicker({
       )}
 
       <div className="space-y-2 border-t border-border/50 pt-3">
-        <button
+        <Button variant="ghost"
           type="button"
           aria-pressed={otherSelected}
-          disabled={!otherSelected && atLimit}
+          reason={!otherSelected && atLimit && { key: 'limit_reached', params: { max: MAX_SAP_AREAS } }}
           onClick={() => onAreasChange(toggleArea(areas, OTHER_AREA))}
           className={`flex w-full items-start gap-2 rounded-xl border p-2.5 text-start text-sm transition-all ${
             otherSelected
@@ -199,13 +200,13 @@ export default function SapAreaPicker({
               otherSelected ? 'border-accent bg-accent text-accent-foreground' : 'border-border'
             }`}
           >
-            {otherSelected && <Check className="h-3 w-3" />}
+            {otherSelected && <Check className="h-auto rounded-none p-0 whitespace-normal h-3 w-3" />}
           </span>
           <span className="min-w-0">
             <span className="block leading-snug">Other</span>
             <span className="block text-[11px] font-normal text-muted-foreground">My area is not in the list: I will name it myself</span>
           </span>
-        </button>
+        </Button>
         {otherSelected && (
           <div>
             <label htmlFor={`${idPrefix}-other`} className="mb-1 block text-xs font-medium">

@@ -371,7 +371,7 @@ export default function AIChatbot() {
                         <button
                           key={qp.label}
                           onClick={() => { resetChatIdle(); sendMessage(qp.prompt, selectedModel); }}
-                          disabled={isLoading}
+                          /* disabled-ok: busy */ disabled={isLoading} aria-busy={isLoading}
                           className="text-[11px] px-3 py-1.5 rounded-full border border-primary/20 bg-primary/[0.06] text-primary hover:bg-primary/[0.12] hover:border-primary/30 transition-all duration-200 hover:shadow-sm disabled:opacity-50"
                         >
                           {qp.label}
@@ -477,7 +477,7 @@ export default function AIChatbot() {
                     size="icon"
                     aria-label="Send message"
                     className="h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 shrink-0"
-                    disabled={!input.trim() || isLoading}
+                    busy={isLoading} reason={!input.trim() && 'type_message_first'}
                   >
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </Button>

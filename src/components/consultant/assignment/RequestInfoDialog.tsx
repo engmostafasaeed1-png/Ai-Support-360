@@ -79,16 +79,16 @@ export default function RequestInfoDialog({ requestId, used, onClose, onSent }: 
               const on = topics.includes(k);
               const disabled = !on && topics.length >= INFO_MAX_TOPICS;
               return (
-                <button
+                <Button variant="ghost"
                   key={k}
                   type="button"
                   aria-pressed={on}
-                  disabled={disabled}
+                  reason={disabled && { key: 'limit_reached', params: { max: INFO_MAX_TOPICS } }}
                   onClick={() => toggle(k)}
                   className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 ${on ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-foreground hover:bg-muted'}`}
                 >
                   {t(`assignment_info.topic_${k}`, TOPIC_FALLBACK[k])}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -120,8 +120,8 @@ export default function RequestInfoDialog({ requestId, used, onClose, onSent }: 
         </p>
 
         <DialogFooter className="flex-col gap-2 sm:flex-row">
-          <Button variant="ghost" onClick={onClose} disabled={ask.isPending}>{t('assignment_info.cancel', 'Cancel')}</Button>
-          <Button onClick={send} disabled={ask.isPending || (tried && problems.length > 0)} className="gradient-primary border-0 gap-1">
+          <Button variant="ghost" onClick={onClose} busy={ask.isPending}>{t('assignment_info.cancel', 'Cancel')}</Button>
+          <Button onClick={send} busy={ask.isPending} reason={tried && problems.length > 0 && { key: 'fix_errors_first', message: problems.map(problemText).join(' ') }} className="gradient-primary border-0 gap-1">
             {ask.isPending && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
             {t('assignment_info.send', 'Send question')}
           </Button>

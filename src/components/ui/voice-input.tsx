@@ -71,7 +71,7 @@ export default function VoiceInput({ onTranscript, value, disabled, className, s
             variant="ghost"
             size="icon"
             className={cn(btnSize, 'shrink-0 text-muted-foreground hover:text-foreground text-[10px] font-semibold')}
-            disabled={disabled || voice.listening}
+            reason={[disabled && 'another_action_running', voice.listening && 'recording_in_progress']}
             title={t('voice.language', 'Voice language')}
             aria-label={`${t('voice.language', 'Voice language')}: ${current.label}`}
           >
@@ -99,7 +99,7 @@ export default function VoiceInput({ onTranscript, value, disabled, className, s
         size="icon"
         className={cn(btnSize, 'relative shrink-0 transition-all', voice.listening ? 'text-destructive bg-destructive/10 hover:bg-destructive/20' : 'text-muted-foreground hover:text-foreground')}
         onClick={() => void toggle()}
-        disabled={disabled || voice.status === 'starting' || busy}
+        busy={busy || voice.status === 'starting'} reason={disabled && 'another_action_running'}
         title={voice.listening ? t('voice.stop', 'Stop recording') : t('voice.start', 'Start voice input')}
         aria-label={voice.listening ? t('voice.stop', 'Stop recording') : t('voice.start', 'Start voice input')}
         aria-pressed={voice.listening}

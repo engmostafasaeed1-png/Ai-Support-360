@@ -163,7 +163,7 @@ export default function MeetingJoinEventsExportPage() {
             })}
           </p>
         </div>
-        <Button onClick={handleExport} disabled={isLoading}>
+        <Button onClick={handleExport} busy={isLoading}>
           <Download className="w-4 h-4 mr-1.5" aria-hidden="true" />
           {t('mje_export.download', { defaultValue: 'Download CSV' })}
         </Button>
@@ -244,7 +244,7 @@ export default function MeetingJoinEventsExportPage() {
                 total: totalCount,
               })}
             </Badge>
-            <Button size="sm" variant="ghost" onClick={() => refetch()} disabled={isFetching}>
+            <Button size="sm" variant="ghost" onClick={() => refetch()} busy={isFetching}>
               <FileDown className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
               {t('mje_export.refresh', { defaultValue: 'Refresh' })}
             </Button>

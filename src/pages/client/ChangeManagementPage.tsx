@@ -218,7 +218,7 @@ function CreateChangeDialog({ open, onOpenChange, onCreated }: { open: boolean; 
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={saving} className="gradient-primary border-0">Create</Button>
+          <Button onClick={handleSubmit} busy={saving} className="gradient-primary border-0">Create</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

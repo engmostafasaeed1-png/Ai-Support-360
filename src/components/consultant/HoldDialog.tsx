@@ -156,8 +156,8 @@ export default function HoldDialog({ open, onOpenChange, hold, maxDays = HOLD_MA
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => setStep('form')} disabled={busy}>{s.back}</Button>
-              <Button onClick={() => void submit()} disabled={busy} data-testid="hold-confirm-button">
+              <Button variant="outline" onClick={() => setStep('form')} busy={busy}>{s.back}</Button>
+              <Button onClick={() => void submit()} busy={busy} data-testid="hold-confirm-button">
                 {busy && <Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden="true" />}{changing ? s.confirmChange : s.confirm}
               </Button>
             </>

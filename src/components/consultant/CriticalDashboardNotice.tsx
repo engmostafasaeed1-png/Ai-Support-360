@@ -64,7 +64,7 @@ export default function CriticalDashboardNotice() {
                 <Button asChild variant="outline" size="sm">
                   <Link to={`/consultant/tickets/${a.ticket_id}`}>Open the ticket</Link>
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => dismiss.mutate(a.ticket_id)} disabled={dismiss.isPending}>Not for me</Button>
+                <Button variant="ghost" size="sm" onClick={() => dismiss.mutate(a.ticket_id)} busy={dismiss.isPending}>Not for me</Button>
               </div>
             </li>
           ))}

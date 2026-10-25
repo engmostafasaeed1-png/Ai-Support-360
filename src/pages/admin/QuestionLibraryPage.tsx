@@ -277,7 +277,7 @@ export default function QuestionLibraryPage() {
               </div>
             </div>
           )}
-          <DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button><Button onClick={save} disabled={saving}>{saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Save</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button><Button onClick={save} busy={saving}>{saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Save</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -298,7 +298,7 @@ export default function QuestionLibraryPage() {
             <div><Label>How many</Label><Input type="number" min={1} max={10} value={gen.count} onChange={(e) => setGen({ ...gen, count: Math.max(1, Math.min(10, Number(e.target.value) || 1)) })} /></div>
             <div><Label>Topic (optional)</Label><Input value={gen.topic} maxLength={300} onChange={(e) => setGen({ ...gen, topic: e.target.value })} placeholder="e.g. period-end close" /></div>
           </div>
-          <Button onClick={generate} disabled={genLoading}>{genLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Writing… this can take a minute</> : 'Generate drafts'}</Button>
+          <Button onClick={generate} busy={genLoading}>{genLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Writing… this can take a minute</> : 'Generate drafts'}</Button>
           {drafts.length > 0 && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">Review and edit before saving. Untick any you don't want.</p>

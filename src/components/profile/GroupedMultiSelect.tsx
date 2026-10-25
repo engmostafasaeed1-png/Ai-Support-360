@@ -114,7 +114,7 @@ export default function GroupedMultiSelect({ groups, value, onChange, max = 60, 
                             maxLength={120}
                             aria-label={otherPlaceholder}
                           />
-                          <Button type="button" size="sm" variant="outline" className="h-8" onClick={addOther} disabled={!otherText.trim() || atMax}>
+                          <Button type="button" size="sm" variant="outline" className="h-8" onClick={addOther} reason={[!otherText.trim() && 'fill_required_fields', atMax && { key: 'limit_reached', params: { max } }]}>
                             <Plus className="h-3.5 w-3.5 me-1" />Add
                           </Button>
                         </div>

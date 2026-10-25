@@ -270,8 +270,8 @@ export default function SubmitProposalModal({ ticketId, ticketTitle, trigger, cr
         <div className="pt-2 border-t border-border/50">
           <LocationBlockedNotice />
           <PolicyBlockedNotice />
-          <div className="mb-2"><SlaAcceptanceBox ticketId={ticketId} context="bid" onReadyChange={setSlaReady} /></div>
-          <Button onClick={handleSubmit} disabled={submit.isPending || locationBlocked || policyBlocked || !slaReady} className="w-full gradient-primary border-0 h-10">
+          <div className="mb-2"><div data-consultant-sla><SlaAcceptanceBox ticketId={ticketId} context="bid" onReadyChange={setSlaReady} /></div></div>
+          <Button onClick={handleSubmit} busy={submit.isPending} reason={[locationBlocked && 'location_missing', policyBlocked && 'policy_not_accepted', !slaReady && { key: 'sla_not_accepted', onNext: () => { const box = document.querySelector<HTMLElement>('[data-consultant-sla] [role=checkbox]'); box?.scrollIntoView({ block: 'center', behavior: 'smooth' }); box?.focus(); } }]} className="w-full gradient-primary border-0 h-10">
             {submit.isPending ? 'Sending...' : isRevision ? `Send revised bid (v${nextVersion})` : 'Send bid'}
           </Button>
         </div>

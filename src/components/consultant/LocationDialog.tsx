@@ -45,7 +45,7 @@ export default function LocationDialog({ open, onOpenChange, initial, onSave }: 
         <LocationPicker idPrefix="location-dialog" value={value} onChange={v => { setValue(v); setError(null); }} error={error} />
         <DialogFooter className="gap-2 sm:gap-2">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>{t('location.later', 'Later')}</Button>
-          <Button type="button" className="gradient-primary text-primary-foreground" onClick={save} disabled={saving}>
+          <Button type="button" className="gradient-primary text-primary-foreground" onClick={save} busy={saving}>
             {saving && <Loader2 className="me-1 h-4 w-4 animate-spin motion-reduce:animate-none" />}{t('location.save', 'Save location')}
           </Button>
         </DialogFooter>

@@ -184,7 +184,7 @@ export default function CriticalAlarm() {
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-2">
-          <Button variant="ghost" size="sm" onClick={notForMe} disabled={dismiss.isPending}>Not for me</Button>
+          <Button variant="ghost" size="sm" onClick={notForMe} busy={dismiss.isPending}>Not for me</Button>
           <Button variant="ghost" size="sm" onClick={later}>Remind me later</Button>
           <Button variant="ghost" size="sm" className="gap-1" onClick={toggleMute} aria-pressed={muted}>
             {muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}

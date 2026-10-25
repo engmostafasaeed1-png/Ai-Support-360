@@ -61,7 +61,7 @@ export default function BrdVersionsPanel({ state, canWrite, isAdmin, onRestored,
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-xs text-muted-foreground flex-1">{t('brd.versions.pickTwo')}</p>
-        <Button size="sm" variant="outline" className="gap-1.5" disabled={picked.length !== 2 || busy} onClick={doCompare}>
+        <Button size="sm" variant="outline" className="gap-1.5" busy={busy} disabled={picked.length !== 2} onClick={doCompare}>
           <GitCompare className="h-4 w-4" /> {t('brd.versions.compare')}
         </Button>
       </div>
@@ -91,7 +91,7 @@ export default function BrdVersionsPanel({ state, canWrite, isAdmin, onRestored,
                 <Button size="sm" variant="ghost" className="h-8 gap-1" onClick={() => onAttach(v.version)}><Share2 className="h-4 w-4" /> {t('brd.attach.short')}</Button>
               )}
               {canWrite && (
-                <Button size="sm" variant="ghost" className="h-8 gap-1" disabled={busy} onClick={async () => {
+                <Button size="sm" variant="ghost" className="h-8 gap-1" busy={busy} onClick={async () => {
                   setBusy(true);
                   const r = await restoreBrdVersion(ticketId, v.version, t('brd.versions.restoreNote', { v: v.version }));
                   setBusy(false);

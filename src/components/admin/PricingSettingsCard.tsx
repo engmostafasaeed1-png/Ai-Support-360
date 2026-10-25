@@ -69,7 +69,7 @@ export default function PricingSettingsCard() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Button
-            disabled={!valid || unchanged || savePricing.isPending}
+            busy={savePricing.isPending} disabled={!valid || unchanged}
             onClick={() => savePricing.mutate({ service: serviceN as number, processing: processingN as number, vat: vatN as number })}
           >
             {savePricing.isPending && <Loader2 className="me-1.5 h-4 w-4 animate-spin" />}

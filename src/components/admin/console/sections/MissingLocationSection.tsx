@@ -114,7 +114,7 @@ const MissingLocationSection = () => {
             <Label htmlFor="location-grace-days">{t('admin.missingLocation.graceDays', 'Days before blocking')}</Label>
             <Input id="location-grace-days" type="number" min={0} max={MAX_LOCATION_GRACE_DAYS} value={days} onChange={e => setDays(e.target.value)} className="w-28" disabled={!ready} />
           </div>
-          <Button onClick={() => saveGrace.mutate()} disabled={!ready || saveGrace.isPending}>{t('common.save', 'Save')}</Button>
+          <Button onClick={() => saveGrace.mutate()} busy={saveGrace.isPending} disabled={!ready}>{t('common.save', 'Save')}</Button>
           {graceQ.data?.grace_started_at && (
             <p className="text-xs text-muted-foreground">{t('admin.missingLocation.graceFrom', 'Counted from {{date}} (or the sign-up date, if later).', { date: format(new Date(graceQ.data.grace_started_at), 'PP') })}</p>
           )}
@@ -126,7 +126,7 @@ const MissingLocationSection = () => {
           <CardTitle className="text-base">{t('admin.missingLocation.count', '{{n}} consultant(s) without a location', { n: rows.length })}</CardTitle>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={exportCsv} disabled={!rows.length}><Download className="h-4 w-4" />{t('admin.missingLocation.export', 'Export CSV')}</Button>
-            <Button size="sm" className="gap-1.5" disabled={!ready || !selected.size || remind.isPending} onClick={() => remind.mutate([...selected])}>
+            <Button size="sm" className="gap-1.5" busy={remind.isPending} disabled={!ready || !selected.size} onClick={() => remind.mutate([...selected])}>
               <Send className="h-4 w-4" />{t('admin.missingLocation.sendNow', 'Send reminder now')}{selected.size ? ` (${selected.size})` : ''}
             </Button>
           </div>

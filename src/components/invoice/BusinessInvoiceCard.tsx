@@ -137,7 +137,7 @@ export default function BusinessInvoiceCard({ open, onOpenChange, payments }: Pr
               </Button>
             ) : null}
             {canUpdateOlder && on ? (
-              <Button size="sm" onClick={() => setConfirmOlder(true)} disabled={reissueMany.isPending}>
+              <Button size="sm" onClick={() => setConfirmOlder(true)} busy={reissueMany.isPending}>
                 Add the details to {older.length} older invoice{older.length === 1 ? '' : 's'}
               </Button>
             ) : null}
@@ -193,7 +193,7 @@ export default function BusinessInvoiceCard({ open, onOpenChange, payments }: Pr
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button disabled={save.isPending} onClick={submit} className="gap-1.5">
+            <Button busy={save.isPending} onClick={submit} className="gap-1.5">
               {save.isPending ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null} Save
             </Button>
           </DialogFooter>
@@ -215,7 +215,7 @@ export default function BusinessInvoiceCard({ open, onOpenChange, payments }: Pr
           </ul>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmOlder(false)}>Cancel</Button>
-            <Button disabled={reissueMany.isPending} onClick={updateOlder} className="gap-1.5">
+            <Button busy={reissueMany.isPending} onClick={updateOlder} className="gap-1.5">
               {reissueMany.isPending ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null} Add the details
             </Button>
           </DialogFooter>

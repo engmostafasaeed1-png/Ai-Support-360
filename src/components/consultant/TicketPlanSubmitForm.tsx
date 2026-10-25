@@ -121,7 +121,7 @@ export default function TicketPlanSubmitForm({ ticket }: Props) {
             size="sm"
             className="h-7 gap-1 text-xs"
             onClick={() => setLines(prev => [...prev, { label: '', hours: '', cost: '' }])}
-            disabled={lines.length >= 10}
+            reason={lines.length >= 10 && { key: 'limit_reached', params: { max: 10 } }}
           >
             <Plus className="w-3 h-3" /> Add line
           </Button>
@@ -144,11 +144,11 @@ export default function TicketPlanSubmitForm({ ticket }: Props) {
       </div>
 
       <div className="flex gap-2">
-        <Button onClick={handleSubmit} disabled={saving} className="flex-1 gap-1.5 gradient-primary border-0">
+        <Button onClick={handleSubmit} busy={saving} className="flex-1 gap-1.5 gradient-primary border-0">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           Submit plan
         </Button>
-        <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
+        <Button variant="outline" onClick={() => setOpen(false)} busy={saving}>Cancel</Button>
       </div>
     </div>
   );

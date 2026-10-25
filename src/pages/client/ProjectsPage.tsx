@@ -895,7 +895,7 @@ export default function ProjectsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignTicketOpen(false)}>Cancel</Button>
-            <Button onClick={handleAssignTickets} disabled={selectedTicketIds.length === 0}>
+            <Button onClick={handleAssignTickets} reason={selectedTicketIds.length === 0 && 'select_items_first'}>
               Assign {selectedTicketIds.length > 0 ? `(${selectedTicketIds.length})` : ''}
             </Button>
           </DialogFooter>

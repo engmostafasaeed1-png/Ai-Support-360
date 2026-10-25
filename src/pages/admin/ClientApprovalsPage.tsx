@@ -148,7 +148,7 @@ function ApprovalSwitch() {
         <Switch
           id="approval-required"
           checked={enabled}
-          disabled={isLoading || save.isPending}
+          busy={isLoading || save.isPending}
           onCheckedChange={(v) => (v ? save.mutate(true) : setConfirmOff(true))}
         />
       </CardContent>
@@ -327,19 +327,19 @@ function ReviewDialog({ row, onClose }: { row: Row; onClose: () => void }) {
             <Button
               variant="outline"
               className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              disabled={busy || !hasComment || row.status === 'rejected' || row.status === 'draft'}
+              busy={busy} reason={[!hasComment && 'type_message_first', row.status === 'rejected' && 'same_as_current', row.status === 'draft' && 'client_information_not_submitted']}
               onClick={() => setConfirmReject(true)}
             >
               Reject
             </Button>
             <Button
               variant="outline"
-              disabled={busy || !hasComment || row.status === 'draft'}
+              busy={busy} reason={[!hasComment && 'type_message_first', row.status === 'draft' && 'client_information_not_submitted']}
               onClick={() => decide.mutate('request_changes')}
             >
               Send comments
             </Button>
-            <Button disabled={busy || row.status === 'approved'} onClick={() => decide.mutate('approve')} className="gap-2">
+            <Button busy={busy} reason={row.status === 'approved' && 'same_as_current'} onClick={() => decide.mutate('approve')} className="gap-2">
               {busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
               Approve
             </Button>
@@ -418,7 +418,7 @@ export default function ClientApprovalsPage() {
             Review the information a new client sent. Approve it, or send comments so the client completes it and sends it again.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+        <Button variant="outline" size="sm" onClick={() => refetch()} busy={isFetching}>
           <RefreshCw aria-hidden="true" className={cn('me-1 h-4 w-4', isFetching && 'animate-spin')} /> Refresh
         </Button>
       </div>

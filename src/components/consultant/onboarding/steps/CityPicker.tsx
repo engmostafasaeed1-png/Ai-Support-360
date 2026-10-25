@@ -43,7 +43,7 @@ export default function CityPicker({ country, city, cities, onChange }: Props) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" role="combobox" aria-expanded={open} disabled={!country} className="w-full justify-between font-normal">
+        <Button type="button" variant="outline" role="combobox" aria-expanded={open} reason={!country && 'choose_option_first'} className="w-full justify-between font-normal">
           <span className="truncate">{known ? city : country ? 'Select city' : 'Select country first'}</span>
           <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />
         </Button>

@@ -180,12 +180,12 @@ function ConsultantRate({ ticketId, state, currency, suggestedRate, onChanged }:
             <Label htmlFor="timesheet-rate-input" className="text-xs">Your hourly rate ({cur})</Label>
             <Input id="timesheet-rate-input" type="number" inputMode="decimal" min="0" step="0.01" value={value} onChange={e => setValue(e.target.value)} className="w-36" />
           </div>
-          <Button size="sm" onClick={() => void send()} disabled={busy} className="gap-1.5">
+          <Button size="sm" onClick={() => void send()} busy={busy} className="gap-1.5">
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
             Send to the client for approval
           </Button>
           {editing && (
-            <Button size="sm" variant="ghost" onClick={() => setEditing(false)} disabled={busy}>Cancel</Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(false)} busy={busy}>Cancel</Button>
           )}
         </div>
       )}
@@ -241,11 +241,11 @@ function ClientRate({ name, state, canApprove, onChanged }: { name: string; stat
           </div>
           {canApprove && (
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" disabled={busy} onClick={() => void answer(proposed, true)} className="gap-1.5">
+              <Button size="sm" busy={busy} onClick={() => void answer(proposed, true)} className="gap-1.5">
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                 Approve this rate
               </Button>
-              <Button size="sm" variant="outline" disabled={busy} onClick={() => setDeclineOpen(true)}>Decline...</Button>
+              <Button size="sm" variant="outline" busy={busy} onClick={() => setDeclineOpen(true)}>Decline...</Button>
             </div>
           )}
         </div>
@@ -271,10 +271,10 @@ function ClientRate({ name, state, canApprove, onChanged }: { name: string; stat
           </DialogHeader>
           <Textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} maxLength={500} placeholder="Tell the consultant why the rate is declined..." />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeclineOpen(false)} disabled={busy}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setDeclineOpen(false)} busy={busy}>Cancel</Button>
             <Button
               variant="destructive"
-              disabled={busy || reason.trim().length < 3}
+              busy={busy} disabled={reason.trim().length < 3}
               onClick={() => proposed && void answer(proposed, false, reason.trim())}
               className="gap-1.5"
             >

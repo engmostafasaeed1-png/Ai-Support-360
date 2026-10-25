@@ -315,7 +315,7 @@ export default function ResponsivenessPage() {
             </div>
             <div className="space-y-1"><Label htmlFor="period-why" className="text-xs">{t('responsiveness.period_reason', 'Note (optional, only you and admins see it)')}</Label>
               <Input id="period-why" maxLength={120} value={why} onChange={(e) => setWhy(e.target.value)} /></div>
-            <Button size="sm" onClick={addPeriod} disabled={!start || !end || !consultantId}>{t('responsiveness.period_add', 'Add period')}</Button>
+            <Button size="sm" onClick={addPeriod} reason={[(!start || !end) && 'choose_date_first', !consultantId && 'profile_incomplete']}>{t('responsiveness.period_add', 'Add period')}</Button>
           </CardContent>
         </Card>
 
@@ -359,7 +359,7 @@ export default function ResponsivenessPage() {
           <p id="dispute-count" className="text-end text-[11px] text-muted-foreground">{reason.trim().length}/500</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDisputeFor(null)}>{t('common.cancel', 'Cancel')}</Button>
-            <Button onClick={submitDispute} disabled={busy || reason.trim().length < 10}>
+            <Button onClick={submitDispute} busy={busy} reason={reason.trim().length < 10 && { key: 'reason_required', params: { min: 10 } }}>
               {busy && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden="true" />}{t('responsiveness.dispute_send', 'Send dispute')}
             </Button>
           </DialogFooter>

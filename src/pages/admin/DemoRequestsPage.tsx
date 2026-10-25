@@ -153,7 +153,7 @@ function DemoRequestDialog({ row, onClose, onSaved }: { row: DemoRow; onClose: (
                     <span className={past ? 'line-through text-muted-foreground' : ''}>
                       {s.date} {s.time}{row.timezone ? ` (${row.timezone})` : ''}
                     </span>
-                    <Button size="sm" variant="outline" disabled={past || confirming !== null} onClick={() => confirmSlot(i)}>
+                    <Button size="sm" variant="outline" reason={past && 'date_in_past'} busy={confirming !== null} onClick={() => confirmSlot(i)}>
                       {confirming === i && <Loader2 className="w-3.5 h-3.5 me-1.5 animate-spin" />}
                       Confirm this time
                     </Button>
@@ -186,8 +186,8 @@ function DemoRequestDialog({ row, onClose, onSaved }: { row: DemoRow; onClose: (
               Page of the requester <ExternalLink className="w-3.5 h-3.5 ms-1.5" />
             </a>
           </Button>
-          <Button variant="outline" onClick={onClose} disabled={saving}>Close</Button>
-          <Button onClick={save} disabled={saving || (status === row.status && (note.trim() || null) === (row.status_note ?? null))}>
+          <Button variant="outline" onClick={onClose} busy={saving}>Close</Button>
+          <Button onClick={save} busy={saving} reason={(status === row.status && (note.trim() || null) === (row.status_note ?? null)) && 'nothing_changed'}>
             {saving && <Loader2 className="w-4 h-4 me-1.5 animate-spin" />}
             Save
           </Button>

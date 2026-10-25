@@ -294,8 +294,8 @@ export default function RequestsPage() {
                       {infoReady && <InfoThread rows={thread} />}
                       {req.status === 'pending' && !paused && (
                         <div className="mt-2">
-                          <SlaAcceptanceBox ticketId={req.ticket_id} context="assignment"
-                            onReadyChange={(ready) => setSlaReady((m) => (m[req.id] === ready ? m : { ...m, [req.id]: ready }))} />
+                          <div id={`consultant-sla-${req.id}`}><SlaAcceptanceBox ticketId={req.ticket_id} context="assignment"
+                            onReadyChange={(ready) => setSlaReady((m) => (m[req.id] === ready ? m : { ...m, [req.id]: ready }))} /></div>
                         </div>
                       )}
                       {/* NDA status indicator */}
@@ -341,7 +341,7 @@ export default function RequestsPage() {
                                 variant="outline"
                                 className="h-8 text-xs"
                                 onClick={() => setAskId(req.id)}
-                                disabled={!!askBlockedText}
+                                reason={askBlockedText ? { key: 'not_editable_now', message: askBlockedText } : undefined}
                                 title={askBlockedText ?? undefined}
                               >
                                 <HelpCircle className="w-3.5 h-3.5 me-1" aria-hidden="true" /> {t('assignment_info.ask_button', 'Request more information')}
@@ -353,7 +353,7 @@ export default function RequestsPage() {
                             variant="outline"
                             className="h-8 text-xs text-destructive hover:bg-destructive/10"
                             onClick={() => handleDecline(req.id)}
-                            disabled={respond.isPending}
+                            busy={respond.isPending}
                           >
                             <X className="w-3.5 h-3.5 me-1" /> Decline
                           </Button>
@@ -361,7 +361,7 @@ export default function RequestsPage() {
                             size="sm"
                             className="h-8 text-xs gradient-primary border-0"
                             onClick={() => handleAccept(req.id, req.ticket_id)}
-                            disabled={respond.isPending || !slaOk(req.id)}
+                            busy={respond.isPending} reason={!slaOk(req.id) && { key: 'sla_not_accepted', onNext: () => { setPreviewId(null); window.setTimeout(() => { const box = document.getElementById(`consultant-sla-${req.id}`)?.querySelector<HTMLElement>('[role=checkbox]'); box?.scrollIntoView({ block: 'center', behavior: 'smooth' }); box?.focus(); }, 0); } }}
                             title={slaOk(req.id) ? undefined : t('sla.err.sla_acceptance_required')}
                           >
                             {hasNda ? <Check className="w-3.5 h-3.5 me-1" /> : <FileSignature className="w-3.5 h-3.5 me-1" />}
@@ -387,10 +387,10 @@ export default function RequestsPage() {
             <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={() => { setPreviewId(null); setDeclineId(req.id); }}>
               {t('assignment_policy.decline', 'Decline')}
             </Button>
-            <Button variant="outline" disabled={!!blocked} onClick={() => { setPreviewId(null); setAskId(req.id); }}>
+            <Button variant="outline" reason={blocked ? { key: 'not_editable_now', message: blocked } : undefined} onClick={() => { setPreviewId(null); setAskId(req.id); }}>
               {t('assignment_info.ask_button', 'Request more information')}
             </Button>
-            <Button className="gradient-primary border-0" disabled={respond.isPending || !slaOk(req.id)} onClick={() => { setPreviewId(null); handleAccept(req.id, req.ticket_id); }}>
+            <Button className="gradient-primary border-0" busy={respond.isPending} reason={!slaOk(req.id) && { key: 'sla_not_accepted', onNext: () => { setPreviewId(null); window.setTimeout(() => { const box = document.getElementById(`consultant-sla-${req.id}`)?.querySelector<HTMLElement>('[role=checkbox]'); box?.scrollIntoView({ block: 'center', behavior: 'smooth' }); box?.focus(); }, 0); } }} onClick={() => { setPreviewId(null); handleAccept(req.id, req.ticket_id); }}>
               {t('assignment_policy.accept', 'Accept')}
             </Button>
           </>

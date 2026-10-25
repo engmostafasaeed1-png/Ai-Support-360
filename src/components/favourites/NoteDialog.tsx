@@ -49,7 +49,7 @@ export default function NoteDialog({ open, onOpenChange, name, note, tags, readO
         </div>
         <DialogFooter className="gap-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{readOnly ? t('fav.close') : t('common.cancel', 'Cancel')}</Button>
-          {!readOnly && <Button type="button" disabled={saving || tooLong || !!parsed.error} onClick={() => void onSave(text, parsed.tags)}>{t('fav.save')}</Button>}
+          {!readOnly && <Button type="button" busy={saving} reason={[tooLong && { key: 'text_too_long', params: { max: FAV_LIMITS.note } }, !!parsed.error && { key: 'invalid_value', message: parsed.error }]} onClick={() => void onSave(text, parsed.tags)}>{t('fav.save')}</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

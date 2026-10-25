@@ -258,7 +258,7 @@ export default function LandingEditorPage() {
                     </div>
                   ))}
                   <div className="flex justify-end pt-2">
-                    <Button onClick={() => saveSection(sec.key)} disabled={saving === sec.key} className="gap-2">
+                    <Button onClick={() => saveSection(sec.key)} busy={saving === sec.key} className="gap-2">
                       {saving === sec.key ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                       Save {sec.label}
                     </Button>

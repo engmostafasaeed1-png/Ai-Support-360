@@ -269,7 +269,7 @@ export default function ProductTour({ steps, open, startAt = 0, onStep, onFinish
             <Button variant="link" size="sm" className="px-0 text-xs text-muted-foreground" onClick={onSkip}>{t('tour.dont_show', "Don't show again")}</Button>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={back} disabled={index === 0}>
+            <Button variant="outline" size="sm" onClick={back} reason={index === 0 && 'first_page'}>
               <ChevronLeft className="w-4 h-4 me-1 rtl:rotate-180" aria-hidden="true" />{t('tour.back', 'Back')}
             </Button>
             <Button ref={primaryRef} size="sm" onClick={next}>

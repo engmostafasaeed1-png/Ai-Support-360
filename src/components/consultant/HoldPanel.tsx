@@ -47,7 +47,7 @@ export default function HoldPanel() {
           <p className="font-semibold">{s.active(holdDate(active.ends_at, lang))}</p>
           {active.set_by_admin && <p className="text-xs text-muted-foreground">{s.byAdmin}</p>}
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={() => void run(actions.resumeHold, s.resumed)} disabled={busy} data-testid="hold-resume">
+            <Button size="sm" onClick={() => void run(actions.resumeHold, s.resumed)} busy={busy} data-testid="hold-resume">
               {busy ? <Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden="true" /> : <PlayCircle className="me-2 h-4 w-4" aria-hidden="true" />}{s.resume}
             </Button>
             <Button size="sm" variant="outline" onClick={() => setDialog('active')}>{s.change}</Button>
@@ -59,7 +59,7 @@ export default function HoldPanel() {
           <p className="flex items-center gap-2"><CalendarClock className="h-4 w-4 text-muted-foreground" aria-hidden="true" />{s.next(holdDate(next.starts_at, lang), holdDate(next.ends_at, lang))}</p>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" onClick={() => setDialog('next')}>{s.change}</Button>
-            <Button size="sm" variant="ghost" onClick={() => void run(() => actions.cancelHold(next.id), s.cancelled)} disabled={busy}>{s.cancel}</Button>
+            <Button size="sm" variant="ghost" onClick={() => void run(() => actions.cancelHold(next.id), s.cancelled)} busy={busy}>{s.cancel}</Button>
           </div>
         </div>
       )}

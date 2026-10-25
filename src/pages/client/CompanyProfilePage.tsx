@@ -441,7 +441,7 @@ export default function CompanyProfilePage() {
               </Avatar>
               <button
                 onClick={requestLogoSelect}
-                disabled={uploadingLogo}
+                /* disabled-ok: busy */ disabled={uploadingLogo} aria-busy={uploadingLogo}
                 className="absolute inset-0 rounded-xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
               >
                 {uploadingLogo ? (
@@ -467,7 +467,7 @@ export default function CompanyProfilePage() {
                   size="sm"
                   variant="outline"
                   onClick={requestLogoSelect}
-                  disabled={uploadingLogo}
+                  busy={uploadingLogo}
                 >
                   {uploadingLogo ? (
                     <>
@@ -813,7 +813,7 @@ export default function CompanyProfilePage() {
       <ClientNDAUpload />
 
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={updateProfile.isPending} className="gradient-primary border-0 gap-2">
+        <Button onClick={handleSave} busy={updateProfile.isPending} className="gradient-primary border-0 gap-2">
           {updateProfile.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Save Company Profile
         </Button>

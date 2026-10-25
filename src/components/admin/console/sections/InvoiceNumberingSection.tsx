@@ -195,7 +195,7 @@ export default function InvoiceNumberingSection() {
               </div>
 
               <div className="flex justify-end">
-                <Button onClick={review} disabled={setCounter.isPending}>Review the change</Button>
+                <Button onClick={review} busy={setCounter.isPending}>Review the change</Button>
               </div>
             </CardContent>
           </Card>
@@ -246,8 +246,8 @@ export default function InvoiceNumberingSection() {
                 <li>The database refuses a number that an invoice of this year already has.</li>
               </ul>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={setCounter.isPending}>Cancel</Button>
-                <Button onClick={save} disabled={setCounter.isPending} className="gap-2">
+                <Button variant="outline" onClick={() => setConfirmOpen(false)} busy={setCounter.isPending}>Cancel</Button>
+                <Button onClick={save} busy={setCounter.isPending} className="gap-2">
                   {setCounter.isPending ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
                   Change the counter
                 </Button>

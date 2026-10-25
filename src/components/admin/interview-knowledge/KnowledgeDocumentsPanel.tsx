@@ -176,8 +176,8 @@ export default function KnowledgeDocumentsPanel({ ready }: { ready: boolean }) {
                     {t('ik.docs.enabled', 'Enabled')}
                   </label>
                   <Button size="sm" variant="outline" disabled={!d.chunk_count} onClick={() => setExcerptsOf(d)}><Eye className="h-3.5 w-3.5 me-1" />{t('ik.docs.excerpts', 'Preview excerpts')}</Button>
-                  <Button size="sm" variant="outline" disabled={working === d.id} onClick={() => reextract(d)}><RefreshCw className="h-3.5 w-3.5 me-1" />{t('ik.docs.reextract', 'Re-extract')}</Button>
-                  <Button size="sm" variant="ghost" className="text-destructive" disabled={working === d.id} onClick={() => setToDelete(d)} aria-label={t('ik.docs.delete', 'Delete')}><Trash2 className="h-3.5 w-3.5" /></Button>
+                  <Button size="sm" variant="outline" busy={working === d.id} onClick={() => reextract(d)}><RefreshCw className="h-3.5 w-3.5 me-1" />{t('ik.docs.reextract', 'Re-extract')}</Button>
+                  <Button size="sm" variant="ghost" className="text-destructive" busy={working === d.id} onClick={() => setToDelete(d)} aria-label={t('ik.docs.delete', 'Delete')}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
               </li>
             );
@@ -223,8 +223,8 @@ export default function KnowledgeDocumentsPanel({ ready }: { ready: boolean }) {
             </label>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>{t('common.cancel', 'Cancel')}</Button>
-            <Button onClick={submit} disabled={busy || !form.rights || !form.title.trim() || !form.sap_module.trim()}>
+            <Button variant="outline" onClick={() => setOpen(false)} busy={busy}>{t('common.cancel', 'Cancel')}</Button>
+            <Button onClick={submit} busy={busy} disabled={!form.rights || !form.title.trim() || !form.sap_module.trim()}>
               {busy && <Loader2 className="h-4 w-4 me-1.5 animate-spin" />}{busy ? t('ik.upload.working', 'Uploading and reading…') : t('ik.docs.upload', 'Upload document')}
             </Button>
           </DialogFooter>

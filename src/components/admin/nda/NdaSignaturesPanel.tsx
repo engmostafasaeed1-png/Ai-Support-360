@@ -156,7 +156,7 @@ function SettingsCard({ onSaved }: { onSaved(): void }) {
           <div className="space-y-1"><Label htmlFor="nda-set-reason">{t('ndaSign.admin.reason')}</Label>
             <Input id="nda-set-reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={300} /></div>
         )}
-        <div className="flex justify-end"><Button onClick={save} disabled={!dirty || !valid || busy}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden />}{t('ndaSign.admin.save')}</Button></div>
+        <div className="flex justify-end"><Button onClick={save} busy={busy} disabled={!dirty || !valid}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden />}{t('ndaSign.admin.save')}</Button></div>
       </CardContent>
     </Card>
   );
@@ -200,7 +200,7 @@ function RevealDialog({ sig, onClose }: { sig: Sig; onClose(): void }) {
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => { setValue(null); onClose(); }}>{t('common.close', 'Close')}</Button>
-          {!value && <Button onClick={go} disabled={reason.trim().length < 10 || busy}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden />}{t('ndaSign.admin.showFull')}</Button>}
+          {!value && <Button onClick={go} busy={busy} disabled={reason.trim().length < 10}>{busy && <Loader2 className="me-1 h-4 w-4 animate-spin" aria-hidden />}{t('ndaSign.admin.showFull')}</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

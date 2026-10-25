@@ -250,7 +250,7 @@ export default function BrdWorkspace({ state, initial, initialRev, fresh, isAdmi
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline" className="gap-1.5" disabled={exporting}>{exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} {t('brd.export.label')}</Button>
+              <Button size="sm" variant="outline" className="gap-1.5" busy={exporting}>{exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} {t('brd.export.label')}</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={exportPdf}>{t('brd.export.pdf')}</DropdownMenuItem>

@@ -36,7 +36,7 @@ export default function MessagingSettingsPanel({ settings }: { settings: BulkSet
               <Input id={`bm-${k}`} type="number" min={1} max={max} className="w-28" disabled={ro} value={v[k]} onChange={(e) => setV((s) => ({ ...s, [k]: Number(e.target.value) }))} />
             </div>
           ))}
-          {!ro && <Button size="sm" disabled={setSettings.isPending} onClick={() => save({ inapp_per_minute: v.inapp, telegram_per_minute: v.tg, daily_cap: v.cap })}>{t('bmsg.save', 'Save')}</Button>}
+          {!ro && <Button size="sm" busy={setSettings.isPending} onClick={() => save({ inapp_per_minute: v.inapp, telegram_per_minute: v.tg, daily_cap: v.cap })}>{t('bmsg.save', 'Save')}</Button>}
         </CardContent>
       </Card>
       <Card className="border-border/40">

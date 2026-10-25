@@ -157,7 +157,7 @@ export default function ReinterviewDialog({ open, onOpenChange, consultantId, co
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t('common.cancel', 'Cancel')}
           </Button>
-          <Button className="gradient-primary border-0" onClick={handleSubmit} disabled={loading}>
+          <Button className="gradient-primary border-0" onClick={handleSubmit} busy={loading}>
             {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
             {selfService && selectedType === 'ai' ? t('interview.start_ai', 'Start AI Interview') : t('interview.send_request', 'Send Request')}
           </Button>

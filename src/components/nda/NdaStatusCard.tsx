@@ -101,7 +101,7 @@ export default function NdaStatusCard({ ndaId, consultantId, clientId, consultan
           {v.mySignedAt && (
             <div className="flex flex-col gap-2 rounded-xl bg-success/10 p-3 sm:flex-row sm:items-center sm:justify-between" role="status">
               <p className="flex items-center gap-2 text-sm font-medium text-foreground"><CheckCircle2 className="h-4 w-4 text-success" aria-hidden /> {t('ndaSign.card.youSigned', { date: fmt(v.mySignedAt, lang) })}</p>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={download} disabled={downloading || !s.nda_id}>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={download} busy={downloading} disabled={!s.nda_id}>
                 {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Download className="h-3.5 w-3.5" aria-hidden />} {t('ndaSign.card.downloadMine')}
               </Button>
             </div>
@@ -120,7 +120,7 @@ export default function NdaStatusCard({ ndaId, consultantId, clientId, consultan
       {v.kind === 'fully_signed' && (
         <div className="flex flex-col gap-2 rounded-xl bg-success/10 p-3 sm:flex-row sm:items-center sm:justify-between" role="status">
           <p className="flex items-center gap-2 text-sm font-medium text-foreground"><ShieldCheck className="h-4 w-4 text-success" aria-hidden /> {t('ndaSign.card.fully')}</p>
-          <Button size="sm" className="gap-1.5" onClick={download} disabled={downloading}>
+          <Button size="sm" className="gap-1.5" onClick={download} busy={downloading}>
             {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Download className="h-3.5 w-3.5" aria-hidden />} {t('ndaSign.card.downloadFull')}
           </Button>
         </div>

@@ -64,7 +64,7 @@ export default function SapNotesField({ value, onChange, idPrefix = 'sap-notes-t
           className="rounded-xl"
           maxLength={120}
         />
-        <Button type="button" variant="outline" size="sm" className="h-10" disabled={!text.trim() || value.length >= MAX_NOTES_TRIED} onClick={add}>Add</Button>
+        <Button type="button" variant="outline" size="sm" className="h-10" reason={[!text.trim() && 'fill_required_fields', value.length >= MAX_NOTES_TRIED && { key: 'limit_reached', params: { max: MAX_NOTES_TRIED } }]} onClick={add}>Add</Button>
       </div>
       {hint && <p className="mt-1 text-[11px] text-destructive" role="alert">{hint}</p>}
       <div className="mt-2">

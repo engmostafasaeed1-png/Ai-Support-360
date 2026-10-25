@@ -121,7 +121,7 @@ function CodeCard({ ov, locked }: { ov: ReferralOverview; locked: boolean }) {
             <div className="flex flex-wrap gap-2">
               <Input id="refz-code" dir="ltr" value={draft} maxLength={24} onChange={(e) => setDraft(e.target.value.toUpperCase())} className="max-w-xs font-mono rounded-xl"
                 aria-invalid={!!problem} aria-describedby="refz-code-help" />
-              <Button onClick={save} disabled={!!problem || saving} className="rounded-xl">{saving && <Loader2 className="w-4 h-4 me-2 animate-spin" />}{t('refz.save', 'Save')}</Button>
+              <Button onClick={save} busy={saving} reason={!!problem && { key: 'invalid_value', message: problem === 'blocked' ? t('refz.code_blocked', 'Please choose another code.') : t('refz.code_format', 'Use 4 to 24 letters and numbers, groups separated by a dash (for example SAP-MOSTAFA-7K2).') }} className="rounded-xl">{saving && <Loader2 className="w-4 h-4 me-2 animate-spin" />}{t('refz.save', 'Save')}</Button>
               <Button variant="ghost" onClick={() => setEditing(false)} className="rounded-xl">{t('refz.cancel', 'Cancel')}</Button>
             </div>
             <p id="refz-code-help" className={cn('text-xs', problem ? 'text-destructive' : 'text-muted-foreground')}>
@@ -162,7 +162,7 @@ function CodeCard({ ov, locked }: { ov: ReferralOverview; locked: boolean }) {
           <p dir={msgLang === 'ar' ? 'rtl' : 'ltr'} className="rounded-xl bg-muted/40 p-3 text-sm text-muted-foreground">{msg.text}</p>
           <div className="flex flex-wrap gap-2">
             {channels.map(([c, label, Icon]) => (
-              <Button key={c} variant="outline" size="sm" className="rounded-xl" onClick={() => open(c)} disabled={ov.disabled}>
+              <Button key={c} variant="outline" size="sm" className="rounded-xl" onClick={() => open(c)} reason={ov.disabled && 'feature_disabled_by_admin'}>
                 <Icon className="w-4 h-4 me-1" />{label}
               </Button>
             ))}

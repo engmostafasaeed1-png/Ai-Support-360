@@ -269,7 +269,7 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
               aria-label="Comment on this timesheet"
               className="min-h-[44px] flex-1 text-xs"
             />
-            <Button size="sm" variant="outline" disabled={busy || !commentText.trim()} onClick={() => void sendComment()} className="gap-1.5">
+            <Button size="sm" variant="outline" busy={busy} disabled={!commentText.trim()} onClick={() => void sendComment()} className="gap-1.5">
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
               Send comment
             </Button>
@@ -289,8 +289,8 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
           {subtotal > 0 && <PriceBreakdown breakdown={price} currency={cur} estimate />}
           <Textarea value={note} onChange={e => setNote(e.target.value)} rows={3} maxLength={1000} placeholder="A note for the consultant (optional)" />
           <DialogFooter>
-            <Button variant="ghost" onClick={closeDialog} disabled={busy}>Cancel</Button>
-            <Button onClick={() => void respond(true)} disabled={busy} className="gap-1.5">
+            <Button variant="ghost" onClick={closeDialog} busy={busy}>Cancel</Button>
+            <Button onClick={() => void respond(true)} busy={busy} className="gap-1.5">
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
               Approve the timesheet
             </Button>
@@ -306,8 +306,8 @@ function SubmissionCard({ sub, comments, invoice, entryCount, consultantName, na
           </DialogHeader>
           <Textarea value={note} onChange={e => setNote(e.target.value)} rows={4} maxLength={1000} placeholder="Tell the consultant what to change..." />
           <DialogFooter>
-            <Button variant="ghost" onClick={closeDialog} disabled={busy}>Cancel</Button>
-            <Button onClick={() => void respond(false)} disabled={busy || note.trim().length < 3} className="gap-1.5">
+            <Button variant="ghost" onClick={closeDialog} busy={busy}>Cancel</Button>
+            <Button onClick={() => void respond(false)} busy={busy} disabled={note.trim().length < 3} className="gap-1.5">
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
               Send to the consultant
             </Button>

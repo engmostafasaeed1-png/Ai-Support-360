@@ -93,7 +93,7 @@ export default function RulesSimulator({ settings, tiers, defaults, money }: Pro
             <Switch id="sim-ramp" checked={ramp} onCheckedChange={setRamp} />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant="outline" onClick={useReal} disabled={loading}>
+            <Button type="button" size="sm" variant="outline" onClick={useReal} busy={loading}>
               {loading ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Sparkles className="me-1 h-4 w-4" />}{t('refr.sim_real', 'Use my real numbers')}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={reset}><RotateCcw className="me-1 h-4 w-4" />{t('refr.sim_reset', 'Reset')}</Button>

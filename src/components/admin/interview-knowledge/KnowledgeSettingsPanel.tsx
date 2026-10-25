@@ -83,7 +83,7 @@ export default function KnowledgeSettingsPanel({ ready }: { ready: boolean }) {
               </div>
             ))}
           </div>
-          <Button onClick={submit} disabled={save.isPending || settings.isLoading}><Save className="h-4 w-4 me-1.5" />{t('common.save', 'Save')}</Button>
+          <Button onClick={submit} busy={save.isPending || settings.isLoading}><Save className="h-4 w-4 me-1.5" />{t('common.save', 'Save')}</Button>
         </CardContent>
       </Card>
 

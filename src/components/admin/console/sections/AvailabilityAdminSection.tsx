@@ -166,7 +166,7 @@ export default function AvailabilityAdminSection() {
             <Switch checked={required} onCheckedChange={setRequired} disabled={!data?.ready} aria-label={t('admin.availability.required', 'Weekly availability is required')} />
             {t('admin.availability.required', 'Weekly availability is required')}
           </label>
-          <Button onClick={() => save.mutate()} disabled={!data?.ready || save.isPending}>{t('common.save', 'Save')}</Button>
+          <Button onClick={() => save.mutate()} busy={save.isPending} disabled={!data?.ready}>{t('common.save', 'Save')}</Button>
           {c?.grace_started_at && <p className="basis-full text-xs text-muted-foreground">{t('admin.availability.graceFrom', 'Counted from {{date}} (or the sign-up date, if later). Every change is recorded in the audit log.', { date: format(new Date(c.grace_started_at), 'PP') })}</p>}
         </CardContent>
       </Card>
@@ -176,7 +176,7 @@ export default function AvailabilityAdminSection() {
           <CardTitle className="text-base">{t('admin.availability.listTitle', '{{n}} consultant(s) without weekly availability', { n: rows.length })}</CardTitle>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={exportCsv} disabled={!rows.length}><Download className="h-4 w-4" aria-hidden="true" />{t('admin.availability.export', 'Export CSV')}</Button>
-            <Button size="sm" className="gap-1.5" disabled={!data?.ready || !selected.size || remind.isPending} onClick={() => remind.mutate([...selected])}>
+            <Button size="sm" className="gap-1.5" busy={remind.isPending} disabled={!data?.ready || !selected.size} onClick={() => remind.mutate([...selected])}>
               <Send className="h-4 w-4" aria-hidden="true" />{t('admin.availability.sendNow', 'Send reminder now')}{selected.size ? ` (${Math.min(selected.size, ADMIN_REMINDER_BATCH)})` : ''}
             </Button>
           </div>
@@ -263,7 +263,7 @@ export default function AvailabilityAdminSection() {
           <Textarea id="clear-reason" rows={2} maxLength={500} value={clearReason} onChange={(e) => setClearReason(e.target.value)} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setClearing(null)}>{t('common.cancel', 'Cancel')}</Button>
-            <Button onClick={() => clear.mutate()} disabled={clearReason.trim().length < 3 || clear.isPending}>{t('admin.availability.clear', 'Clear hold')}</Button>
+            <Button onClick={() => clear.mutate()} busy={clear.isPending} disabled={clearReason.trim().length < 3}>{t('admin.availability.clear', 'Clear hold')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -286,7 +286,7 @@ export default function AvailabilityAdminSection() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSetFor(null)}>{t('common.cancel', 'Cancel')}</Button>
-            <Button onClick={() => setHold.mutate()} disabled={!holdEnd || holdReason.trim().length < 3 || setHold.isPending}>{t('admin.availability.setHold', 'Set hold')}</Button>
+            <Button onClick={() => setHold.mutate()} busy={setHold.isPending} disabled={!holdEnd || holdReason.trim().length < 3}>{t('admin.availability.setHold', 'Set hold')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

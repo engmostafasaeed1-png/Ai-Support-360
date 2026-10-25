@@ -300,7 +300,7 @@ export default function TicketEditDialog({ ticket, open, onOpenChange }: Props) 
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving} className="gradient-primary border-0">
+          <Button onClick={handleSave} busy={saving} className="gradient-primary border-0">
             {saving && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
             Save Changes
           </Button>

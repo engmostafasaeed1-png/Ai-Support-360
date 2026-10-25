@@ -109,7 +109,7 @@ export default function SatisfactionSurveyDialog({ open, onOpenChange, onSubmit,
           <Button
             className="w-full gradient-primary border-0"
             onClick={handleSubmit}
-            disabled={isPending || !allRated}
+            busy={isPending} reason={!allRated && 'give_rating_first'}
           >
             {isPending ? t('csat.submitting', 'Submitting...') : t('csat.submit', 'Submit Survey')}
           </Button>

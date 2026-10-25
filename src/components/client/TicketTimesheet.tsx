@@ -490,8 +490,8 @@ export default function TicketTimesheet({ ticketId, ticketTitle, isReadOnly = fa
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeleteEntry(null)} disabled={deleting}>Cancel</Button>
-            <Button variant="destructive" onClick={() => void confirmDelete()} disabled={deleting}>Delete the entry</Button>
+            <Button variant="ghost" onClick={() => setDeleteEntry(null)} busy={deleting}>Cancel</Button>
+            <Button variant="destructive" onClick={() => void confirmDelete()} busy={deleting}>Delete the entry</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

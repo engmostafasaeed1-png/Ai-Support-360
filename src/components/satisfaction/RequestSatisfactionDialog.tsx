@@ -52,7 +52,7 @@ export default function RequestSatisfactionDialog({ open, onOpenChange, onReques
           <Button
             className="w-full gradient-primary border-0"
             onClick={handleSend}
-            disabled={isPending || !selected}
+            busy={isPending} reason={!selected && 'choose_option_first'}
           >
             {isPending ? t('csat.sending', 'Sending...') : t('csat.send_request', 'Send Survey Request')}
           </Button>

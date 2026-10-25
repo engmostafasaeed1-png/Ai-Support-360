@@ -107,7 +107,7 @@ export default function GroupEditorDialog({ open, onOpenChange, group, otherName
           </fieldset>
           <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel', 'Cancel')}</Button>
-            <Button type="submit" disabled={saving}>{t('fav.save')}</Button>
+            <Button type="submit" busy={saving}>{t('fav.save')}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

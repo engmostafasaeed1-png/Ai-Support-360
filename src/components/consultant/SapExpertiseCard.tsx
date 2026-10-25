@@ -83,7 +83,7 @@ function Chips({ options, value, onChange, otherPlaceholder = 'Add another…' }
           className="h-8 text-xs"
           maxLength={300}
         />
-        <Button type="button" size="sm" variant="outline" className="h-8" onClick={add} disabled={!custom.trim()}><Plus className="h-3.5 w-3.5 me-1" />Add</Button>
+        <Button type="button" size="sm" variant="outline" className="h-8" onClick={add} reason={!custom.trim() && 'fill_required_fields'}><Plus className="h-3.5 w-3.5 me-1" />Add</Button>
       </div>
     </div>
   );
@@ -226,7 +226,7 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
     <Card className="rounded-2xl border-border/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base flex items-center gap-2"><Cpu className="h-4 w-4" /> SAP expertise</CardTitle>
-        <SectionSaveControls state={state} disabled={loading} />
+        <SectionSaveControls state={state} reason={loading && 'loading_data'} />
       </CardHeader>
       <CardContent className="space-y-6">
         {loadError && <p role="alert" className="text-xs text-destructive">{loadError}</p>}
@@ -250,7 +250,7 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
         </div>
 
         <div className="space-y-2">
-          <Label>SAP modules &amp; skill level</Label><FieldHint field="skillLevel" /><SectionSaveControls state={moduleState} disabled={loading} />
+          <Label>SAP modules &amp; skill level</Label><FieldHint field="skillLevel" /><SectionSaveControls state={moduleState} reason={loading && 'loading_data'} />
           {skills.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {skills.map((s) => (
@@ -305,7 +305,7 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
               </Select>
               <Input className="w-24 h-8 text-xs" type="number" min={0} max={50} placeholder="Years" value={newYears} onChange={(e) => setNewYears(e.target.value)} />
               <FieldHint field="skillYears" />
-              <Button size="sm" variant="outline" onClick={addSkills} disabled={!picked.length && !customModule.trim()}>
+              <Button size="sm" variant="outline" onClick={addSkills} reason={!picked.length && !customModule.trim() && 'select_items_first'}>
                 <Plus className="h-4 w-4 me-1" />Add {picked.length + (customModule.trim() ? customModule.split(',').filter((x) => x.trim()).length : 0) || ''} module(s)
               </Button>
             </div>

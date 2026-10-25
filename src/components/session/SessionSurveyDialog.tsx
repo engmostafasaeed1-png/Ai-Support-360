@@ -151,7 +151,7 @@ export default function SessionSurveyDialog({ sessionId, open, onOpenChange }: P
             <Button
               className="w-full"
               onClick={() => submitMutation.mutate()}
-              disabled={submitMutation.isPending}
+              busy={submitMutation.isPending}
             >
               {submitMutation.isPending ? 'Submitting...' : 'Submit Survey'}
             </Button>

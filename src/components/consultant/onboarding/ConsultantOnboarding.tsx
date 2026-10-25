@@ -793,19 +793,19 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
           <Button
             variant="outline"
             onClick={() => setCurrentStep(s => s - 1)}
-            disabled={currentStep === 0}
+            reason={currentStep === 0 && 'first_page'}
             className="gap-1.5"
           >
             <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
             {t('onboarding.back')}
           </Button>
           {currentStep < STEP_COUNT - 2 ? (
-            <Button onClick={() => setCurrentStep(s => s + 1)} disabled={!canNext()} className="gap-1.5">
+            <Button onClick={() => setCurrentStep(s => s + 1)} reason={!canNext() && 'previous_step_incomplete'} className="gap-1.5">
               {t('onboarding.next')}
               <ChevronRight className="w-4 h-4 rtl:rotate-180" />
             </Button>
           ) : (
-            <Button onClick={handleSaveAndContinue} disabled={submitting} className="gap-1.5">
+            <Button onClick={handleSaveAndContinue} busy={submitting} className="gap-1.5">
               {submitting ? t('common.loading') : 'Save & Continue to Interview'}
               <ChevronRight className="w-4 h-4 rtl:rotate-180" />
             </Button>

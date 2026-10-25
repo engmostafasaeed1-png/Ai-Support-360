@@ -118,7 +118,7 @@ export default function TeamMembersPage() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5" disabled={!isOwnerOrAdmin} title={isOwnerOrAdmin ? undefined : 'Only company owners and administrators can invite people'}>
+            <Button size="sm" className="gap-1.5" hint="inline" reason={!isOwnerOrAdmin && { key: 'permission_missing', message: 'Only company owners and administrators can invite people. Ask a company administrator to send the invitation.' }} title={isOwnerOrAdmin ? undefined : 'Only company owners and administrators can invite people'}>
               <Plus className="w-4 h-4" />
               Invite
             </Button>
@@ -150,7 +150,7 @@ export default function TeamMembersPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full" onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
+              <Button className="w-full" onClick={handleInvite} busy={inviting} hint="inline" reason={!inviteEmail.trim() && 'invalid_email'}>
                 {inviting ? <Loader2 className="w-4 h-4 me-2 animate-spin" /> : <Mail className="w-4 h-4 me-2" />}
                 Send Invitation
               </Button>

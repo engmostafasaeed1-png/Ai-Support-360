@@ -99,7 +99,7 @@ export default function TicketInternalNotes({ ticketId }: Props) {
         />
         <Button
           onClick={handleAdd}
-          disabled={saving || !newNote.trim()}
+          busy={saving} disabled={!newNote.trim()}
           size="sm"
           className="gap-1.5 gradient-primary border-0 self-end h-9"
         >

@@ -116,7 +116,7 @@ export default function BulkBar({ ids, total, installed, perms, onClear, onSelec
             </div>
           )}
           <DialogFooter><Button variant="outline" onClick={() => setKind(null)}>{t('common.cancel', 'Cancel')}</Button>
-            <Button disabled={busy || ((kind === 'tag_add' || kind === 'tag_remove') && !tags.trim())} onClick={() => dryRun()}>{t('um.preview', 'Preview')}</Button></DialogFooter>
+            <Button busy={busy} disabled={((kind === 'tag_add' || kind === 'tag_remove') && !tags.trim())} onClick={() => dryRun()}>{t('um.preview', 'Preview')}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

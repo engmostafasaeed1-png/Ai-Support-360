@@ -151,7 +151,7 @@ export default function CredlyBadgesSection({ initialUsername, consultantUserId,
                 className="flex-1"
                 onKeyDown={(e) => e.key === 'Enter' && handleLink()}
               />
-              <Button onClick={handleLink} disabled={!inputValue.trim() || loading} className="gradient-primary border-0 gap-1.5">
+              <Button onClick={handleLink} busy={loading} reason={!inputValue.trim() && 'fill_required_fields'} className="gradient-primary border-0 gap-1.5">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
                 {t('credly.link', 'Link')}
               </Button>

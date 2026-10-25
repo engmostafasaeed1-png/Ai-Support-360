@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -272,13 +273,13 @@ export default function SidebarNav({
               const listId = `sidebar-${scope}-${group.id}`;
               return (
                 <section key={group.id} className="py-0.5">
-                  <button
+                  <Button variant="ghost"
                     type="button"
                     onClick={() => toggle(group)}
-                    disabled={searching}
+                    reason={searching && { key: 'previous_step_incomplete', message: t('sidebar.clear_search_first', 'Clear the search to collapse this group.') }}
                     aria-expanded={open}
                     aria-controls={listId}
-                    className="flex h-8 w-full items-center gap-2 rounded-md px-3 text-xs font-medium text-sidebar-foreground/60 outline-none transition-colors hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring disabled:pointer-events-none"
+                    className="h-auto rounded-none p-0 whitespace-normal flex h-8 w-full items-center gap-2 rounded-md px-3 text-xs font-medium text-sidebar-foreground/60 outline-none transition-colors hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring disabled:pointer-events-none"
                   >
                     <span className="truncate">{groupLabelOf(group)}</span>
                     {!searching && (
@@ -295,7 +296,7 @@ export default function SidebarNav({
                         />
                       </span>
                     )}
-                  </button>
+                  </Button>
                   {open && (
                     <SidebarMenu
                       id={listId}

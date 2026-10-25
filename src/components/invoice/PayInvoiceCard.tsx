@@ -153,7 +153,7 @@ export function PayInvoiceCard({ payment, compact = false, actionsContainer, can
                     <a href="/privacy-policy" target="_blank" rel="noopener" className="text-primary underline">Privacy Policy</a>.
                   </span>
                 </label>
-                <Button className="w-full gap-1.5" disabled={startCard.isPending || !agreed} onClick={() => startCard.mutate(payment.id)}>
+                <Button className="w-full gap-1.5" busy={startCard.isPending} disabled={!agreed} onClick={() => startCard.mutate(payment.id)}>
                   {startCard.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
                   Pay {money(payment.amount, payment.currency)} by card
                 </Button>
@@ -238,7 +238,7 @@ export function PayInvoiceCard({ payment, compact = false, actionsContainer, can
                     <Button
                       size="sm"
                       className="w-full"
-                      disabled={!reference.trim() || !date || report.isPending}
+                      busy={report.isPending} disabled={!reference.trim() || !date}
                       onClick={() => report.mutate({ paymentId: payment.id, reference: reference.trim(), date, note }, { onSuccess: () => setReportOpen(false) })}
                     >
                       I have paid
@@ -266,7 +266,7 @@ export function PayInvoiceCard({ payment, compact = false, actionsContainer, can
                     <Button
                       size="sm"
                       className="w-full"
-                      disabled={!reference.trim() || !date || report.isPending}
+                      busy={report.isPending} disabled={!reference.trim() || !date}
                       onClick={() => report.mutate({ paymentId: payment.id, reference: reference.trim(), date, note })}
                     >
                       I have paid

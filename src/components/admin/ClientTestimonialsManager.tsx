@@ -376,7 +376,7 @@ export default function ClientTestimonialsManager() {
             Manage the cards shown in the “What Our Clients Say” section. Upload square 1:1 logos for best results.
           </p>
         </div>
-        <Button onClick={createItem} disabled={creating} className="gap-2">
+        <Button onClick={createItem} busy={creating} className="gap-2">
           {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
           Add testimonial
         </Button>
@@ -643,7 +643,7 @@ function SortableTestimonialRow({
               </AlertDialogContent>
             </AlertDialog>
 
-            <Button onClick={onSave} disabled={savingId === item.id} className="gap-2">
+            <Button onClick={onSave} busy={savingId === item.id} className="gap-2">
               {savingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               Save
             </Button>

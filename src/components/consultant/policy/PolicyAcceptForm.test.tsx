@@ -7,11 +7,11 @@ describe('required checkbox', () => {
     const onAccept = vi.fn(async () => {});
     render(<PolicyAcceptForm version={3} submitLabel="Accept and submit for review" onAccept={onAccept} />);
     const button = screen.getByRole('button', { name: 'Accept and submit for review' });
-    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-disabled', 'true');
     fireEvent.click(button);
     expect(onAccept).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('checkbox', { name: 'I have read and accept the Consultant Service Policy (version 3)' }));
-    expect(button).toBeEnabled();
+    expect(button).not.toHaveAttribute('aria-disabled');
     fireEvent.click(button);
     await waitFor(() => expect(onAccept).toHaveBeenCalledWith(3));
   });
@@ -22,6 +22,6 @@ describe('required checkbox', () => {
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('A newer version');
-    expect(screen.getByRole('button', { name: 'Confirm' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Confirm' })).not.toHaveAttribute('aria-disabled');
   });
 });

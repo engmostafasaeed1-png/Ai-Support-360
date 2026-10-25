@@ -262,7 +262,7 @@ function ClientsList({ search, onlineOnly, enabled }: { search: string; onlineOn
           <Input value={newAlias} onChange={e => setNewAlias(e.target.value)} placeholder="Enter alias name..." />
           <DialogFooter>
             <Button variant="outline" onClick={() => setAliasDialog(null)}>Cancel</Button>
-            <Button onClick={handleSaveAlias} disabled={setAlias.isPending} className="gradient-primary border-0 gap-1.5">
+            <Button onClick={handleSaveAlias} busy={setAlias.isPending} className="gradient-primary border-0 gap-1.5">
               {setAlias.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save
             </Button>
           </DialogFooter>

@@ -233,8 +233,8 @@ function PlanDialog({ plan, nextSort, onClose }: { plan: VMwarePricingPlan | nul
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={save.isPending}>Cancel</Button>
-          <Button onClick={submit} disabled={save.isPending} className="gap-2">
+          <Button variant="outline" onClick={onClose} busy={save.isPending}>Cancel</Button>
+          <Button onClick={submit} busy={save.isPending} className="gap-2">
             {save.isPending ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
             Save plan
           </Button>
@@ -300,12 +300,12 @@ export default function VMwarePricingSection() {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={pendingId === s.id}
+                      busy={pendingId === s.id}
                       onClick={() => decide.mutate({ id: s.id, status: 'rejected' })}
                     >
                       Reject
                     </Button>
-                    <Button size="sm" disabled={pendingId === s.id} onClick={() => decide.mutate({ id: s.id, status: 'active' })} className="gap-2">
+                    <Button size="sm" busy={pendingId === s.id} onClick={() => decide.mutate({ id: s.id, status: 'active' })} className="gap-2">
                       {pendingId === s.id ? <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" /> : null}
                       Activate
                     </Button>

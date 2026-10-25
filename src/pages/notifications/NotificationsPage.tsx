@@ -182,7 +182,7 @@ export default function NotificationsPage() {
               id="select-all-unread"
               checked={allUnreadSelected}
               onCheckedChange={(v) => (v ? selectAllUnread() : setSelectedIds(new Set()))}
-              disabled={unreadSelectableIds.length === 0}
+              reason={unreadSelectableIds.length === 0 && 'no_data_yet'}
             />
             <label htmlFor="select-all-unread" className="cursor-pointer">
               {selectedCount > 0
@@ -196,7 +196,7 @@ export default function NotificationsPage() {
             <Button
               size="sm"
               onClick={handleBulkMarkRead}
-              disabled={selectedCount === 0 || busy}
+              busy={busy} reason={selectedCount === 0 && 'select_items_first'}
               className="gap-1.5"
             >
               <CheckCheck className="w-4 h-4" />
@@ -229,7 +229,7 @@ export default function NotificationsPage() {
             variant="outline"
             size="sm"
             className="gap-1.5"
-            disabled={busy}
+            busy={busy}
             onClick={async () => {
               setBusy(true);
               try {
@@ -357,7 +357,7 @@ export default function NotificationsPage() {
                         size="icon"
                         className="h-7 w-7 text-destructive hover:text-destructive"
                         title="Retry delivery"
-                        disabled={busy}
+                        busy={busy}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRetry(n.id);

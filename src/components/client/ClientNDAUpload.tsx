@@ -182,7 +182,7 @@ export default function ClientNDAUpload() {
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleDownload}>
                 <Download className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={handleRemove} disabled={uploading}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={handleRemove} busy={uploading}>
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
               </Button>
             </div>
@@ -192,7 +192,7 @@ export default function ClientNDAUpload() {
             variant="outline"
             className="w-full h-20 border-dashed gap-2 flex-col"
             onClick={() => inputRef.current?.click()}
-            disabled={uploading}
+            busy={uploading}
           >
             {uploading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -211,7 +211,7 @@ export default function ClientNDAUpload() {
             size="sm"
             className="gap-1.5"
             onClick={() => inputRef.current?.click()}
-            disabled={uploading}
+            busy={uploading}
           >
             <Upload className="w-3.5 h-3.5" />
             {t('nda.replace_nda', 'Replace NDA')}

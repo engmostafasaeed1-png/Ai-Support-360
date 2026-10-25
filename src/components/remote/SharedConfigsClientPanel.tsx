@@ -84,12 +84,12 @@ export default function SharedConfigsClientPanel() {
                       <>
                         <Button variant="ghost" size="sm" className="h-7 text-xs gap-1"
                           onClick={() => resend.mutate(cfg.id)}
-                          disabled={resend.isPending}>
+                          busy={resend.isPending}>
                           <RefreshCw className="w-3 h-3" /> Resend
                         </Button>
                         <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-destructive"
                           onClick={() => revoke.mutate(cfg.id)}
-                          disabled={revoke.isPending}>
+                          busy={revoke.isPending}>
                           <XCircle className="w-3 h-3" /> Revoke
                         </Button>
                       </>

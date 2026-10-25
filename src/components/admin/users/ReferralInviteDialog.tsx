@@ -258,7 +258,7 @@ export default function ReferralInviteDialog({ open, onOpenChange, mode, ids, fi
             )}
 
             <DialogFooter className="gap-2 sm:gap-2">
-              <Button variant="outline" onClick={() => void sendTest()} disabled={busy || !installed || selected.length === 0}><ShieldCheck className="me-1 h-4 w-4" />{t('rinv.test', 'Send to me only')}</Button>
+              <Button variant="outline" onClick={() => void sendTest()} busy={busy} disabled={!installed || selected.length === 0}><ShieldCheck className="me-1 h-4 w-4" />{t('rinv.test', 'Send to me only')}</Button>
               <Button onClick={() => void send()} disabled={!!blocker} className="gap-1">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 rtl:rotate-180" />}
                 {t('rinv.send_n', 'Send to {{n}}', { n: nf.format(reach) })}

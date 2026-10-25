@@ -260,7 +260,7 @@ function AddShiftDialog({ schedule, people, onClose, onCreated }: { schedule: an
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={close}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={saving} className="gradient-primary border-0">Save shift</Button>
+          <Button onClick={handleSubmit} busy={saving} className="gradient-primary border-0">Save shift</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -306,7 +306,7 @@ function CreateScheduleDialog({ open, onOpenChange, onCreated }: { open: boolean
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={saving} className="gradient-primary border-0">Create</Button>
+          <Button onClick={handleSubmit} busy={saving} className="gradient-primary border-0">Create</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

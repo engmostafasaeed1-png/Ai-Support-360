@@ -127,9 +127,9 @@ function ReviewDialog({ item, onClose }: { item: KnowledgeItem; onClose: () => v
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button variant="outline" disabled={!!problemText || update.isPending} onClick={() => save()}>Save changes</Button>
+          <Button variant="outline" busy={update.isPending} reason={!!problemText && { key: 'fix_errors_first', message: problemText }} onClick={() => save()}>Save changes</Button>
           {item.status !== 'published' && (
-            <Button className="gradient-primary border-0" disabled={!!problemText || !confirmed || update.isPending} onClick={() => save('published')}>
+            <Button className="gradient-primary border-0" busy={update.isPending} reason={[!!problemText && { key: 'fix_errors_first', message: problemText }, !confirmed && 'tick_confirmation_first']} onClick={() => save('published')}>
               {update.isPending ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="me-2 h-4 w-4" />}
               Publish
             </Button>
@@ -209,7 +209,7 @@ export default function KnowledgeReviewPage() {
               variant="outline"
               size="sm"
               className="gap-1.5"
-              disabled={learn.isPending || switches.data?.ai_learning_enabled === false}
+              busy={learn.isPending} reason={switches.data?.ai_learning_enabled === false && { key: 'ai_learning_disabled', onNext: () => document.getElementById('ai-learning-switch')?.focus() }}
               onClick={() => learn.mutate()}
             >
               {learn.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
@@ -266,7 +266,7 @@ export default function KnowledgeReviewPage() {
                         <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={() => setReviewing(item)}>
                           <ShieldCheck className="h-3.5 w-3.5" /> Review and publish
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" disabled={update.isPending} onClick={() => move(item, 'archived')}>
+                        <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" busy={update.isPending} onClick={() => move(item, 'archived')}>
                           <Archive className="h-3.5 w-3.5" /> Archive
                         </Button>
                       </>
@@ -276,13 +276,13 @@ export default function KnowledgeReviewPage() {
                         <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => setReviewing(item)}>
                           <Pencil className="h-3.5 w-3.5" /> Edit
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" disabled={update.isPending} onClick={() => move(item, 'draft')}>
+                        <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" busy={update.isPending} onClick={() => move(item, 'draft')}>
                           <Undo2 className="h-3.5 w-3.5" /> Unpublish
                         </Button>
                       </>
                     )}
                     {item.status === 'archived' && (
-                      <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" disabled={update.isPending} onClick={() => move(item, 'draft')}>
+                      <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" busy={update.isPending} onClick={() => move(item, 'draft')}>
                         <Undo2 className="h-3.5 w-3.5" /> Back to drafts
                       </Button>
                     )}

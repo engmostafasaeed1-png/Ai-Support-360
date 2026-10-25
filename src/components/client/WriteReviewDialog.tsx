@@ -169,7 +169,7 @@ export default function WriteReviewDialog({ open, onOpenChange, consultantId, se
             <Button
               className="w-full gradient-primary border-0"
               onClick={() => mutation.mutate()}
-              disabled={mutation.isPending || score === 0}
+              busy={mutation.isPending} disabled={score === 0}
             >
               {mutation.isPending ? t('reviews.submitting', 'Submitting...') : t('reviews.submit', 'Submit Review')}
             </Button>

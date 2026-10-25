@@ -87,7 +87,7 @@ export default function InviteUserDialog({ open, onOpenChange }: { open: boolean
             <div><Label className="text-xs">Email</Label><Input type="email" value={email} maxLength={254} onChange={e => setEmail(e.target.value)} placeholder="name@company.com" /></div>
           </div>
           <div><Label className="text-xs">Personal note (optional)</Label><Textarea rows={2} maxLength={500} value={message} onChange={e => setMessage(e.target.value)} placeholder="We'd love to have you on board." /></div>
-          <Button className="w-full gradient-primary border-0" onClick={sendEmail} disabled={sending}>
+          <Button className="w-full gradient-primary border-0" onClick={sendEmail} busy={sending}>
             {sending ? <Loader2 className="w-4 h-4 me-1 animate-spin" /> : <Mail className="w-4 h-4 me-1" />} Send email invitation
           </Button>
         </div>

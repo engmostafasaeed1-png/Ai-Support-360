@@ -199,7 +199,7 @@ export function InvoiceDetailsDialog({ payment, onClose, onEditDetails, onDownlo
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmOpen(false)}>Cancel</Button>
-            <Button disabled={!bankReference.trim() || confirm.isPending} onClick={confirmReceived}>Confirm payment</Button>
+            <Button busy={confirm.isPending} disabled={!bankReference.trim()} onClick={confirmReceived}>Confirm payment</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

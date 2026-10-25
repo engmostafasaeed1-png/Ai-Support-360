@@ -213,10 +213,9 @@ export default function ShareRemoteConfigDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             onClick={handleShare}
-            disabled={
-              !isValidConnectionId(toolType, connectionId) ||
-              (shareMode === 'consultant' ? (!consultantId || shareMutation.isPending) : !recipientEmail) 
-            }
+            busy={shareMode === 'consultant' && shareMutation.isPending}
+            hint="inline"
+            reason={[!isValidConnectionId(toolType, connectionId) && 'invalid_value', shareMode === 'consultant' ? !consultantId && 'no_consultant_selected' : !recipientEmail && 'fill_required_fields']}
             className="gradient-primary border-0 gap-1.5"
           >
             {shareMutation.isPending && shareMode === 'consultant' ? <Loader2 className="w-4 h-4 animate-spin" /> : shareMode === 'email' ? <Mail className="w-4 h-4" /> : <Send className="w-4 h-4" />}

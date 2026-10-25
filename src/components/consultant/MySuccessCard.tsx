@@ -75,7 +75,7 @@ export default function MySuccessCard() {
           <Textarea id="success-dispute" rows={4} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
           <DialogFooter>
             <Button variant="outline" onClick={() => setTarget(null)}>{ar ? 'إلغاء' : 'Cancel'}</Button>
-            <Button onClick={send} disabled={busy}>{ar ? 'إرسال' : 'Send'}</Button>
+            <Button onClick={send} busy={busy}>{ar ? 'إرسال' : 'Send'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

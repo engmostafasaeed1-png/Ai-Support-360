@@ -136,8 +136,8 @@ export default function UsersPage() {
           <p className="text-sm text-muted-foreground">{t('um.subtitle', 'Manage accounts, roles and access')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => invalidate()} disabled={search.isFetching}><RefreshCw className={`me-1 h-4 w-4 ${search.isFetching ? 'animate-spin' : ''}`} />{t('um.refresh', 'Refresh')}</Button>
-          {(perms.includes('users.export') || me.isLoading) && <Button variant="outline" size="sm" className={me.isLoading ? 'invisible' : undefined} onClick={() => exportCsv(false)} disabled={!total}><Download className="me-1 h-4 w-4" />{t('um.export_csv', 'Export CSV')}</Button>}
+          <Button variant="outline" size="sm" onClick={() => invalidate()} busy={search.isFetching}><RefreshCw className={`me-1 h-4 w-4 ${search.isFetching ? 'animate-spin' : ''}`} />{t('um.refresh', 'Refresh')}</Button>
+          {(perms.includes('users.export') || me.isLoading) && <Button variant="outline" size="sm" className={me.isLoading ? 'invisible' : undefined} onClick={() => exportCsv(false)} reason={!total && 'nothing_to_export'}><Download className="me-1 h-4 w-4" />{t('um.export_csv', 'Export CSV')}</Button>}
           <Button variant="outline" size="sm" onClick={() => setRefInvite('all_eligible')}><Gift className="me-1 h-4 w-4" />{t('rinv.all_button', 'Refer & earn: all eligible consultants')}</Button>
           {(perms.includes('users.invite') || me.isLoading) && <Button variant="outline" size="sm" className={me.isLoading ? 'invisible' : undefined} onClick={() => setBulkInvite(true)}><Mail className="me-1 h-4 w-4" />{t('um.invite_many', 'Invite people')}</Button>}
           {(perms.includes('users.invite') || me.isLoading) && <Button className={`gradient-primary border-0 ${me.isLoading ? 'invisible' : ''}`} size="sm" onClick={() => setInviteOpen(true)}><UserPlus className="me-1 h-4 w-4" />{t('um.invite_one', 'Invite user')}</Button>}
@@ -156,7 +156,7 @@ export default function UsersPage() {
         <TabsContent value="users" className="space-y-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
             {statCards.map(([label, n, preset]) => (
-              <button key={label} type="button" disabled={!preset} className="text-start disabled:cursor-default"
+              <button /* disabled-ok: summary-only statistic has no filter action */ key={label} type="button" disabled={!preset} className="text-start disabled:cursor-default"
                 onClick={() => preset && setFilters({ ...DEFAULT_FILTERS, roles: [], status: [], verification: [], badge: [], tags: [], ...preset })}>
                 <Card className="h-full rounded-2xl border-border/50 transition-colors hover:border-primary/40">
                   <CardContent className="p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="text-xl font-bold">{n ?? '—'}</p></CardContent>
@@ -188,9 +188,9 @@ export default function UsersPage() {
                   <SelectTrigger className="h-8 w-20" aria-label={t('um.per_page', 'Per page')}><SelectValue /></SelectTrigger>
                   <SelectContent>{[10, 25, 50, 100].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
                 </Select>
-                <Button size="sm" variant="outline" className="h-8" disabled={filters.page <= 1} onClick={() => setFilters({ ...filters, page: filters.page - 1 })}>{t('um.prev', 'Previous')}</Button>
+                <Button size="sm" variant="outline" className="h-8" reason={filters.page <= 1 && 'first_page'} onClick={() => setFilters({ ...filters, page: filters.page - 1 })}>{t('um.prev', 'Previous')}</Button>
                 <span>{t('um.page_of', 'Page {{p}} of {{n}}', { p: filters.page, n: pages })}</span>
-                <Button size="sm" variant="outline" className="h-8" disabled={filters.page >= pages} onClick={() => setFilters({ ...filters, page: filters.page + 1 })}>{t('um.next', 'Next')}</Button>
+                <Button size="sm" variant="outline" className="h-8" reason={filters.page >= pages && 'last_page'} onClick={() => setFilters({ ...filters, page: filters.page + 1 })}>{t('um.next', 'Next')}</Button>
               </div>
             </div>
           </Card>

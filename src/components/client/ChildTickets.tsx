@@ -322,7 +322,7 @@ function CreateChildTicketDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleCreate} disabled={saving} className="gradient-primary border-0">
+          <Button onClick={handleCreate} busy={saving} className="gradient-primary border-0">
             {saving && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
             Create Sub-Ticket
           </Button>

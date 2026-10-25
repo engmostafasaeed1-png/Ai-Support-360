@@ -343,7 +343,7 @@ export default function NDASigningModal({
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 {t('common.cancel', 'Cancel')}
               </Button>
-              <Button className="gap-1.5" onClick={() => setStep('sign')} disabled={ndaTextMissing}>
+              <Button className="gap-1.5" onClick={() => setStep('sign')} reason={ndaTextMissing && 'feature_not_ready'}>
                 {t('nda.proceed_to_sign', 'Proceed to Sign')}
                 <ArrowRight className="w-4 h-4" />
               </Button>
@@ -488,7 +488,7 @@ export default function NDASigningModal({
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 {t('common.cancel', 'Cancel')}
               </Button>
-              <Button onClick={handleSign} disabled={!canSubmit || submitting}>
+              <Button onClick={handleSign} busy={submitting} hint="inline" reason={[ndaTextMissing && 'feature_not_ready', !agreed && 'tick_confirmation_first', (sigType === 'type' ? typedName.trim().length < 2 : !hasDrawn) && 'signature_incomplete']}>
                 {submitting
                   ? t('nda.signing', 'Signing...')
                   : t('nda.sign_button', 'Sign NDA')}

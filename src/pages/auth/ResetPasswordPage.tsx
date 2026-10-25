@@ -254,7 +254,7 @@ export default function ResetPasswordPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" disabled={loading}>
+            <Button type="submit" className="w-full gradient-primary border-0 h-11 text-base shadow-premium hover:shadow-xl transition-all hover:scale-[1.02]" busy={loading}>
               {loading && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {t('auth.reset_btn')}
             </Button>
