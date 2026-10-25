@@ -115,14 +115,13 @@ export interface SectionRequest {
   currentHtml: string; currentHtmlAr?: string; include: IncludeFlags; attachments: Array<{ name: string; text: string }>; deep?: boolean;
 }
 
-/** Streams one AI call. Also used by architecture documents (fn 'architecture-ai', same NDJSON format and guardrails). */
-export async function runBrdAi<T>(body: DraftRequest | SectionRequest, onStep: (s: AiStep) => void, signal?: AbortSignal, fn: 'ticket-brd' | 'architecture-ai' = 'ticket-brd'):
+export async function runBrdAi<T>(body: DraftRequest | SectionRequest, onStep: (s: AiStep) => void, signal?: AbortSignal):
   Promise<{ result: (T & { report: AiReport }) | null; error: AiError | null }> {
   try {
     const { data: s } = await supabase.auth.getSession();
     const token = s.session?.access_token;
     if (!token) return { result: null, error: { code: 'auth', status: 401, message: 'Please sign in again.' } };
-    const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/${fn}`;
+    const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/ticket-brd`;
     const res = await fetch(url, {
       method: 'POST', signal,
       headers: { Authorization: `Bearer ${token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },

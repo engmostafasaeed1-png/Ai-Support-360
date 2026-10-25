@@ -12,6 +12,8 @@ import {
 import {
   clientNavGroups, consultantNavGroups, adminNavGroups, superAdminNavGroups,
 } from "@/components/sidebar/navConfig";
+import { usePageVisibility } from "@/hooks/usePageVisibility";
+import { filterNavGroups } from "@/lib/pageVisibility";
 import type { NavGroup } from "@/components/sidebar/navTypes";
 import { titleize } from "@/components/sidebar/navUtils";
 import { OPEN_GLOBAL_SEARCH_EVENT } from "@/lib/globalSearch";
@@ -67,6 +69,7 @@ const GlobalSearch = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { t } = useTranslation();
+  const { visible } = usePageVisibility();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -97,7 +100,7 @@ const GlobalSearch = () => {
 
   const items = useMemo<SearchItem[]>(() => {
     if (!portal) return searchItems;
-    const fromMenu = portal.groups.flatMap((g) => {
+    const fromMenu = filterNavGroups(portal.groups, visible).flatMap((g) => {
       const group = String(t(g.labelKey, { defaultValue: g.fallback }));
       return g.items.map((item) => ({
         label: String(t(item.labelKey ?? `sidebar.${item.key}`, { defaultValue: item.fallback ?? titleize(item.key) })),
@@ -117,7 +120,7 @@ const GlobalSearch = () => {
       },
       ...fromMenu,
     ];
-  }, [portal, t]);
+  }, [portal, t, visible]);
 
   const groups = [...new Set(items.map((i) => i.group))];
 

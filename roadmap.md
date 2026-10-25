@@ -123,5 +123,5 @@
 - [x] Refer & earn page upgrade: header/sidebar pill + dot, policy cards + terms status, journey counts + next action, per-referral funnel chips, reward-line breakdown table (filters/sort/search/pages/CSV), earnings summary + chart, payouts + history, docs/sql/referral-tracking.sql (unapplied) + tests, Arabic
 - [x] Switch on Refer & earn tracking: docs/sql/referral-tracking.sql applied with Feature Z (Oct 22); checks passed on a copy of the database structure
 
-- [x] Solution Architecture made real (wizard, editor with versions/diff/restore, traceability, diagrams, comments, PDF, attach to ticket, landscape register, real timeline and ticket links, AI assist, admin switches OFF by default, EN/AR, tests); SQL prepared + 20 rolled-back checks passed on a private copy (Oct 25)
-- [ ] Solution Architecture SQL: owner reviews and applies docs/sql/solution-architecture.sql, runs docs/sql/solution-architecture.test.sql, then switches it on in Admin settings
+- [x] Solution Architecture build CANCELLED by owner (Oct 25); page hidden behind owner switch solution_architecture_visible (default off, admins can open by address)
+- [ ] Solution Architecture switch: owner applies docs/sql/solution-architecture-flag.sql so clients can read the switch when it is turned on

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import BrdButton from '@/components/brd/BrdButton';
-import TicketArchitectureCard from '@/components/architecture/TicketArchitectureCard';
 import TicketTrackingPanel, { TrackingHeaderChips } from '@/components/tracking/TicketTrackingPanel';
 import { BrdApprovalHeaderChip } from '@/components/brd/approval/BrdApprovalChip';
 import { useParams, Link } from 'react-router-dom';
@@ -296,8 +295,6 @@ export default function CaseDetailPage() {
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2"><TrackingHeaderChips ticketId={ticket.id} /><BrdApprovalHeaderChip ticketId={ticket.id} /></div>
-
-      <TicketArchitectureCard ticketId={ticket.id} docBase="/consultant/architecture" />
 
       {/* Two-layer tracking: automatic stage + the working status set by client and consultant */}
       <TicketTrackingPanel ticketId={ticket.id} ticketTitle={ticket.title ?? ''} />

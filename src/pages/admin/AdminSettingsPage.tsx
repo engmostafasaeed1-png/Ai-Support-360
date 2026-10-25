@@ -5,7 +5,6 @@ import AssignmentRemindersCard from '@/components/admin/AssignmentRemindersCard'
 import NotificationPauseAdminCard from '@/components/admin/NotificationPauseAdminCard';
 import SocialSigninSettingsCard from '@/components/admin/SocialSigninSettingsCard';
 import BrdSettingsCard from '@/components/admin/BrdSettingsCard';
-import ArchSettingsCard from '@/components/admin/ArchSettingsCard';
 import TrackingSettingsCard from '@/components/tracking/TrackingSettingsCard';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -42,6 +41,12 @@ const GENERAL = [
     labelKey: 'admin.settings_registration',
     label: 'Open registration',
     hint: 'Off: nobody can create a new account and the sign-up page says that registration is closed. People who already have an account can still sign in.',
+  },
+  {
+    key: 'solution_architecture_visible',
+    labelKey: 'admin.settings_solution_architecture',
+    label: 'Show Solution Architecture to clients',
+    hint: 'Off (default): the page is hidden from client menus and search, and its address leads to the client dashboard. Administrators can still open it by address for review; it shows example data only.',
   },
 ] as const;
 
@@ -123,7 +128,6 @@ export default function AdminSettingsPage() {
 
         <SocialSigninSettingsCard settings={settings} loading={loading} updateSetting={updateSetting} />
         <BrdSettingsCard />
-        <ArchSettingsCard />
         <TrackingSettingsCard />
 
         {/* Portal Layout Card */}

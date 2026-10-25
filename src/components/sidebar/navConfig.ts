@@ -64,7 +64,7 @@ export const clientNavGroups: NavGroup[] = [
       { key: 'tasks', icon: ListChecks, path: '/client/tasks' },
       { key: 'pm_tickets', icon: ClipboardList, path: '/client/pm-tickets' },
       { key: 'business_processes', icon: Workflow, path: '/client/business-processes' },
-      { key: 'solution_architecture', icon: Wand2, path: '/client/solution-architecture' },
+      { key: 'solution_architecture', icon: Wand2, path: '/client/solution-architecture', visibleSetting: 'solution_architecture_visible' },
     ],
   },
   {

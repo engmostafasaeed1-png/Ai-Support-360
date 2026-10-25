@@ -165,8 +165,8 @@ const ProjectsPage = lazyWithRetry(() => import("./pages/client/ProjectsPage.tsx
 const ContractsPage = lazyWithRetry(() => import("./pages/client/ContractsPage.tsx"), 'ContractsPage');
 const SupportPage = lazyWithRetry(() => import("./pages/client/SupportPage.tsx"), 'SupportPage');
 const ProjectManagementTicketsPage = lazyWithRetry(() => import("./pages/client/ProjectManagementTicketsPage.tsx"), 'ProjectManagementTicketsPage');
+import PageVisibilityGate from "./components/auth/PageVisibilityGate.tsx";
 const SolutionArchitecturePage = lazyWithRetry(() => import("./pages/client/SolutionArchitecturePage.tsx"), 'SolutionArchitecturePage');
-const ArchDocumentPage = lazyWithRetry(() => import("./pages/architecture/ArchDocumentPage.tsx"), 'ArchDocumentPage');
 const ChangeManagementPage = lazyWithRetry(() => import("./pages/client/ChangeManagementPage.tsx"), 'ChangeManagementPage');
 
 
@@ -380,7 +380,6 @@ const App = () => (
               <Route path="cases" element={<CasesPage />} />
               <Route path="cases/:caseId" element={<CaseDetailPage />} />
               <Route path="cases/:caseId/brd" element={<BrdPage />} />
-              <Route path="architecture/:docId" element={<ArchDocumentPage back="/consultant/cases" />} />
               <Route path="requests" element={<RequestsPage />} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="earnings" element={<EarningsPage />} />
@@ -449,8 +448,7 @@ const App = () => (
               <Route path="contracts" element={<ContractsPage />} />
               <Route path="support" element={<SupportPage />} />
               <Route path="pm-tickets" element={<ProjectManagementTicketsPage />} />
-              <Route path="solution-architecture" element={<SolutionArchitecturePage />} />
-              <Route path="solution-architecture/:docId" element={<ArchDocumentPage back="/client/solution-architecture" />} />
+              <Route path="solution-architecture" element={<PageVisibilityGate setting="solution_architecture_visible" redirectTo="/client"><SolutionArchitecturePage /></PageVisibilityGate>} />
               <Route path="changes" element={<ChangeManagementPage />} />
               
               
@@ -505,7 +503,6 @@ const App = () => (
               <Route path="tickets" element={<TicketKanbanPage />} />
               <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
               <Route path="tickets/:ticketId/brd" element={<BrdPage />} />
-              <Route path="architecture/:docId" element={<ArchDocumentPage back="/admin/settings" />} />
               <Route path="approvals" element={<ConsultantApprovalsPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="integrations" element={<AdminIntegrationsPage />} />
