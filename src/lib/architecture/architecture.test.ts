@@ -8,7 +8,7 @@ import { parseArchDraft, parseReview } from '../../../supabase/functions/_shared
 import { layoutGraph, layoutToSvg, parseMermaid } from './mermaid';
 import { sanitizeSvg, sniffImage } from './svgSanitize';
 import { DEFAULT_FILTERS, docsByTicket, filterDocs } from './listing';
-import { proposedChanges } from '@/components/architecture/doc/ArchAiDialog';
+import { proposedChanges } from './aiChanges';
 import type { ArchListRow } from './api';
 
 const base: ArchAccessInput = {

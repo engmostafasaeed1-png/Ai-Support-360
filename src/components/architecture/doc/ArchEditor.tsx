@@ -29,7 +29,8 @@ import DiagramBlocks from './DiagramBlocks';
 import TracePicker from './TracePicker';
 import ArchVersions from './ArchVersions';
 import ArchAttachDialog from './ArchAttachDialog';
-import ArchAiDialog, { type AiChange } from './ArchAiDialog';
+import ArchAiDialog from './ArchAiDialog';
+import type { AiChange } from '@/lib/architecture/aiChanges';
 import { archCommentApi, draftOf, metaOf, refOf } from './archShared';
 import { NoSecretsWarning } from '../LandscapeRegister';
 
