@@ -172,7 +172,7 @@ function SettingsCard({ flags, loading, updateSetting }: {
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t(`admin.resp_sec_${sec.id}_hint`, sec.hint)}</p>
                 {sec.id === 'rating' && <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{t('admin.resp_rank_hint', 'The ranking weight is "Responsiveness" in the match weights card under Settings (default 3).')}</p>}
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid items-end gap-4 sm:grid-cols-2">
                 {sec.fields.map(([k, label, unit]) => {
                   const u = UNIT_LABEL[unit];
                   return (
