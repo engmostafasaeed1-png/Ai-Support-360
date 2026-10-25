@@ -1,6 +1,8 @@
 # Roadmap
 
 - [x] SLA policies (Oct 25) built; waiting for owner to review/apply docs/sql/sla-policies.sql and switch on: inventory, severities S1-S4, platform default (= today's SLA) + client policies with versions, business-hour clock with pauses, escalation ladder, snapshot per ticket, consultant acceptance, chips/lists/dashboards, reminder engine, admin reports, EN/AR, tests. SQL docs/sql/sla-policies.sql + test, NOT applied; switch OFF.
+- [x] Support agreements (Oct 25, extension of SLA policies) built and OFF: inventory, request/apply/counter/accept with immutable rate records, three commitment models, lifecycle + daily job, ticket link with agreed rate + SLA, usage, PDF summary, anti-bypass alert, admin settings, EN/AR, tests (26 SQL checks). SQL docs/sql/support-agreements.sql + test, NOT applied.
+- [ ] Switch on support agreements: awaits the owner applying sla-policies.sql then support-agreements.sql, and the open decisions in docs/support-agreements.md (fee for long commitments, minimum term, termination, legal wording).
 
 - [x] BRD approval by the assigned consultant (Oct 24): rounds per version + fingerprint, approve (read tick) / request changes / decline, superseded/withdrawn, lead-only or all members, no-material-change carry-over, Off/Recommended (default)/Required gate on confirmation, work logs and timesheets, admin waiver, team step + stage step + timeline, header/list chips and filters, notices + e-mails (EN/AR, previews, test send), reminders/client notice/escalation, approval record PDF, tests. docs/sql/ticket-brd-approval.sql + test (26/26 on a private copy), NOT applied.
 - [ ] Switch on BRD approval: awaits the owner applying docs/sql/ticket-brd-approval.sql and choosing the approval rule.

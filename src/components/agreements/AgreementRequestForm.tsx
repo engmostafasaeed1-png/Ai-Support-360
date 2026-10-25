@@ -80,7 +80,7 @@ export default function AgreementRequestForm({ settings, agreementId, initial, o
   const [invite, setInvite] = useState<string[]>([]);
 
   const policies = useQuery({ queryKey: ['sla-my-policies', tenant?.id ?? null], queryFn: () => slaApi.fetchMyPolicies(tenant?.id ?? null), retry: false, staleTime: 60_000 });
-  const favIds = useMemo(() => [...(favs.data?.favourites.keys() ?? [])].slice(0, 30), [favs.data]);
+  const favIds = useMemo(() => [...(favs.favourites.keys() ?? [])].slice(0, 30), [favs.favourites]);
   const favNames = useQuery({
     queryKey: ['sa-fav-names', favIds], enabled: favIds.length > 0 && publishOpen, staleTime: 300_000,
     queryFn: async () => Object.fromEntries(await Promise.all(favIds.map(async (cid) => [cid, (await safeRpc<string>('consultant_public_name', { _consultant_id: cid })).data ?? '—'] as const))),
