@@ -510,10 +510,10 @@ BEGIN
     IF s -> 'rate_caps' -> m ->> 'min' IS NOT NULL THEN lo := GREATEST(lo, (s -> 'rate_caps' -> m ->> 'min')::numeric); END IF;
     IF s -> 'rate_caps' -> m ->> 'max' IS NOT NULL THEN hi := LEAST(hi, (s -> 'rate_caps' -> m ->> 'max')::numeric); END IF;
   END LOOP;
-  IF _rate IS NULL OR _rate < lo THEN out := out || 'rate_low'; END IF;
-  IF _rate IS NULL OR _rate > hi THEN out := out || 'rate_high'; END IF;
-  IF (_s1 IS NOT NULL AND (_s1 < 1 OR _s1 > mx)) OR (_ooh IS NOT NULL AND (_ooh < 1 OR _ooh > mx)) THEN out := out || 'multiplier'; END IF;
-  IF _overage IS NOT NULL AND _overage < _rate THEN out := out || 'overage_low'; END IF;
+  IF _rate IS NULL OR _rate < lo THEN out := array_append(out, 'rate_low'); END IF;
+  IF _rate IS NULL OR _rate > hi THEN out := array_append(out, 'rate_high'); END IF;
+  IF (_s1 IS NOT NULL AND (_s1 < 1 OR _s1 > mx)) OR (_ooh IS NOT NULL AND (_ooh < 1 OR _ooh > mx)) THEN out := array_append(out, 'multiplier'); END IF;
+  IF _overage IS NOT NULL AND _overage < _rate THEN out := array_append(out, 'overage_low'); END IF;
   RETURN out;
 END $$;
 
@@ -522,25 +522,25 @@ RETURNS text[] LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public
 DECLARE s jsonb := public.sa_settings(); out text[] := '{}'; sd date; ed date; mods text[];
 BEGIN
   mods := ARRAY(SELECT jsonb_array_elements_text(COALESCE(_t -> 'scope' -> 'modules', '[]'::jsonb)));
-  IF char_length(btrim(COALESCE(_t ->> 'name', ''))) NOT BETWEEN 1 AND 120 THEN out := out || 'name'; END IF;
-  IF cardinality(mods) = 0 THEN out := out || 'modules'; END IF;
-  IF NOT (COALESCE(s -> 'models_enabled', '[]'::jsonb) ? COALESCE(_t ->> 'model', '')) THEN out := out || 'model_disabled'; END IF;
+  IF char_length(btrim(COALESCE(_t ->> 'name', ''))) NOT BETWEEN 1 AND 120 THEN out := array_append(out, 'name'); END IF;
+  IF cardinality(mods) = 0 THEN out := array_append(out, 'modules'); END IF;
+  IF NOT (COALESCE(s -> 'models_enabled', '[]'::jsonb) ? COALESCE(_t ->> 'model', '')) THEN out := array_append(out, 'model_disabled'); END IF;
   BEGIN sd := (_t -> 'term' ->> 'start_date')::date; EXCEPTION WHEN OTHERS THEN sd := NULL; END;
-  BEGIN ed := NULLIF(_t -> 'term' ->> 'end_date', '')::date; EXCEPTION WHEN OTHERS THEN ed := NULL; out := out || 'end_before_start'; END;
-  IF sd IS NULL OR sd < current_date THEN out := out || 'start_past'; END IF;
+  BEGIN ed := NULLIF(_t -> 'term' ->> 'end_date', '')::date; EXCEPTION WHEN OTHERS THEN ed := NULL; out := array_append(out, 'end_before_start'); END;
+  IF sd IS NULL OR sd < current_date THEN out := array_append(out, 'start_past'); END IF;
   IF ed IS NOT NULL AND sd IS NOT NULL THEN
-    IF ed <= sd THEN out := out || 'end_before_start';
-    ELSIF COALESCE((s ->> 'min_term_months')::int, 0) > 0 AND ed < (sd + make_interval(months => (s ->> 'min_term_months')::int))::date THEN out := out || 'term_short';
+    IF ed <= sd THEN out := array_append(out, 'end_before_start');
+    ELSIF COALESCE((s ->> 'min_term_months')::int, 0) > 0 AND ed < (sd + make_interval(months => (s ->> 'min_term_months')::int))::date THEN out := array_append(out, 'term_short');
     END IF;
   END IF;
-  IF COALESCE((_t -> 'term' ->> 'notice_days')::int, -1) NOT BETWEEN 0 AND COALESCE((s ->> 'max_notice_days')::int, 90) THEN out := out || 'notice'; END IF;
+  IF COALESCE((_t -> 'term' ->> 'notice_days')::int, -1) NOT BETWEEN 0 AND COALESCE((s ->> 'max_notice_days')::int, 90) THEN out := array_append(out, 'notice'); END IF;
   IF _t ->> 'model' = 'hours_bank' THEN
-    IF COALESCE((_t -> 'bank' ->> 'hours_per_month')::numeric, 0) NOT BETWEEN 0.25 AND 744 THEN out := out || 'bank_hours'; END IF;
-    IF _t -> 'bank' ->> 'unused' = 'forfeit' AND NOT COALESCE((s ->> 'allow_forfeit')::boolean, false) THEN out := out || 'forfeit_disabled'; END IF;
-    IF COALESCE((_t -> 'bank' ->> 'prepay')::boolean, false) AND NOT COALESCE((s ->> 'allow_prepayment')::boolean, false) THEN out := out || 'prepay_disabled'; END IF;
+    IF COALESCE((_t -> 'bank' ->> 'hours_per_month')::numeric, 0) NOT BETWEEN 0.25 AND 744 THEN out := array_append(out, 'bank_hours'); END IF;
+    IF _t -> 'bank' ->> 'unused' = 'forfeit' AND NOT COALESCE((s ->> 'allow_forfeit')::boolean, false) THEN out := array_append(out, 'forfeit_disabled'); END IF;
+    IF COALESCE((_t -> 'bank' ->> 'prepay')::boolean, false) AND NOT COALESCE((s ->> 'allow_prepayment')::boolean, false) THEN out := array_append(out, 'prepay_disabled'); END IF;
   END IF;
-  IF _t ->> 'model' = 'availability' AND COALESCE((_t ->> 'capacity_hours_per_week')::numeric, 0) NOT BETWEEN 0.5 AND 60 THEN out := out || 'capacity'; END IF;
-  IF COALESCE(_t -> 'rate' ->> 'currency', '') !~ '^[A-Z]{3}$' THEN out := out || 'currency'; END IF;
+  IF _t ->> 'model' = 'availability' AND COALESCE((_t ->> 'capacity_hours_per_week')::numeric, 0) NOT BETWEEN 0.5 AND 60 THEN out := array_append(out, 'capacity'); END IF;
+  IF COALESCE(_t -> 'rate' ->> 'currency', '') !~ '^[A-Z]{3}$' THEN out := array_append(out, 'currency'); END IF;
   out := out || public.sa_rate_problems((_t -> 'rate' ->> 'hourly_rate')::numeric, NULLIF(_t -> 'rate' ->> 's1_multiplier', '')::numeric,
     NULLIF(_t -> 'rate' ->> 'ooh_multiplier', '')::numeric, NULLIF(_t -> 'rate' ->> 'overage_rate', '')::numeric, mods);
   RETURN out;
