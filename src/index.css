@@ -29,6 +29,9 @@
     --background: 0 0% 100%;
     --foreground: 218 44% 13%;
     --canvas: 220 33% 97%;
+    /* NDA signature pad: light paper with navy ink in both themes (the PNG and the PDF stay identical) */
+    --signature-paper: 40 33% 98%;
+    --signature-ink: 226 53% 23%;
 
     --card: 0 0% 100%;
     --card-foreground: 218 44% 13%;
@@ -137,6 +140,8 @@
   }
 
   .dark {
+    --signature-paper: 40 20% 94%;
+    --signature-ink: 226 53% 23%;
     --background: 218 50% 7%;
     --foreground: 214 32% 92%;
     --canvas: 218 52% 5%;
