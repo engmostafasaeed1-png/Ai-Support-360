@@ -868,4 +868,12 @@ Condition = what the button shows (reason keys from the catalogue) or the loadin
 | choose_two_versions | message | Select exactly two versions to compare. | حدّد نسختين بالضبط للمقارنة. |
 | coverage_not_allowed | message | Choose a coverage mode allowed by the administrator. | اختر نمط تغطية يسمح به المسؤول. |
 
-Popover/UI strings (in `guided-button.tsx`): "Why is this dimmed?" / "لماذا هذا الزر غير متاح؟", "{{n}} more steps" / "{{n}} خطوات أخرى", "Step {{done}} of {{total}} done" / "تمّ {{done}} من {{total}} خطوات", "Saving..." / "جارٍ الحفظ...".
+Shared texts (`src/lib/blockedReasons.ts`):
+
+| English | Arabic |
+|---|---|
+| Next step: {step}. | الخطوة التالية: {step}. |
+| 1 more step / {n} more steps | see `moreStepsText` (Arabic plural forms) |
+| {done} of {total} steps done | تم إنجاز {done} من {total} خطوات |
+| Please wait… | يرجى الانتظار… |
+| Saving… | جارٍ الحفظ… |
