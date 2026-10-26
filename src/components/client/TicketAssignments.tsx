@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { normalizeRoles, roleLabel } from '@/lib/consultantRoles';
 import ClientViewHint from '@/components/admin/ClientViewHint';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -145,6 +146,7 @@ interface TicketAssignmentsProps {
 }
 
 export default function TicketAssignments({ ticketId, isReadOnly }: TicketAssignmentsProps) {
+  const { t, i18n } = useTranslation();
   const { data: assignments, isLoading } = useTicketAssignments(ticketId);
   const [addOpen, setAddOpen] = useState(false);
   const queryClient = useQueryClient();
