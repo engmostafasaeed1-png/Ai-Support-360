@@ -107,7 +107,7 @@ export function categoriesOf(values: readonly string[] | null | undefined, catal
 /** Label in the chosen language; unknown legacy values show as typed. */
 export function roleLabel(value: string, lang: string = 'en', catalog: RoleEntry[] = DEFAULT_ROLE_CATALOG): string {
   const e = roleEntry(value, catalog);
-  if (!e || e.key === 'other' && roleKeyFor(value, catalog) !== 'other') return value;
+  if (!e) return value;
   return lang.startsWith('ar') ? e.label_ar : e.label_en;
 }
 
