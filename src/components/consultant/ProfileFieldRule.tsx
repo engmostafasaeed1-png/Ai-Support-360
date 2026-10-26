@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useProfileFieldRules } from '@/hooks/useProfileFieldRules';
+import { useMyConsultantRoles } from '@/hooks/useRoleCatalog';
+import { ROLE_FIELD_CATEGORIES, fieldAppliesToRoles } from '@/lib/consultantRoles';
 
 /** Renders its children only when the administrator did not set the field (or every listed field) to Hidden. */
 export function FieldGate({ field, children }: { field: string | string[]; children: ReactNode }) {
@@ -14,7 +16,11 @@ export function FieldGate({ field, children }: { field: string | string[]; child
 export function RequiredMark({ field }: { field: string }) {
   const { t } = useTranslation();
   const { isRequired } = useProfileFieldRules();
+  // Role-dependent fields (e.g. technologies, certificates) are never marked required for roles they do not apply to.
+  const roleDependent = field in ROLE_FIELD_CATEGORIES;
+  const myRoles = useMyConsultantRoles(roleDependent);
   if (!isRequired(field)) return null;
+  if (roleDependent && myRoles.data && !fieldAppliesToRoles(field, myRoles.data)) return null;
   return (
     <span data-testid={`required-${field}`} className="ms-1 inline-flex items-center gap-1 align-middle">
       <span aria-hidden="true" className="text-destructive">*</span>
