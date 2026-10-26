@@ -9,6 +9,9 @@ import {
   VERTICAL_SOLUTIONS, LOCALIZATION_SOLUTIONS,
 } from '@/lib/profileTaxonomy';
 import type { TicketContextInput } from '@/lib/ticketContext';
+import { useTranslation } from 'react-i18next';
+import RolePicker from '@/components/consultant/RolePicker';
+import { useRoleCatalog } from '@/hooks/useRoleCatalog';
 
 /** The old company industry keys that clearly name one of the new industry labels. */
 const INDUSTRY_KEY_TO_LABEL: Record<string, string> = {
@@ -38,6 +41,8 @@ interface Props {
 export default function RequestContextSection({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const set = (patch: Partial<TicketContextInput>) => onChange({ ...value, ...patch });
+  const { t } = useTranslation();
+  const roles = useRoleCatalog();
   return (
     <div className="rounded-xl border border-border/50">
       <button
@@ -52,6 +57,13 @@ export default function RequestContextSection({ value, onChange }: Props) {
       <p className="px-3 pb-3 -mt-1 text-xs text-muted-foreground">Optional: the more you tell us, the better the match.</p>
       {open && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 pt-0">
+          {roles.applied && (
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>{t('roles.help_needed', 'Type of help needed')}</Label>
+              <p className="text-[11px] text-muted-foreground">{t('roles.help_needed_hint', 'Optional. For example a solution architect, a project manager or a technical consultant. You can mix roles for a team.')}</p>
+              <RolePicker catalog={roles.catalog.filter((r) => r.key !== 'other')} value={value.help_roles ?? []} onChange={v => set({ help_roles: v })} max={5} idPrefix="ctx-role" />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="ctx-industry">Industry</Label>
             <TaxonomySelect id="ctx-industry" groups={INDUSTRY_EXPERIENCE} value={value.industry ?? ''} onChange={v => set({ industry: v })} noneLabel="Not specified" />
