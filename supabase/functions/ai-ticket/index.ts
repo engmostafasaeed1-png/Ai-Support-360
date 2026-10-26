@@ -4,6 +4,7 @@ import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit, getUserRoles, hasAnyRole, ADMIN_ROLES } from "../_shared/security.ts";
 import { weightedMatch } from "../_shared/matchScoring.ts";
 import { contextFit, readRequestContext } from "../_shared/contextFit.ts";
+import { helpRolesFrom, normalizeRoles } from "../_shared/consultantRoles.ts";
 import { matchInputsHash, rankConsultants, readMatchWeights, weightsVersion, type MatchConsultant, type MatchTicket } from "../_shared/ticketMatch.ts";
 import { responseRate } from "../_shared/assignmentPolicy.ts";
 import { clampInterviewWeight, DEFAULT_INTERVIEW_WEIGHT, interviewDoneFrom, profileCompleteness } from "../_shared/profileCompleteness.ts";
@@ -423,7 +424,8 @@ serve(async (req) => {
           verification_status: c.verification_status,
           ai_skills_score: c.ai_skills_score,
           total_sap_years: c.total_sap_years ?? totalSapYears,
-          sap_roles: (c as any).sap_roles?.length ? (c as any).sap_roles : (c.sap_role ? [c.sap_role] : []),
+          // Stored roles may still be labels or old keys: compare as catalogue keys.
+          sap_roles: normalizeRoles((c as any).sap_roles ?? [], c.sap_role).roles,
           seniority_level: c.seniority_level,
           technologies: c.sap_technologies,
           localization_countries: c.localization_countries,
@@ -550,6 +552,7 @@ serve(async (req) => {
         project_type: requestContext.project_type, vertical_solutions: requestContext.vertical_solutions, localization_solutions: requestContext.localization_solutions,
         deployment: extraContext.deployment ?? ((clientContext as any)?.sap_hosting_type || null), work_mode: extraContext.work_mode, budget_max_rate: extraContext.budget_max_rate,
         timezone: (clientContext as any)?.timezone ?? null,
+        help_roles: helpRolesFrom(rawCtx.help_roles),
       };
       const matchInput: MatchConsultant[] = consultants.map((c) => {
         const e = enrichedConsultants.find((x) => x.id === c.id)!;
