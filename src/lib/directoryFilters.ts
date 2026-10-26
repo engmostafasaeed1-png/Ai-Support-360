@@ -1,6 +1,7 @@
 // Consultant directory filters: one typed state, kept in the URL query string (shareable), applied to the loaded list,
 // with counts per option and a "best match" ranking that reuses the deterministic ticket matcher.
 import type { RespLevel } from '../../supabase/functions/_shared/responsiveness';
+import { normalizeRoles, roleKeyFor } from '@/lib/consultantRoles';
 import type { ConsultantLive, WeeklySlot } from './consultantDirectory';
 import { STATE_META } from './mapMarkers';
 import { compareSuccessLevel, compareSuccessRate, meetsSuccessLevel, meetsSuccessRate, type SuccessLevel, type SuccessView } from './successLevel';
@@ -190,7 +191,8 @@ export const PREDICATES: Partial<Record<keyof DirectoryFilters, Pred>> = {
     return wanted.some((w) => have.has(w));
   },
   sub: (c, f) => !f.sub || subsOf(c).has(f.sub),
-  role: (c, f) => !f.role || (c.sap_roles ?? []).includes(f.role),
+  // Stored roles may still be labels or old keys: compare as catalogue keys.
+  role: (c, f) => !f.role || normalizeRoles(c.sap_roles).roles.some((r) => (roleKeyFor(r) ?? r) === f.role),
   skill: (c, f) => !f.skill || [...(c.skills ?? []), ...(c.technologies ?? [])].some((s) => lc(s) === lc(f.skill)),
   cert: (c, f) => !f.cert || (c.certifications ?? []).some((n) => lc(n).includes(lc(f.cert))),
   years: (c, f) => !f.years || (c.total_sap_years ?? 0) >= f.years,

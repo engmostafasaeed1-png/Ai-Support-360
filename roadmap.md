@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] All SAP jobs as consultants (Oct 26, owner): role catalogue (28 roles, 11 categories, admin page), 1 main + up to 4 roles, legacy labels mapped (unknown kept as Other), role-aware fields (manager/pre-sales details, technical fields never forced), "Type of help needed" on requests + matching, directory Role filter, team card role, interview focus/rubric + 3 templates, suggested rate ranges, verification defaults, public wording EN/AR, tests. docs/sql/consultant-roles.sql + test (5/5 on a private copy), NOT applied.
+- [ ] Apply docs/sql/consultant-roles.sql: awaits owner review (until then the built-in list is used and requests cannot store the type of help).
+
 - [x] Blocked-button rule (Oct 25, owner): shared Button reason/busy + popover/inline hint, catalogue src/lib/blockedReasons.ts (EN/AR, checks, server codes), convert every disabled button (audit docs/disabled-buttons-audit.md), guard test + AGENTS.md note, server error codes → same text in toasts, tests, Arabic list.
 - [x] Schedule meeting bug (Oct 25): inventory of entry points; fix silent dead button on Sessions & chat; reason next to every disabled button; Schedule button on Sessions/Video sessions/Messages/consultant Messages + Calendar (pick a request first); dialog: preselect, why-dimmed message, time zone, agenda, colleagues, conflict check, external switch, reschedule/cancel; invitations in-app + e-mail with .ics; dialog test; prepared docs/sql/meeting-participants.sql (not applied).
 - [ ] Apply docs/sql/meeting-participants.sql: awaits owner review (extra consultants/colleagues then see the meeting in their portal).

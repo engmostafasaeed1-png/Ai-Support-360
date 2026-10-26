@@ -99,7 +99,7 @@ describe('ForConsultantsPage', () => {
     fireEvent.keyDown(first, { key: 'Enter' });
     fireEvent.click(first);
     expect(first).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText(/SAP consultants who complete their profile/)).toBeVisible();
+    expect(screen.getByText(/pre-sales\) who complete their profile/)).toBeVisible();
     fireEvent.keyDown(first, { key: 'Enter' });
     fireEvent.click(first);
     expect(first).toHaveAttribute('aria-expanded', 'false');

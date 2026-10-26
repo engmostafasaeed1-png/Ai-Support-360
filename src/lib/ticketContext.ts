@@ -1,3 +1,4 @@
+import { helpRolesFrom, roleLabel } from '@/lib/consultantRoles';
 // The matching context of a request (tickets.ticket_context). Only non-empty values are kept; the database accepts only these keys.
 export interface TicketContextInput {
   industry?: string;
@@ -6,10 +7,12 @@ export interface TicketContextInput {
   project_type?: string;
   vertical_solutions?: string[];
   localization_solutions?: string[];
+  /** "Type of help needed": role catalogue keys (sent only once docs/sql/consultant-roles.sql allows the key). */
+  help_roles?: string[];
 }
 
 export type TicketContext = Partial<Record<'industry' | 'customer_segment' | 'country' | 'project_type', string>> &
-  Partial<Record<'vertical_solutions' | 'localization_solutions', string[]>>;
+  Partial<Record<'vertical_solutions' | 'localization_solutions' | 'help_roles', string[]>>;
 
 const clip = (s: string) => s.trim().slice(0, 160);
 
@@ -23,6 +26,8 @@ export function buildTicketContext(input: TicketContextInput): TicketContext | n
     const list = Array.from(new Set((input[key] ?? []).map(clip).filter(Boolean))).slice(0, 12);
     if (list.length > 0) out[key] = list;
   }
+  const help = helpRolesFrom(input.help_roles);
+  if (help.length > 0) out.help_roles = help;
   return Object.keys(out).length > 0 ? out : null;
 }
 
@@ -32,13 +37,13 @@ export function ticketContextBadges(ctx: unknown): string[] {
   const c = ctx as Record<string, unknown>;
   const labels: Record<string, string> = {
     industry: 'Industry', customer_segment: 'Customer segment', country: 'Country', project_type: 'Project type',
-    vertical_solutions: 'Vertical solution', localization_solutions: 'Localization solution',
+    vertical_solutions: 'Vertical solution', localization_solutions: 'Localization solution', help_roles: 'Help needed',
   };
   const out: string[] = [];
   for (const key of Object.keys(labels)) {
     const v = c[key];
     if (typeof v === 'string' && v.trim()) out.push(`${labels[key]}: ${v}`);
-    else if (Array.isArray(v)) v.filter(x => typeof x === 'string' && x.trim()).forEach(x => out.push(`${labels[key]}: ${x}`));
+    else if (Array.isArray(v)) v.filter(x => typeof x === 'string' && x.trim()).forEach(x => out.push(`${labels[key]}: ${key === 'help_roles' ? roleLabel(x) : x}`));
   }
   return out;
 }

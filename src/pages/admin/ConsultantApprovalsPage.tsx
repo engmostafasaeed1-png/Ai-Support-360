@@ -45,10 +45,10 @@ export default function ConsultantApprovalsPage() {
   };
   const [expanded, setExpanded] = useState<string | null>(null);
   const [filterKey, setFilterKey] = useState(STATUS_FILTERS[0].key);
-  const [reinterviewTarget, setReinterviewTarget] = useState<{ id: string; name: string } | null>(null);
+  const [reinterviewTarget, setReinterviewTarget] = useState<{ id: string; name: string; roles?: string[] } | null>(null);
   const [liveTarget, setLiveTarget] = useState<{ id: string; userId: string; name: string } | null>(null);
   const [decisionTarget, setDecisionTarget] = useState<{ id: string; name: string; option: DecisionOption } | null>(null);
-  const [conditionalTarget, setConditionalTarget] = useState<{ id: string; name: string } | null>(null);
+  const [conditionalTarget, setConditionalTarget] = useState<{ id: string; name: string; roles?: string[] } | null>(null);
   const [decisionReason, setDecisionReason] = useState('');
   const [bankMissingOnly, setBankMissingOnly] = useState(false);
   const payoutStatusQ = useAdminPayoutStatus();
@@ -71,7 +71,7 @@ export default function ConsultantApprovalsPage() {
           id, user_id, bio, hourly_rate, currency, languages, industries, ai_skills_score, created_at, verification_status,
           city, country, linkedin_checked_at, credly_checked_at,
           customer_segments, vertical_solutions, localization_countries, localization_solutions, project_types,
-          deployment_experience, project_scale, work_modes, onsite_countries, working_week, language_levels,
+          deployment_experience, project_scale, work_modes, onsite_countries, working_week, language_levels, sap_role, sap_roles,
           consultant_skills (sap_module, proficiency_level),
           certifications (id, name, issuer, issue_date, expiry_date, document_url, verified)
         `)
@@ -110,6 +110,7 @@ export default function ConsultantApprovalsPage() {
         status: c.verification_status || 'pending',
         bio: c.bio || '',
         modules: (c.consultant_skills || []).map((s: any) => s.sap_module),
+        sap_roles: (c.sap_roles?.length ? c.sap_roles : c.sap_role ? [c.sap_role] : []) as string[],
         certificates: c.certifications || [],
         languages: c.languages || [],
         hourlyRate: c.hourly_rate || 0,
@@ -430,7 +431,7 @@ export default function ConsultantApprovalsPage() {
                           </Button>
                         )}
                         {!isGuest && ['pending', 'under_review', 'on_hold'].includes(status) && (
-                          <Button variant="outline" size="sm" onClick={() => setConditionalTarget({ id: c.id, name: c.name })}>
+                          <Button variant="outline" size="sm" onClick={() => setConditionalTarget({ id: c.id, name: c.name, roles: c.sap_roles })}>
                             Approve with items to verify
                           </Button>
                         )}

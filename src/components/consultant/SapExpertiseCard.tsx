@@ -19,7 +19,13 @@ import { FieldHint } from './onboarding/OnboardingGuidePanel';
 import { useTranslation } from 'react-i18next';
 import { cleanVersion, isNotAppliedError, MAX_VERSION_LENGTH, versionChoices } from '@/lib/interviewKnowledge';
 import { useVersionOptions } from '@/hooks/useInterviewKnowledge';
+import { useQueryClient } from '@tanstack/react-query';
+import { Textarea } from '@/components/ui/textarea';
+import RolePicker from './RolePicker';
+import { MY_ROLES_KEY, useRoleCatalog } from '@/hooks/useRoleCatalog';
+import { MAX_ROLES, fieldAppliesToRoles, isRequiredForRoles, normalizeRoles, primaryToStore } from '@/lib/consultantRoles';
 
+/** @deprecated The role list now comes from the admin catalogue (useRoleCatalog); kept for older imports. */
 export const SAP_ROLES = [
   ['functional', 'Functional consultant'],
   ['technical', 'Technical / developer (ABAP, Fiori)'],
@@ -38,6 +44,10 @@ export const SENIORITY = [
   ['lead', 'Lead (10–15 yrs)'],
   ['principal', 'Principal / expert (15+ yrs)'],
 ] as const;
+
+const METHODOLOGIES = ['SAP Activate', 'ASAP', 'Agile / Scrum', 'Waterfall', 'Hybrid', 'PRINCE2', 'PMP', 'SAFe', 'ITIL', 'TOGAF'];
+const SOLUTION_AREAS = ['Finance', 'Procurement', 'Supply chain', 'Sales & service', 'Human resources', 'Manufacturing', 'Asset management', 'Analytics', 'BTP & integration', 'Industry solutions'];
+type RoleDetails = { methodologies?: string[]; team_size_managed?: number | null; solution_areas?: string[]; presales_experience?: string };
 
 const TECHNOLOGIES = [
   'S/4HANA On-Premise', 'S/4HANA Cloud Public', 'RISE / Private Cloud', 'ECC 6.0', 'HANA DB', 'ABAP', 'ABAP OO', 'ABAP RAP', 'CDS Views',
@@ -111,6 +121,10 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
   const knownVersions = useRef<Map<string, string | null>>(new Map());
   const versionRows = useVersionOptions();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const roleCatalog = useRoleCatalog();
+  const [details, setDetails] = useState<RoleDetails>({});
+  const [detailsLoaded, setDetailsLoaded] = useState(false);
   const loadSkills = async (uid: string) => {
     const withVersion = await (supabase as any).from('consultant_skills').select('id, sap_module, proficiency_level, years_experience, sap_version').eq('consultant_id', uid).order('proficiency_level', { ascending: false });
     let data = withVersion.data as Skill[] | null;
@@ -140,9 +154,8 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
         .maybeSingle();
       if (error) throw error;
       if (data) {
-        const labelOf = (k: string) => SAP_ROLES.find(([v]) => v === k)?.[1] ?? k;
-        const r = data.sap_roles?.length ? data.sap_roles : data.sap_role ? [data.sap_role] : [];
-        setRoles(r.map(labelOf));
+        // Stored labels and old keys become catalogue keys; unknown legacy text stays as typed.
+        setRoles(normalizeRoles(data.sap_roles?.length ? data.sap_roles : [], data.sap_role).roles);
         setSeniority(data.seniority_level ?? '');
         setYears(data.total_sap_years != null ? String(data.total_sap_years) : '');
         setTech(data.sap_technologies ?? []);
@@ -162,19 +175,30 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
   const automatic = useProfileAutosaveReady();
   const rules = useProfileFieldRules();
   const beforeManual = useProfileSavePrompt();
+  const applied = roleCatalog.applied;
+  useEffect(() => {
+    if (!applied || !userId || detailsLoaded) return;
+    (supabase as any).from('consultants').select('role_details').eq('id', userId).maybeSingle().then(({ data }: { data: { role_details?: RoleDetails } | null }) => {
+      setDetails(data?.role_details && typeof data.role_details === 'object' ? data.role_details : {});
+      setDetailsLoaded(true);
+    });
+  }, [applied, userId, detailsLoaded]);
+  const applies = (field: string) => fieldAppliesToRoles(field, roles, roleCatalog.catalog);
   const values = { sap_roles: roles, seniority_level: seniority || null, total_sap_years: years === '' ? null : Number(years), sap_technologies: tech };
   const state = useSectionAutosave({ values, ready: !loading && loadSucceeded && !!userId && !rules.isLoading, automatic: automatic.data === true, beforeManual,
     validate: patch => {
       const y = values.total_sap_years;
       if (y !== null && (!Number.isInteger(y) || y < 0 || y > 50)) return 'Years of SAP experience must be 0–50';
-      if (Object.entries(patch).some(([key, value]) => rules.isRequired(key) && (value === null || value === '' || (Array.isArray(value) && !value.length)))) return 'Complete the required fields in this section before saving.';
+      if (roles.length > MAX_ROLES && 'sap_roles' in patch) return t('roles.max_reached', 'You can choose up to {{n}} roles.', { n: MAX_ROLES });
+      if (Object.entries(patch).some(([key, value]) => isRequiredForRoles(key, rules.isRequired(key), roles, roleCatalog.catalog) && (value === null || value === '' || (Array.isArray(value) && !value.length)))) return 'Complete the required fields in this section before saving.';
       return null;
     },
     persist: async patch => {
       if (!userId) throw new Error('Your consultant profile could not be found.');
-      const payload = { ...patch, ...('sap_roles' in patch ? { sap_role: SAP_ROLES.find(([, label]) => label === roles[0])?.[0] ?? null } : {}) };
+      const payload = { ...patch, ...('sap_roles' in patch ? { sap_role: primaryToStore(roles[0] ?? null, applied, roleCatalog.catalog) } : {}) };
       const { error } = await supabase.from('consultants').update(payload as never).eq('id', userId);
       if (error) { toast.error(error.message); throw error; }
+      if ('sap_roles' in patch) void queryClient.invalidateQueries({ queryKey: MY_ROLES_KEY });
       onProfileChanged?.();
     },
   });
@@ -209,6 +233,30 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
       onProfileChanged?.();
     },
   });
+  const detailState = useSectionAutosave({ values: { role_details: details }, ready: applied && detailsLoaded && !!userId && !rules.isLoading, automatic: automatic.data === true, beforeManual,
+    validate: () => {
+      const n = details.team_size_managed;
+      if (n !== undefined && n !== null && (!Number.isInteger(n) || n < 0 || n > 10000)) return t('roles.team_size_invalid', 'Team size must be a whole number from 0 to 10000.');
+      const missing = (['methodologies', 'team_size_managed', 'solution_areas', 'presales_experience'] as const).some((k) => {
+        if (!isRequiredForRoles(k, rules.isRequired(k), roles, roleCatalog.catalog)) return false;
+        const v = details[k];
+        return v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length);
+      });
+      return missing ? 'Complete the required fields in this section before saving.' : null;
+    },
+    persist: async () => {
+      if (!userId) throw new Error('Your consultant profile could not be found.');
+      const clean: RoleDetails = {};
+      if (details.methodologies?.length) clean.methodologies = details.methodologies.slice(0, 12).map((x) => x.slice(0, 80));
+      if (details.solution_areas?.length) clean.solution_areas = details.solution_areas.slice(0, 12).map((x) => x.slice(0, 80));
+      if (typeof details.team_size_managed === 'number') clean.team_size_managed = details.team_size_managed;
+      if (details.presales_experience?.trim()) clean.presales_experience = details.presales_experience.trim().slice(0, 600);
+      const { error } = await (supabase as any).from('consultants').update({ role_details: clean }).eq('id', userId);
+      if (error) { toast.error(error.message?.includes('role_details_invalid') ? t('roles.details_invalid', 'Remove contact details (e-mail, phone, links) from your role details.') : error.message); throw error; }
+      onProfileChanged?.();
+    },
+  });
+  const showDetails = applied && (['methodologies', 'team_size_managed', 'solution_areas', 'presales_experience'] as const).some((k) => applies(k) && rules.isVisible(k));
   const addSkills = () => {
     const have = new Set(skills.map(s => s.sap_module.toLowerCase()));
     const names = [...picked, ...customModule.split(',').map(x => x.trim().slice(0, 120))].filter(Boolean).filter((n, i, list) => list.findIndex(x => x.toLowerCase() === n.toLowerCase()) === i && !have.has(n.toLowerCase()));
@@ -231,9 +279,46 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
       <CardContent className="space-y-6">
         {loadError && <p role="alert" className="text-xs text-destructive">{loadError}</p>}
         <div className="space-y-2">
-          <Label>Roles (choose all that apply)</Label>
-          <Chips options={SAP_ROLES.map(([, l]) => l)} value={roles} onChange={setRoles} otherPlaceholder="Other role, e.g. Test manager" />
+          <p className="text-xs text-muted-foreground">{t('roles.intro', 'All SAP professionals are welcome: consultants, architects, managers, analysts, testers, trainers and pre-sales. Choose one main role and up to 4 more.')}</p>
+          <RolePicker catalog={roleCatalog.catalog} value={roles} onChange={setRoles} max={MAX_ROLES} withPrimary idPrefix="profile-role" required={rules.isRequired('sap_roles') || rules.isRequired('sap_role')} />
         </div>
+
+        {showDetails && (
+          <div className="rounded-xl border border-border/60 p-3 space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-medium text-foreground">{t('roles.details_title', 'Details for your role')}</p>
+              <SectionSaveControls state={detailState} reason={loading && 'loading_data'} />
+            </div>
+            {applies('methodologies') && rules.isVisible('methodologies') && (
+              <div className="space-y-2">
+                <Label>{t('roles.methodologies', 'Delivery methodologies')}</Label>
+                <Chips options={METHODOLOGIES} value={details.methodologies ?? []} onChange={(v) => setDetails({ ...details, methodologies: v.slice(0, 12) })} otherPlaceholder={t('roles.other_method', 'Other method')} />
+              </div>
+            )}
+            {applies('team_size_managed') && rules.isVisible('team_size_managed') && (
+              <div className="space-y-1.5 max-w-xs">
+                <Label htmlFor="role-team-size">{t('roles.team_size', 'Largest team you managed (people)')}</Label>
+                <Input id="role-team-size" type="number" min={0} max={10000} value={details.team_size_managed ?? ''}
+                  onChange={(e) => setDetails({ ...details, team_size_managed: e.target.value === '' ? null : Number(e.target.value) })} />
+              </div>
+            )}
+            {applies('solution_areas') && rules.isVisible('solution_areas') && (
+              <div className="space-y-2">
+                <Label>{t('roles.solution_areas', 'Solution areas you position or design')}</Label>
+                <Chips options={SOLUTION_AREAS} value={details.solution_areas ?? []} onChange={(v) => setDetails({ ...details, solution_areas: v.slice(0, 12) })} otherPlaceholder={t('roles.other_area', 'Other area')} />
+              </div>
+            )}
+            {applies('presales_experience') && rules.isVisible('presales_experience') && (
+              <div className="space-y-1.5">
+                <Label htmlFor="role-presales">{t('roles.presales_experience', 'Deal and demo experience')}</Label>
+                <Textarea id="role-presales" rows={3} maxLength={600} value={details.presales_experience ?? ''}
+                  placeholder={t('roles.presales_placeholder', 'For example: 20+ S/4HANA demos for distribution companies, discovery workshops, proposal writing.')}
+                  onChange={(e) => setDetails({ ...details, presales_experience: e.target.value })} />
+                <p className="text-[11px] text-muted-foreground">{t('roles.no_prices', 'Do not include prices, discounts or contact details.')}</p>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
@@ -312,10 +397,12 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Technologies</Label>
-          <Chips options={TECHNOLOGIES} value={tech} onChange={setTech} otherPlaceholder="Other technologies (comma-separated)" />
-        </div>
+        {(applies('sap_technologies') || tech.length > 0) && (
+          <div className="space-y-2">
+            <Label>Technologies{!applies('sap_technologies') && <span className="ms-1 text-xs font-normal text-muted-foreground">{t('roles.optional_for_role', '(optional for your role)')}</span>}</Label>
+            <Chips options={TECHNOLOGIES} value={tech} onChange={setTech} otherPlaceholder="Other technologies (comma-separated)" />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

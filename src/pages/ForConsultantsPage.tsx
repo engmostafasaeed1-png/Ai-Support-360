@@ -122,7 +122,7 @@ export default function ForConsultantsPage() {
               {t('forConsultants.hero_title', 'Keep 100% of your rate')}
             </h1>
             <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
-              {t('forConsultants.hero_subtitle', 'Join verified SAP consultants on AI Support 360. You set your rate. Clients pay the fees on top.')}
+              {t('forConsultants.hero_subtitle', 'Join verified SAP professionals on AI Support 360: consultants, architects, managers and pre-sales. You set your rate. Clients pay the fees on top.')}
             </p>
             <Button asChild size="lg" className="gradient-primary border-0">
               <Link to={href}>
@@ -379,7 +379,7 @@ export default function ForConsultantsPage() {
 const FAQ_DEFAULTS = [
   {
     q: 'Who can apply?',
-    a: 'SAP consultants who complete their profile, take the 10-15 minute AI voice interview (camera and microphone needed) and pass the review of the platform team. Verification is required before you can take requests.',
+    a: 'SAP professionals (functional and technical consultants, architects, project and delivery managers, analysts, testers, trainers and pre-sales) who complete their profile, take the 10-15 minute AI voice interview (camera and microphone needed) and pass the review of the platform team. Verification is required before you can take requests.',
   },
   {
     q: 'Who sets my rate?',

@@ -10,7 +10,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import TaxonomySelect from '@/components/profile/TaxonomySelect';
 import { INDUSTRY_EXPERIENCE, CUSTOMER_SEGMENTS, LOCALIZATION_COUNTRIES, VERTICAL_SOLUTIONS, DEPLOYMENT_EXPERIENCE, WORK_MODES } from '@/lib/profileTaxonomy';
-import { SAP_ROLES } from '@/components/consultant/SapExpertiseCard';
+import { useRoleCatalog } from '@/hooks/useRoleCatalog';
+import { CATEGORY_LABELS } from '@/lib/consultantRoles';
 import type { ConsultantLive } from '@/lib/consultantDirectory';
 import {
   FAMILY_OPTIONS, MODULE_OPTIONS, RATE_MAX, facetCounts, type DirectoryContext, type DirectoryFilters,
@@ -69,6 +70,7 @@ interface Props {
 export default function DirectoryFilterPanel({ filters: f, consultants, ctx, onChange, onClear, saved, onSave, onApplySaved, onDeleteSaved }: Props) {
   const { t, i18n } = useTranslation();
   const ar = !!i18n?.language?.startsWith('ar');
+  const roleCatalog = useRoleCatalog();
   const anyLabel = t('directory.any', 'Any');
   const [saveName, setSaveName] = useState('');
 
@@ -93,6 +95,9 @@ export default function DirectoryFilterPanel({ filters: f, consultants, ctx, onC
   const days = ar ? ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'] : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const switchCount = (key: 'verified' | 'founding' | 'credly') => counts(key, [true]).get(true as unknown as string) ?? 0;
 
+  // Role filter: every enabled catalogue role, labelled "Category · Role" so managers, architects and pre-sales are easy to find.
+  const roleOptions = roleCatalog.enabled.filter((r) => r.key !== 'other').map((r) => ({ value: r.key, label: `${CATEGORY_LABELS[r.category][ar ? 'ar' : 'en']} · ${ar ? r.label_ar : r.label_en}` }));
+
   return (
     <Card className="rounded-2xl border-border/50 animate-fade-in">
       <CardContent className="space-y-5 p-4 sm:p-5">
@@ -105,7 +110,7 @@ export default function DirectoryFilterPanel({ filters: f, consultants, ctx, onC
           <FacetSelect id="f-sub" label={t('directory.sub_module', 'Sub-module')} value={f.sub} anyLabel={anyLabel}
             options={SUB_MODULE_CODES.map((c) => ({ value: c, label: c }))} counts={counts('sub', SUB_MODULE_CODES)} onChange={(v) => onChange({ sub: v })} />
           <FacetSelect id="f-role" label={t('directory.role', 'Role')} value={f.role} anyLabel={anyLabel}
-            options={SAP_ROLES.map(([v, l]) => ({ value: v, label: t(`directory.role_${v}`, l) }))} counts={counts('role', SAP_ROLES.map(([v]) => v))} onChange={(v) => onChange({ role: v })} />
+            options={roleOptions} counts={counts('role', roleOptions.map((o) => o.value))} onChange={(v) => onChange({ role: v })} />
           <FacetSelect id="f-skill" label={t('directory.skill', 'Skill')} value={f.skill} anyLabel={anyLabel}
             options={skills.map((s) => ({ value: s, label: s }))} counts={counts('skill', skills)} onChange={(v) => onChange({ skill: v })} />
           <div className="space-y-1.5">

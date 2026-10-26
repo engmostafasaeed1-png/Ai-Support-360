@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { INTERVIEW_FOCUS_TEXT, interviewFocusFor, normalizeRoles } from "../_shared/consultantRoles.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders as getCorsHeaders, adminClient, withinRateLimit } from "../_shared/security.ts";
@@ -68,7 +69,7 @@ serve(async (req) => {
     }
     const { data: consultant } = await supabase
       .from("consultants")
-      .select("user_id")
+      .select("user_id, sap_role, sap_roles")
       .eq("id", session.consultant_id)
       .single();
     const isAdmin = (await supabase.rpc("has_role", { _user_id: authUser.id, _role: "admin" })).data === true;
@@ -83,7 +84,8 @@ serve(async (req) => {
       `Q${i + 1} [${a.category}]: ${a.question}\nAnswer: ${a.answer || "(no answer)"}`
     ).join("\n\n");
 
-    const prompt = `Evaluate these SAP consultant interview answers. For each answer, provide:
+    const rubric = INTERVIEW_FOCUS_TEXT[interviewFocusFor(normalizeRoles((consultant as any)?.sap_roles ?? [], (consultant as any)?.sap_role).primary)].rubric;
+    const prompt = `Evaluate these SAP consultant interview answers.${rubric ? ` ${rubric}` : ""} For each answer, provide:
 - score (0-100)
 - feedback (1-2 sentences)
 

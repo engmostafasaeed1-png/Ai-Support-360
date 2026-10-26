@@ -9,6 +9,7 @@
  * 4. rankConsultants: all eligible consultants are scored before the best are selected.
  * Used by the ai-ticket function (server ranking) and by the client directory (best-match sort and chips).
  */
+import { helpRolesFrom, roleFit, roleLabel } from './consultantRoles.ts';
 import { contextFit } from './contextFit.ts';
 import { indexProfile, matchProfile, prepareTextMatch, ticketTerms, type MatchedIn, type ProfileEntry, type TextMatch } from './profileText.ts';
 import { responseFit } from './assignmentPolicy.ts';
@@ -238,6 +239,8 @@ export type MatchTicket = {
   vertical_solutions?: string[] | null;
   localization_solutions?: string[] | null;
   deployment?: string | null;
+  /** "Type of help needed" chosen by the client (role catalogue keys); replaces the roles guessed from the modules. */
+  help_roles?: string[] | null;
   work_mode?: string | null;
   /** IANA time zone of the client, e.g. "Asia/Riyadh". */
   timezone?: string | null;
@@ -281,7 +284,7 @@ export function extractTicketSignals(t: MatchTicket): TicketSignals {
     products: productsIn(all),
     country: t.country?.trim() || countryIn(text),
     deployment: (t.deployment?.trim() ? (DEPLOYMENTS.find(([name]) => name === t.deployment!.trim())?.[0] ?? deploymentIn(t.deployment!)) : null) || deploymentIn(all),
-    roles: rolesFor(modules),
+    roles: helpRolesFrom(t.help_roles).length ? helpRolesFrom(t.help_roles) : rolesFor(modules),
     language: pl || (arabicShare(text) > 0.3 ? 'ar' : null),
     wordCount: text.split(/\s+/).filter(Boolean).length,
   };
@@ -506,8 +509,9 @@ export function scoreConsultant(c: MatchConsultant, t: MatchTicket, s: TicketSig
   }
   if (s.roles.length > 0) {
     const have = c.sap_roles ?? [];
-    const fit = (r: string) => (have.includes(r) ? 1 : have.includes('techno_functional') && (r === 'functional' || r === 'technical') ? 0.8 : have.includes('architect') ? 0.5 : 0);
-    parts.push({ key: 'role', fit: share(s.roles, fit) });
+    const fit = (r: string) => roleFit(r, have);
+    const hit = helpRolesFrom(t.help_roles).find((r) => fit(r) === 1);
+    parts.push({ key: 'role', fit: share(s.roles, fit), chip: hit ? roleLabel(hit) : undefined });
   }
   const ctx = (field: 'industry' | 'customer_segment' | 'country', value: string | null | undefined) => (value ? (contextFit({ [field]: value }, c).score ?? 0) / 100 : null);
   const industry = ctx('industry', t.industry);

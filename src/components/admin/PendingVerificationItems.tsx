@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { defaultVerificationKinds } from '@/lib/consultantRoles';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ export const ITEM_KINDS = [
   { kind: 'certificates', label: 'Certificates' },
   { kind: 'links', label: 'LinkedIn / Credly profiles' },
   { kind: 'cv', label: 'CV & work experience' },
+  { kind: 'references', label: 'Client or employer references' },
 ] as const;
 
 export const DEFAULT_PERIOD_DAYS = 14;
@@ -59,8 +61,10 @@ export function useVerificationItems(consultantId?: string) {
 /** Admin: approve now, list what still has to be checked within the period. */
 export function ApproveWithItemsDialog({
   target, onClose, onDone,
-}: { target: { id: string; name: string } | null; onClose: () => void; onDone: () => void }) {
+}: { target: { id: string; name: string; roles?: string[] | null } | null; onClose: () => void; onDone: () => void }) {
+  // Certificates for hands-on roles; LinkedIn and references for managers, pre-sales and other non-technical roles.
   const [kinds, setKinds] = useState<string[]>(['certificates']);
+  useEffect(() => { if (target) setKinds(defaultVerificationKinds(target.roles)); }, [target]);
   const [custom, setCustom] = useState<string[]>([]);
   const [draft, setDraft] = useState('');
   const [days, setDays] = useState(DEFAULT_PERIOD_DAYS);
