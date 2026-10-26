@@ -70,11 +70,11 @@ export default function AdminConsultantRolesPage() {
       <Card className="rounded-2xl border-border/50">
         <CardHeader><CardTitle className="text-base">{t('roles.admin_catalogue', 'Role catalogue')}</CardTitle></CardHeader>
         <CardContent className="space-y-2">
-          <div className="hidden md:grid grid-cols-[10rem_1fr_1fr_12rem_4rem_4rem_6rem] gap-2 text-[11px] font-medium text-muted-foreground">
+          <div className="hidden md:grid grid-cols-[10rem_1fr_1fr_12rem_5rem_4rem_6rem] gap-2 text-[11px] font-medium text-muted-foreground">
             <span>{t('roles.admin_key', 'Key')}</span><span>English</span><span>العربية</span><span>{t('roles.admin_category', 'Category')}</span><span>{t('roles.admin_order', 'Order')}</span><span>{t('roles.admin_on', 'On')}</span><span />
           </div>
           {rows.map((r) => (
-            <div key={r.key} className="grid grid-cols-1 md:grid-cols-[10rem_1fr_1fr_12rem_4rem_4rem_6rem] gap-2 items-center border-b border-border/40 pb-2 md:border-0 md:pb-0">
+            <div key={r.key} className="grid grid-cols-1 md:grid-cols-[10rem_1fr_1fr_12rem_5rem_4rem_6rem] gap-2 items-center border-b border-border/40 pb-2 md:border-0 md:pb-0">
               <code className="text-xs text-muted-foreground truncate">{r.key}</code>
               <Input aria-label={`${r.key} English`} value={r.label_en} maxLength={80} onChange={(e) => set(r.key, { label_en: e.target.value })} className="h-8 text-xs" />
               <Input aria-label={`${r.key} Arabic`} dir="rtl" value={r.label_ar} maxLength={80} onChange={(e) => set(r.key, { label_ar: e.target.value })} className="h-8 text-xs" />
