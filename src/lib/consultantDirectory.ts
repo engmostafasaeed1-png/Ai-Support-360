@@ -3,6 +3,7 @@
 // LinkedIn and Credly are "linked" (given by the consultant) or "checked" (confirmed by the platform team); nothing here claims more than that.
 
 import { STATE_META, availabilityState, type AvailabilityState } from './mapMarkers';
+import { normalizeRoles } from '@/lib/consultantRoles';
 import type { LinkState } from './consultantLinks';
 import { cityPoint, countryPoint, placeLabel } from './geo';
 import { interviewDoneFrom, profileCompleteness } from './profileCompleteness';
@@ -225,7 +226,7 @@ export function toConsultantLive(row: DirectoryRow, displayName: string | null |
     project_scale: row.project_scale || null,
     work_modes: row.work_modes || [],
     working_week: row.working_week || null,
-    sap_roles: row.sap_roles || [],
+    sap_roles: normalizeRoles(row.sap_roles || []).roles,
     total_sap_years: row.total_sap_years ?? null,
     technologies: row.sap_technologies || [],
     timezone: row.timezone ?? null,
