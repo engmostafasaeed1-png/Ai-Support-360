@@ -33,6 +33,8 @@ export interface GettingStartedInput {
   payoutReady: boolean;
   alertsOn: boolean;
   bids: number;
+  /** Own success stories; undefined until docs/sql/consultant-achievements.sql is applied (no checklist line then). */
+  stories?: number;
 }
 
 export interface GettingStartedItem { key: string; label: string; done: boolean; to: string }
@@ -48,6 +50,7 @@ export function gettingStartedItems(i: GettingStartedInput): GettingStartedItem[
     { key: 'bank', label: 'Add your bank details', done: i.payoutReady, to: '/consultant/profile#payout-details' },
     { key: 'alerts', label: 'Turn on alerts', done: i.alertsOn, to: '/consultant/settings' },
     { key: 'bid', label: 'Place your first bid', done: i.bids > 0, to: '/consultant/open-tickets' },
+    ...(typeof i.stories === 'number' ? [{ key: 'stories', label: 'Add a success story (optional)', done: i.stories > 0, to: '/consultant/profile#achievements' }] : []),
   ];
 }
 
@@ -71,12 +74,14 @@ function useGettingStartedData() {
         } catch { return 0; }
       };
       const [skills, slots, bids] = await Promise.all([count('consultant_skills'), count('availability_slots'), count('proposals')]);
+      const st = await db.from('consultant_achievements').select('id', { count: 'exact', head: true }).eq('consultant_id', c.id).in('status', ['self_declared', 'verified']);
+      const stories: number | undefined = st.error ? undefined : st.count ?? 0;
       let pushDevices = 0;
       try {
         const { data } = await db.rpc('push_my_status', { _endpoint: null });
         pushDevices = typeof data?.devices === 'number' ? data.devices : 0;
       } catch { /* not available */ }
-      return { c, skills, slots, bids, pushDevices };
+      return { c, skills, slots, bids, pushDevices, stories };
     },
   });
   if (base.isLoading || payout.isLoading) return { loading: true as const, input: null };
@@ -84,7 +89,7 @@ function useGettingStartedData() {
   if (!d) return { loading: false as const, input: null };
   const ready = payoutReady(payout.data?.details);
   // The checklist has its own AI interview line, so "Complete your profile" uses the profile-fields part only.
-  const percent = profileCompleteness({ ...d.c, skills_count: d.skills, payout_ready: ready }).fieldsPercent;
+  const percent = profileCompleteness({ ...d.c, skills_count: d.skills, payout_ready: ready, achievements_count: d.stories }).fieldsPercent;
   const input: GettingStartedInput = {
     completenessPercent: percent,
     skills: d.skills,
@@ -94,6 +99,7 @@ function useGettingStartedData() {
     payoutReady: ready,
     alertsOn: d.c.new_case_alerts === true || d.pushDevices > 0 || telegram.data?.active === true,
     bids: d.bids,
+    stories: d.stories,
   };
   return { loading: false as const, input };
 }

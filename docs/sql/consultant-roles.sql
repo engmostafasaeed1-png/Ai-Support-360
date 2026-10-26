@@ -87,11 +87,14 @@ END $$;
 -- 3. Role details (non-technical roles) --------------------------------------------------------------------------------
 ALTER TABLE public.consultants ADD COLUMN IF NOT EXISTS role_details jsonb NOT NULL DEFAULT '{}'::jsonb;
 COMMENT ON COLUMN public.consultants.role_details IS
-  'Role-specific profile details: methodologies[], team_size_managed, solution_areas[], presales_experience (see consultant-roles.sql)';
+  'Role-specific profile details per role category (keys and kinds: ROLE_DETAIL_SPEC in _shared/consultantRoles.ts)';
+GRANT SELECT (role_details) ON public.consultants TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.consultant_roles_guard()
 RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
-DECLARE _k text; _v jsonb;
+DECLARE _k text; _v jsonb; _kind text;
+  -- Kind of every role-detail key (same list as ROLE_DETAIL_SPEC in _shared/consultantRoles.ts; checked by a test).
+  _kinds jsonb := '{"years_managing":"number","team_size_managed":"number","budget_range":"choice","methodologies":"list","projects_delivered":"number","go_lives_led":"number","pm_tools":"list","architecture_domains":"list","landscape_types":"list","integration_patterns":"list","frameworks":"list","reference_architectures":"list","security_compliance":"text","basis_platforms":"list","cloud_ops":"list","data_tools":"list","solution_areas":"list","deal_size_range":"choice","demos_delivered":"number","workshops_delivered":"number","proposals_written":"number","regions":"list","presales_experience":"text","testing_tools":"list","test_types":"list","trainings_delivered":"number","training_formats":"list"}'::jsonb;
 BEGIN
   IF TG_OP = 'INSERT' OR NEW.sap_roles IS DISTINCT FROM OLD.sap_roles OR NEW.sap_role IS DISTINCT FROM OLD.sap_role THEN
     NEW.sap_roles := public.consultant_roles_normalize(NEW.sap_roles,
@@ -109,22 +112,23 @@ BEGIN
       RAISE EXCEPTION 'role_details_invalid' USING ERRCODE = '22023';
     END IF;
     FOR _k, _v IN SELECT key, value FROM jsonb_each(NEW.role_details) LOOP
-      IF _k IN ('methodologies', 'solution_areas') THEN
+      _kind := _kinds ->> _k;
+      IF _kind IS NULL THEN
+        RAISE EXCEPTION 'role_details_invalid' USING ERRCODE = '22023';
+      ELSIF _kind = 'list' THEN
         IF jsonb_typeof(_v) <> 'array' OR jsonb_array_length(_v) > 12 OR EXISTS (
              SELECT 1 FROM jsonb_array_elements(_v) e WHERE jsonb_typeof(e) <> 'string' OR char_length(e #>> '{}') > 80
                 OR public.contact_details_in_text(e #>> '{}')) THEN
           RAISE EXCEPTION 'role_details_invalid' USING ERRCODE = '22023';
         END IF;
-      ELSIF _k = 'team_size_managed' THEN
-        IF jsonb_typeof(_v) <> 'number' OR (_v)::numeric < 0 OR (_v)::numeric > 10000 THEN
+      ELSIF _kind = 'number' THEN
+        IF jsonb_typeof(_v) <> 'number' OR (_v)::numeric < 0 OR (_v)::numeric > 100000 OR (_v)::numeric <> trunc((_v)::numeric) THEN
           RAISE EXCEPTION 'role_details_invalid' USING ERRCODE = '22023';
         END IF;
-      ELSIF _k = 'presales_experience' THEN
+      ELSE -- choice / text
         IF jsonb_typeof(_v) <> 'string' OR char_length(_v #>> '{}') > 600 OR public.contact_details_in_text(_v #>> '{}') THEN
           RAISE EXCEPTION 'role_details_invalid' USING ERRCODE = '22023';
         END IF;
-      ELSE
-        RAISE EXCEPTION 'role_details_invalid' USING ERRCODE = '22023';
       END IF;
     END LOOP;
   END IF;
@@ -145,10 +149,33 @@ UPDATE public.consultants SET sap_roles = public.consultant_roles_normalize(sap_
 
 -- 4. Role-aware required fields ----------------------------------------------------------------------------------------
 INSERT INTO public.profile_field_rules (field_key, section, label, mode, default_mode, sort_order) VALUES
-  ('methodologies', 'Experience', 'Delivery methodologies (managers, architects)', 'optional', 'optional', 222),
-  ('team_size_managed', 'Experience', 'Team size managed (managers)', 'optional', 'optional', 224),
-  ('solution_areas', 'Experience', 'Solution areas (pre-sales, architects)', 'optional', 'optional', 226),
-  ('presales_experience', 'Experience', 'Deal and demo experience (pre-sales)', 'optional', 'optional', 228)
+  ('years_managing', 'Experience', 'Years managing teams', 'optional', 'optional', 600),
+  ('team_size_managed', 'Experience', 'Largest team you managed (people)', 'optional', 'optional', 601),
+  ('budget_range', 'Experience', 'Largest budget managed', 'optional', 'optional', 602),
+  ('methodologies', 'Experience', 'Delivery methodologies', 'optional', 'optional', 603),
+  ('projects_delivered', 'Experience', 'Projects delivered', 'optional', 'optional', 604),
+  ('go_lives_led', 'Experience', 'Go-lives led', 'optional', 'optional', 605),
+  ('pm_tools', 'Experience', 'Delivery tools', 'optional', 'optional', 606),
+  ('architecture_domains', 'Experience', 'Architecture domains', 'optional', 'optional', 607),
+  ('landscape_types', 'Experience', 'Landscape types', 'optional', 'optional', 608),
+  ('integration_patterns', 'Experience', 'Integration patterns', 'optional', 'optional', 609),
+  ('frameworks', 'Experience', 'Architecture frameworks', 'optional', 'optional', 610),
+  ('reference_architectures', 'Experience', 'Reference architectures', 'optional', 'optional', 611),
+  ('security_compliance', 'Experience', 'Security, audit and compliance experience', 'optional', 'optional', 612),
+  ('basis_platforms', 'Experience', 'Platforms and databases', 'optional', 'optional', 613),
+  ('cloud_ops', 'Experience', 'HANA and cloud operations', 'optional', 'optional', 614),
+  ('data_tools', 'Experience', 'Data and analytics tools', 'optional', 'optional', 615),
+  ('solution_areas', 'Experience', 'Solution areas you position or design', 'optional', 'optional', 616),
+  ('deal_size_range', 'Experience', 'Typical deal size', 'optional', 'optional', 617),
+  ('demos_delivered', 'Experience', 'Demos delivered', 'optional', 'optional', 618),
+  ('workshops_delivered', 'Experience', 'Workshops delivered', 'optional', 'optional', 619),
+  ('proposals_written', 'Experience', 'Proposals written', 'optional', 'optional', 620),
+  ('regions', 'Experience', 'Regions covered', 'optional', 'optional', 621),
+  ('presales_experience', 'Experience', 'Deal and demo experience', 'optional', 'optional', 622),
+  ('testing_tools', 'Experience', 'Testing tools', 'optional', 'optional', 623),
+  ('test_types', 'Experience', 'Test types', 'optional', 'optional', 624),
+  ('trainings_delivered', 'Experience', 'Trainings delivered', 'optional', 'optional', 625),
+  ('training_formats', 'Experience', 'Training formats', 'optional', 'optional', 626)
 ON CONFLICT (field_key) DO NOTHING;
 
 -- Same category lists as ROLE_FIELD_CATEGORIES in _shared/consultantRoles.ts.
@@ -156,16 +183,39 @@ CREATE OR REPLACE FUNCTION public.consultant_field_applies(_cid uuid, _key text)
 RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   _allowed text[];
-  _detail boolean := _key IN ('methodologies','team_size_managed','solution_areas','presales_experience');
+  _detail boolean := _key IN ('years_managing','team_size_managed','budget_range','methodologies','projects_delivered','go_lives_led','pm_tools','architecture_domains','landscape_types','integration_patterns','frameworks','reference_architectures','security_compliance','basis_platforms','cloud_ops','data_tools','solution_areas','deal_size_range','demos_delivered','workshops_delivered','proposals_written','regions','presales_experience','testing_tools','test_types','trainings_delivered','training_formats');
   _cats text[];
 BEGIN
-  _allowed := CASE _key
+  _allowed := CASE _key -- same lists as ROLE_FIELD_CATEGORIES in _shared/consultantRoles.ts (checked by a test)
     WHEN 'sap_technologies' THEN ARRAY['functional','technical','basis_security','data_analytics','integration_btp','architecture','testing_quality']
     WHEN 'certifications'   THEN ARRAY['functional','technical','basis_security','data_analytics','integration_btp','architecture','testing_quality']
-    WHEN 'methodologies'    THEN ARRAY['delivery_management','architecture','testing_quality','change_training']
+    WHEN 'years_managing' THEN ARRAY['delivery_management']
     WHEN 'team_size_managed' THEN ARRAY['delivery_management','architecture','testing_quality','change_training']
-    WHEN 'solution_areas'   THEN ARRAY['presales_sales','architecture']
+    WHEN 'budget_range' THEN ARRAY['delivery_management']
+    WHEN 'methodologies' THEN ARRAY['delivery_management','architecture','testing_quality','change_training']
+    WHEN 'projects_delivered' THEN ARRAY['delivery_management','architecture']
+    WHEN 'go_lives_led' THEN ARRAY['delivery_management']
+    WHEN 'pm_tools' THEN ARRAY['delivery_management','testing_quality']
+    WHEN 'architecture_domains' THEN ARRAY['architecture']
+    WHEN 'landscape_types' THEN ARRAY['architecture','basis_security']
+    WHEN 'integration_patterns' THEN ARRAY['architecture','integration_btp']
+    WHEN 'frameworks' THEN ARRAY['architecture']
+    WHEN 'reference_architectures' THEN ARRAY['architecture']
+    WHEN 'security_compliance' THEN ARRAY['architecture','basis_security']
+    WHEN 'basis_platforms' THEN ARRAY['basis_security']
+    WHEN 'cloud_ops' THEN ARRAY['basis_security']
+    WHEN 'data_tools' THEN ARRAY['data_analytics']
+    WHEN 'solution_areas' THEN ARRAY['presales_sales','architecture']
+    WHEN 'deal_size_range' THEN ARRAY['presales_sales']
+    WHEN 'demos_delivered' THEN ARRAY['presales_sales']
+    WHEN 'workshops_delivered' THEN ARRAY['presales_sales','change_training']
+    WHEN 'proposals_written' THEN ARRAY['presales_sales']
+    WHEN 'regions' THEN ARRAY['presales_sales']
     WHEN 'presales_experience' THEN ARRAY['presales_sales']
+    WHEN 'testing_tools' THEN ARRAY['testing_quality']
+    WHEN 'test_types' THEN ARRAY['testing_quality']
+    WHEN 'trainings_delivered' THEN ARRAY['change_training']
+    WHEN 'training_formats' THEN ARRAY['change_training']
   END;
   IF _allowed IS NULL THEN RETURN true; END IF;
   SELECT array_agg(DISTINCT COALESCE((SELECT k.category FROM public.consultant_role_catalog k WHERE k.key = public.consultant_role_key(r)), 'other'))
@@ -178,10 +228,11 @@ END $$;
 
 CREATE OR REPLACE FUNCTION public.consultant_role_detail_filled(_cid uuid, _key text)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT CASE _key
-    WHEN 'team_size_managed' THEN jsonb_typeof(c.role_details -> _key) = 'number'
-    WHEN 'presales_experience' THEN char_length(btrim(COALESCE(c.role_details ->> _key, ''))) >= 10
-    ELSE jsonb_typeof(c.role_details -> _key) = 'array' AND jsonb_array_length(c.role_details -> _key) > 0
+  SELECT CASE jsonb_typeof(c.role_details -> _key)
+    WHEN 'number' THEN true
+    WHEN 'string' THEN char_length(btrim(c.role_details ->> _key)) >= 2
+    WHEN 'array' THEN jsonb_array_length(c.role_details -> _key) > 0
+    ELSE false
   END FROM public.consultants c WHERE c.id = _cid
 $$;
 
@@ -193,7 +244,7 @@ RETURNS text[] LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS 
     FROM public.profile_field_rules r
    WHERE r.mode = 'required'
      AND public.consultant_field_applies(_cid, r.field_key)
-     AND NOT CASE WHEN r.field_key IN ('methodologies','team_size_managed','solution_areas','presales_experience')
+     AND NOT CASE WHEN r.field_key IN ('years_managing','team_size_managed','budget_range','methodologies','projects_delivered','go_lives_led','pm_tools','architecture_domains','landscape_types','integration_patterns','frameworks','reference_architectures','security_compliance','basis_platforms','cloud_ops','data_tools','solution_areas','deal_size_range','demos_delivered','workshops_delivered','proposals_written','regions','presales_experience','testing_tools','test_types','trainings_delivered','training_formats')
                   THEN COALESCE(public.consultant_role_detail_filled(_cid, r.field_key), false)
                   ELSE public.profile_field_filled(_cid, r.field_key) END
 $$;

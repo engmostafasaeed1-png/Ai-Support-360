@@ -1,4 +1,7 @@
 import FoundingBadge from '@/components/consultant/FoundingBadge';
+import { usePublicAchievementsMap } from '@/hooks/useAchievements';
+import { storyFacets } from '@/lib/achievements';
+import { TopAchievements } from '@/components/consultant/AchievementsSection';
 import { useFoundingConsultants, useFoundingBoost } from '@/hooks/useFoundingConsultants';
 import { foundingTieBreak } from '@/lib/foundingConsultants';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -92,7 +95,10 @@ export default function ConsultantsPage() {
   const successViews = useMemo<Map<string, SuccessView> | null>(() => successCfg.publicOn && successCounts
     ? new Map(consultantIds.map((id) => [id, successView(true, successCounts.get(id) ?? null, successCfg.settings)] as [string, SuccessView]))
     : null, [successCfg.publicOn, successCfg.settings, successCounts, consultantIds]);
-  const ctx = useMemo<DirectoryContext>(() => ({ founding: foundingSet, viewerOffset: -new Date().getTimezoneOffset() / 60, respLevels, success: successViews }), [foundingSet, respLevels, successViews]);
+  // Public success stories: one request for the list; their industries and roles also count for the filters.
+  const storiesById = usePublicAchievementsMap(consultantIds);
+  const storyFacetMap = useMemo(() => new Map([...storiesById].map(([id, list]) => [id, storyFacets(list)])), [storiesById]);
+  const ctx = useMemo<DirectoryContext>(() => ({ founding: foundingSet, viewerOffset: -new Date().getTimezoneOffset() / 60, respLevels, success: successViews, stories: storyFacetMap }), [foundingSet, respLevels, successViews, storyFacetMap]);
   // Same score as the inner ring arc; only while responsiveness is public.
   const respScores = useMemo(() => respPublic ? new Map([...respById].flatMap(([id, r]) => { const v = responsivenessScore(r); return v == null ? [] : [[id, v] as [string, number]]; })) : null, [respById, respPublic]);
 
@@ -395,6 +401,7 @@ export default function ConsultantsPage() {
 
                     <BlendedRatingStars consultantId={c.id} rating={c.rating} reviews={c.reviews} size="sm" className="mt-2" />
                     {matches && <MatchWhyChips why={matches.get(c.id)?.chips} score={matches.get(c.id)?.score} />}
+                    <TopAchievements consultantId={c.id} stories={storiesById.get(c.id)} />
 
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       <FoundingBadge consultantId={c.id} />

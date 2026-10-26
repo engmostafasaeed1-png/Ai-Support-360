@@ -118,18 +118,82 @@ export const isRoleKey = (v: unknown): v is string => typeof v === 'string' && K
 const HANDS_ON: RoleCategory[] = ['functional', 'technical', 'basis_security', 'data_analytics', 'integration_btp', 'architecture', 'testing_quality'];
 const LEADERSHIP: RoleCategory[] = ['delivery_management', 'architecture', 'testing_quality', 'change_training'];
 
-/** Fields that belong only to some role categories. Fields not listed apply to everybody. */
+export type DetailKind = 'list' | 'number' | 'choice' | 'text';
+export type RoleDetailSpec = { key: string; kind: DetailKind; cats: RoleCategory[]; en: string; ar: string; options?: string[] };
+const MGMT: RoleCategory[] = ['delivery_management'];
+const SIZE = ['Under 100k USD', '100k-500k USD', '500k-1M USD', '1M-5M USD', 'Over 5M USD'];
+
+/** Role details per category (stored in consultants.role_details). Lists are admin-editable (settings.lists) plus free "other" text. */
+export const ROLE_DETAIL_SPEC: RoleDetailSpec[] = [
+  { key: 'years_managing', kind: 'number', cats: MGMT, en: 'Years managing teams', ar: 'سنوات إدارة الفرق' },
+  { key: 'team_size_managed', kind: 'number', cats: LEADERSHIP, en: 'Largest team you managed (people)', ar: 'أكبر فريق أدرته (عدد الأشخاص)' },
+  { key: 'budget_range', kind: 'choice', cats: MGMT, en: 'Largest budget managed', ar: 'أكبر ميزانية أدرتها', options: SIZE },
+  { key: 'methodologies', kind: 'list', cats: LEADERSHIP, en: 'Delivery methodologies', ar: 'منهجيات التسليم', options: ['SAP Activate', 'Agile / Scrum', 'SAFe', 'Waterfall', 'Hybrid', 'PRINCE2', 'PMP', 'ITIL'] },
+  { key: 'projects_delivered', kind: 'number', cats: ['delivery_management', 'architecture'], en: 'Projects delivered', ar: 'المشاريع المُسلَّمة' },
+  { key: 'go_lives_led', kind: 'number', cats: MGMT, en: 'Go-lives led', ar: 'عمليات التشغيل الفعلي التي قدتها' },
+  { key: 'pm_tools', kind: 'list', cats: ['delivery_management', 'testing_quality'], en: 'Delivery tools', ar: 'أدوات التسليم', options: ['Jira', 'MS Project', 'SAP Solution Manager', 'SAP Cloud ALM', 'SAP Signavio', 'ServiceNow', 'Azure DevOps', 'Smartsheet'] },
+  { key: 'architecture_domains', kind: 'list', cats: ['architecture'], en: 'Architecture domains', ar: 'مجالات الهندسة المعمارية', options: ['Business', 'Application', 'Data', 'Integration', 'Technology / infrastructure', 'Security'] },
+  { key: 'landscape_types', kind: 'list', cats: ['architecture', 'basis_security'], en: 'Landscape types', ar: 'أنواع البيئات', options: ['On-premise', 'RISE with SAP', 'Public cloud', 'Hybrid', 'Multi-cloud'] },
+  { key: 'integration_patterns', kind: 'list', cats: ['architecture', 'integration_btp'], en: 'Integration patterns', ar: 'أنماط التكامل', options: ['API-led', 'Event-driven', 'IDoc / EDI', 'File-based', 'Side-by-side on BTP', 'Point-to-point'] },
+  { key: 'frameworks', kind: 'list', cats: ['architecture'], en: 'Architecture frameworks', ar: 'أطر الهندسة المعمارية', options: ['TOGAF', 'ArchiMate', 'Zachman', 'SAP EA Framework', 'Clean core'] },
+  { key: 'reference_architectures', kind: 'list', cats: ['architecture'], en: 'Reference architectures', ar: 'المعماريات المرجعية', options: ['SAP reference architecture', 'RISE reference', 'BTP reference', 'Industry best practices'] },
+  { key: 'security_compliance', kind: 'text', cats: ['architecture', 'basis_security'], en: 'Security, audit and compliance experience', ar: 'خبرة الأمن والتدقيق والامتثال' },
+  { key: 'basis_platforms', kind: 'list', cats: ['basis_security'], en: 'Platforms and databases', ar: 'المنصات وقواعد البيانات', options: ['SAP HANA', 'Sybase ASE', 'Oracle', 'MS SQL Server', 'IBM Db2', 'NetWeaver ABAP', 'NetWeaver Java', 'SAP BTP', 'Linux', 'Windows'] },
+  { key: 'cloud_ops', kind: 'list', cats: ['basis_security'], en: 'HANA and cloud operations', ar: 'تشغيل HANA والسحابة', options: ['HANA operations', 'RISE operations', 'Azure', 'AWS', 'Google Cloud', 'Backup and DR', 'System copies', 'Upgrades'] },
+  { key: 'data_tools', kind: 'list', cats: ['data_analytics'], en: 'Data and analytics tools', ar: 'أدوات البيانات والتحليلات', options: ['SAP Analytics Cloud', 'Datasphere', 'BW/4HANA', 'BW 7.x', 'HANA modeling', 'Embedded analytics', 'SAP AI Core / ML', 'Databricks'] },
+  { key: 'solution_areas', kind: 'list', cats: ['presales_sales', 'architecture'], en: 'Solution areas you position or design', ar: 'مجالات الحلول التي تعرضها أو تصممها', options: ['Finance', 'Procurement', 'Supply chain', 'Sales & service', 'Human resources', 'Manufacturing', 'Asset management', 'Analytics', 'BTP & integration', 'Industry solutions'] },
+  { key: 'deal_size_range', kind: 'choice', cats: ['presales_sales'], en: 'Typical deal size', ar: 'حجم الصفقة المعتاد', options: SIZE },
+  { key: 'demos_delivered', kind: 'number', cats: ['presales_sales'], en: 'Demos delivered', ar: 'العروض التوضيحية المقدَّمة' },
+  { key: 'workshops_delivered', kind: 'number', cats: ['presales_sales', 'change_training'], en: 'Workshops delivered', ar: 'ورش العمل المقدَّمة' },
+  { key: 'proposals_written', kind: 'number', cats: ['presales_sales'], en: 'Proposals written', ar: 'العروض المكتوبة' },
+  { key: 'regions', kind: 'list', cats: ['presales_sales'], en: 'Regions covered', ar: 'المناطق المغطّاة', options: ['GCC', 'Middle East', 'North Africa', 'Africa', 'Europe', 'Asia', 'Americas'] },
+  { key: 'presales_experience', kind: 'text', cats: ['presales_sales'], en: 'Deal and demo experience', ar: 'خبرة الصفقات والعروض التوضيحية' },
+  { key: 'testing_tools', kind: 'list', cats: ['testing_quality'], en: 'Testing tools', ar: 'أدوات الاختبار', options: ['Tricentis Tosca', 'SAP CBTA', 'Worksoft', 'Micro Focus ALM', 'Jira Xray', 'Selenium', 'Cloud ALM test management'] },
+  { key: 'test_types', kind: 'list', cats: ['testing_quality'], en: 'Test types', ar: 'أنواع الاختبار', options: ['Unit', 'Integration', 'Regression', 'UAT', 'Performance', 'Security', 'Automation'] },
+  { key: 'trainings_delivered', kind: 'number', cats: ['change_training'], en: 'Trainings delivered', ar: 'الدورات التدريبية المقدَّمة' },
+  { key: 'training_formats', kind: 'list', cats: ['change_training'], en: 'Training formats', ar: 'أشكال التدريب', options: ['Classroom', 'Virtual', 'E-learning', 'Train-the-trainer', 'Job aids', 'SAP Enable Now'] },
+];
+
+/** Fields that belong only to some role categories (technical fields + every role detail). Fields not listed apply to everybody. */
 export const ROLE_FIELD_CATEGORIES: Record<string, RoleCategory[]> = {
   sap_technologies: HANDS_ON,
   certifications: HANDS_ON,
-  methodologies: LEADERSHIP,
-  team_size_managed: LEADERSHIP,
-  solution_areas: ['presales_sales', 'architecture'],
-  presales_experience: ['presales_sales'],
+  ...Object.fromEntries(ROLE_DETAIL_SPEC.map((d) => [d.key, d.cats])),
 };
-/** The new role-detail fields (stored in consultants.role_details). */
-export const ROLE_DETAIL_FIELDS = ['methodologies', 'team_size_managed', 'solution_areas', 'presales_experience'] as const;
-export type RoleDetailField = typeof ROLE_DETAIL_FIELDS[number];
+/** The role-detail fields (stored in consultants.role_details). */
+export const ROLE_DETAIL_FIELDS: readonly string[] = ROLE_DETAIL_SPEC.map((d) => d.key);
+export type RoleDetailField = string;
+export type RoleDetails = Record<string, string | number | string[] | null | undefined>;
+
+/** The options of a list/choice field: the admin's list when set, else the built-in one. */
+export function detailOptions(spec: RoleDetailSpec, settings?: RoleSettings | null): string[] {
+  const own = settings?.lists?.[spec.key];
+  return Array.isArray(own) && own.length ? own.filter((x) => typeof x === 'string' && x.trim()).slice(0, 40) : spec.options ?? [];
+}
+
+/** Cleans role details for saving: known keys, right types, limits (mirror of consultant_roles_guard). Returns problems too. */
+export function cleanRoleDetails(raw: RoleDetails, hasContact: (s: string) => boolean): { details: RoleDetails; problems: string[] } {
+  const details: RoleDetails = {};
+  const problems: string[] = [];
+  for (const spec of ROLE_DETAIL_SPEC) {
+    const v = raw[spec.key];
+    if (v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0)) continue;
+    if (spec.kind === 'number') {
+      const n = Number(v);
+      if (!Number.isInteger(n) || n < 0 || n > 100000) { problems.push(spec.key); continue; }
+      details[spec.key] = n;
+    } else if (spec.kind === 'list') {
+      const list = [...new Set((Array.isArray(v) ? v : []).map((x) => String(x).trim().slice(0, 80)).filter(Boolean))].slice(0, 12);
+      if (list.some(hasContact)) { problems.push(spec.key); continue; }
+      if (list.length) details[spec.key] = list;
+    } else {
+      const text = String(v).trim().slice(0, 600);
+      if (hasContact(text)) { problems.push(spec.key); continue; }
+      if (text) details[spec.key] = text;
+    }
+  }
+  return { details, problems };
+}
 
 /**
  * Whether a profile field applies to someone with these roles. No roles yet, or only "Other": today's fields keep applying
@@ -200,7 +264,7 @@ export const INTERVIEW_FOCUS_TEXT: Record<InterviewFocus, { questions: string; r
 
 // ------------------------------------------------------------- rates and verification
 
-export type RoleSettings = { rate_ranges?: Partial<Record<RoleCategory, { min?: number; max?: number }>> };
+export type RoleSettings = { rate_ranges?: Partial<Record<RoleCategory, { min?: number; max?: number }>>; lists?: Record<string, string[]> };
 
 /** The admin's suggested hourly-rate range for the primary role's category, or null when none is set. */
 export function suggestedRateRange(settings: RoleSettings | null | undefined, primary: string | null | undefined, catalog?: RoleEntry[]): { category: RoleCategory; min: number; max: number } | null {

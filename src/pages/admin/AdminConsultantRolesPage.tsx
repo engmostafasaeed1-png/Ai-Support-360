@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ROLE_CATALOG_KEY, useRoleCatalog, useRoleSettings } from '@/hooks/useRoleCatalog';
-import { CATEGORY_LABELS, ROLE_CATEGORIES, isRoleKey, type RoleCategory, type RoleEntry, type RoleSettings } from '@/lib/consultantRoles';
+import { CATEGORY_LABELS, ROLE_CATEGORIES, ROLE_DETAIL_SPEC, detailOptions, isRoleKey, type RoleCategory, type RoleEntry, type RoleSettings } from '@/lib/consultantRoles';
+import { Textarea } from '@/components/ui/textarea';
 
 const db = supabase as any;
 
@@ -27,6 +28,22 @@ export default function AdminConsultantRolesPage() {
   const [ranges, setRanges] = useState<NonNullable<RoleSettings['rate_ranges']>>({});
   useEffect(() => setRows(catalog), [catalog]);
   useEffect(() => setRanges(settings.data?.rate_ranges ?? {}), [settings.data]);
+  const [lists, setLists] = useState<Record<string, string>>({});
+  useEffect(() => setLists(Object.fromEntries(ROLE_DETAIL_SPEC.filter((d) => d.options).map((d) => [d.key, detailOptions(d, settings.data).join('\n')]))), [settings.data]);
+  const saveLists = async () => {
+    setBusyKey('lists');
+    const clean: Record<string, string[]> = {};
+    for (const d of ROLE_DETAIL_SPEC) {
+      if (!d.options) continue;
+      const items = [...new Set((lists[d.key] ?? '').split('\n').map((x) => x.trim().slice(0, 80)).filter(Boolean))].slice(0, 40);
+      if (items.length && items.join('\n') !== d.options.join('\n')) clean[d.key] = items;
+    }
+    const { error } = await db.from('platform_settings').update({ value: { ...(settings.data ?? {}), lists: clean } }).eq('key', 'consultant_roles');
+    setBusyKey(null);
+    if (error) return toast.error(error.message);
+    toast.success(t('roles.admin_saved', 'Saved'));
+    qc.invalidateQueries({ queryKey: ['consultant-role-settings'] });
+  };
 
   const refresh = () => qc.invalidateQueries({ queryKey: ROLE_CATALOG_KEY });
   const save = async (r: RoleEntry) => {
@@ -115,6 +132,23 @@ export default function AdminConsultantRolesPage() {
             </div>
           ))}
           <Button size="sm" onClick={saveRanges} busy={busyKey === 'ranges'} reason={notReady}>{t('roles.admin_save', 'Save')}</Button>
+        </CardContent>
+      </Card>
+      <Card className="rounded-2xl border-border/50">
+        <CardHeader>
+          <CardTitle className="text-base">{t('roles.admin_lists', 'Choice lists for role details')}</CardTitle>
+          <p className="text-xs text-muted-foreground">{t('roles.admin_lists_hint', 'One option per line. Consultants can still add their own "other" entries; contact details are always refused.')}</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            {ROLE_DETAIL_SPEC.filter((d) => d.options).map((d) => (
+              <div key={d.key} className="space-y-1">
+                <label htmlFor={`list-${d.key}`} className="text-xs font-medium text-foreground">{lang === 'ar' ? d.ar : d.en}</label>
+                <Textarea id={`list-${d.key}`} rows={4} className="text-xs" value={lists[d.key] ?? ''} onChange={(e) => setLists({ ...lists, [d.key]: e.target.value })} />
+              </div>
+            ))}
+          </div>
+          <Button size="sm" onClick={saveLists} busy={busyKey === 'lists'} reason={notReady}>{t('roles.admin_save', 'Save')}</Button>
         </CardContent>
       </Card>
     </div>

@@ -20,10 +20,11 @@ import { useTranslation } from 'react-i18next';
 import { cleanVersion, isNotAppliedError, MAX_VERSION_LENGTH, versionChoices } from '@/lib/interviewKnowledge';
 import { useVersionOptions } from '@/hooks/useInterviewKnowledge';
 import { useQueryClient } from '@tanstack/react-query';
-import { Textarea } from '@/components/ui/textarea';
 import RolePicker from './RolePicker';
-import { MY_ROLES_KEY, useRoleCatalog } from '@/hooks/useRoleCatalog';
-import { MAX_ROLES, fieldAppliesToRoles, isRequiredForRoles, normalizeRoles, primaryToStore } from '@/lib/consultantRoles';
+import RoleDetailsFields from './RoleDetailsFields';
+import { MY_ROLES_KEY, useRoleCatalog, useRoleSettings } from '@/hooks/useRoleCatalog';
+import { MAX_ROLES, ROLE_DETAIL_SPEC, cleanRoleDetails, fieldAppliesToRoles, isRequiredForRoles, normalizeRoles, primaryToStore, type RoleDetails } from '@/lib/consultantRoles';
+import { contactDetailsInText } from '../../../supabase/functions/_shared/assignmentInfo';
 
 /** @deprecated The role list now comes from the admin catalogue (useRoleCatalog); kept for older imports. */
 export const SAP_ROLES = [
@@ -45,9 +46,6 @@ export const SENIORITY = [
   ['principal', 'Principal / expert (15+ yrs)'],
 ] as const;
 
-const METHODOLOGIES = ['SAP Activate', 'ASAP', 'Agile / Scrum', 'Waterfall', 'Hybrid', 'PRINCE2', 'PMP', 'SAFe', 'ITIL', 'TOGAF'];
-const SOLUTION_AREAS = ['Finance', 'Procurement', 'Supply chain', 'Sales & service', 'Human resources', 'Manufacturing', 'Asset management', 'Analytics', 'BTP & integration', 'Industry solutions'];
-type RoleDetails = { methodologies?: string[]; team_size_managed?: number | null; solution_areas?: string[]; presales_experience?: string };
 
 const TECHNOLOGIES = [
   'S/4HANA On-Premise', 'S/4HANA Cloud Public', 'RISE / Private Cloud', 'ECC 6.0', 'HANA DB', 'ABAP', 'ABAP OO', 'ABAP RAP', 'CDS Views',
@@ -123,6 +121,7 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const roleCatalog = useRoleCatalog();
+  const roleSettings = useRoleSettings();
   const [details, setDetails] = useState<RoleDetails>({});
   const [detailsLoaded, setDetailsLoaded] = useState(false);
   const loadSkills = async (uid: string) => {
@@ -235,28 +234,24 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
   });
   const detailState = useSectionAutosave({ values: { role_details: details }, ready: applied && detailsLoaded && !!userId && !rules.isLoading, automatic: automatic.data === true, beforeManual,
     validate: () => {
-      const n = details.team_size_managed;
-      if (n !== undefined && n !== null && (!Number.isInteger(n) || n < 0 || n > 10000)) return t('roles.team_size_invalid', 'Team size must be a whole number from 0 to 10000.');
-      const missing = (['methodologies', 'team_size_managed', 'solution_areas', 'presales_experience'] as const).some((k) => {
-        if (!isRequiredForRoles(k, rules.isRequired(k), roles, roleCatalog.catalog)) return false;
-        const v = details[k];
+      const { problems } = cleanRoleDetails(details, contactDetailsInText);
+      if (problems.length) return t('roles.details_invalid', 'Remove contact details (e-mail, phone, links) from your role details.');
+      const missing = ROLE_DETAIL_SPEC.some(({ key }) => {
+        if (!isRequiredForRoles(key, rules.isRequired(key), roles, roleCatalog.catalog)) return false;
+        const v = details[key];
         return v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length);
       });
       return missing ? 'Complete the required fields in this section before saving.' : null;
     },
     persist: async () => {
       if (!userId) throw new Error('Your consultant profile could not be found.');
-      const clean: RoleDetails = {};
-      if (details.methodologies?.length) clean.methodologies = details.methodologies.slice(0, 12).map((x) => x.slice(0, 80));
-      if (details.solution_areas?.length) clean.solution_areas = details.solution_areas.slice(0, 12).map((x) => x.slice(0, 80));
-      if (typeof details.team_size_managed === 'number') clean.team_size_managed = details.team_size_managed;
-      if (details.presales_experience?.trim()) clean.presales_experience = details.presales_experience.trim().slice(0, 600);
+      const { details: clean } = cleanRoleDetails(details, contactDetailsInText);
       const { error } = await (supabase as any).from('consultants').update({ role_details: clean }).eq('id', userId);
       if (error) { toast.error(error.message?.includes('role_details_invalid') ? t('roles.details_invalid', 'Remove contact details (e-mail, phone, links) from your role details.') : error.message); throw error; }
       onProfileChanged?.();
     },
   });
-  const showDetails = applied && (['methodologies', 'team_size_managed', 'solution_areas', 'presales_experience'] as const).some((k) => applies(k) && rules.isVisible(k));
+  const showDetails = applied && ROLE_DETAIL_SPEC.some(({ key }) => applies(key) && rules.isVisible(key));
   const addSkills = () => {
     const have = new Set(skills.map(s => s.sap_module.toLowerCase()));
     const names = [...picked, ...customModule.split(',').map(x => x.trim().slice(0, 120))].filter(Boolean).filter((n, i, list) => list.findIndex(x => x.toLowerCase() === n.toLowerCase()) === i && !have.has(n.toLowerCase()));
@@ -289,34 +284,9 @@ export default function SapExpertiseCard({ onProfileChanged }: { onProfileChange
               <p className="text-sm font-medium text-foreground">{t('roles.details_title', 'Details for your role')}</p>
               <SectionSaveControls state={detailState} reason={loading && 'loading_data'} />
             </div>
-            {applies('methodologies') && rules.isVisible('methodologies') && (
-              <div className="space-y-2">
-                <Label>{t('roles.methodologies', 'Delivery methodologies')}</Label>
-                <Chips options={METHODOLOGIES} value={details.methodologies ?? []} onChange={(v) => setDetails({ ...details, methodologies: v.slice(0, 12) })} otherPlaceholder={t('roles.other_method', 'Other method')} />
-              </div>
-            )}
-            {applies('team_size_managed') && rules.isVisible('team_size_managed') && (
-              <div className="space-y-1.5 max-w-xs">
-                <Label htmlFor="role-team-size">{t('roles.team_size', 'Largest team you managed (people)')}</Label>
-                <Input id="role-team-size" type="number" min={0} max={10000} value={details.team_size_managed ?? ''}
-                  onChange={(e) => setDetails({ ...details, team_size_managed: e.target.value === '' ? null : Number(e.target.value) })} />
-              </div>
-            )}
-            {applies('solution_areas') && rules.isVisible('solution_areas') && (
-              <div className="space-y-2">
-                <Label>{t('roles.solution_areas', 'Solution areas you position or design')}</Label>
-                <Chips options={SOLUTION_AREAS} value={details.solution_areas ?? []} onChange={(v) => setDetails({ ...details, solution_areas: v.slice(0, 12) })} otherPlaceholder={t('roles.other_area', 'Other area')} />
-              </div>
-            )}
-            {applies('presales_experience') && rules.isVisible('presales_experience') && (
-              <div className="space-y-1.5">
-                <Label htmlFor="role-presales">{t('roles.presales_experience', 'Deal and demo experience')}</Label>
-                <Textarea id="role-presales" rows={3} maxLength={600} value={details.presales_experience ?? ''}
-                  placeholder={t('roles.presales_placeholder', 'For example: 20+ S/4HANA demos for distribution companies, discovery workshops, proposal writing.')}
-                  onChange={(e) => setDetails({ ...details, presales_experience: e.target.value })} />
-                <p className="text-[11px] text-muted-foreground">{t('roles.no_prices', 'Do not include prices, discounts or contact details.')}</p>
-              </div>
-            )}
+            <p className="text-xs text-muted-foreground">{t('roles.details_hint', 'Optional unless marked. Industries and languages are in your profile details.')}</p>
+            <RoleDetailsFields roles={roles} catalog={roleCatalog.catalog} settings={roleSettings.data} value={details} onChange={setDetails}
+              isVisible={rules.isVisible} isRequired={(k) => isRequiredForRoles(k, rules.isRequired(k), roles, roleCatalog.catalog)} />
           </div>
         )}
 

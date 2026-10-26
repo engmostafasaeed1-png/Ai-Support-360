@@ -9,6 +9,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useQueryClient } from '@tanstack/react-query';
+import AchievementsEditor from '@/components/consultant/AchievementsEditor';
 import SapExpertiseCard from '@/components/consultant/SapExpertiseCard';
 import ProfileExperienceCard from '@/components/consultant/ProfileExperienceCard';
 import { useMyPayoutDetails } from '@/hooks/useBilling';
@@ -659,6 +660,7 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
         <ProfileStep data={data} onChange={updateData} renderSection={section} />
       </section>
       <FieldGate field={['skills', 'sap_role', 'seniority_level', 'total_sap_years', 'sap_roles', 'sap_technologies']}><section id="expertise"><SectionRequiredStatus sectionId="expertise" className="mb-2" /><EmbeddedGuideCard section="expertise" stepKey="skills" /><SapExpertiseCard key={`skills-${importRevision}`} onProfileChanged={() => setLoadedRevision(r => r + 1)} /></section></FieldGate>
+      <section id="success-stories-editor"><AchievementsEditor /></section>
       <section id="profile-experience"><SectionRequiredStatus sectionId="profile-experience" className="mb-2" /><EmbeddedGuideCard section="profile-experience" stepKey="projects" /><ProfileExperienceCard sourceRevision={loadedRevision} key={`experience-${importRevision}`} payoutReady={payoutReady(payoutQ.data?.details)} onCompletenessChange={embeddedGuides.setCompleteness} /></section>
       <FieldGate field={['work_history', 'cv']}><section id="experience"><SectionRequiredStatus sectionId="experience" className="mb-2" /><EmbeddedGuideCard section="experience" stepKey="work" /><ExperienceCvCard onProfileChanged={() => setLoadedRevision(r => r + 1)} onImported={() => { setImportRevision(r => r + 1); setLoadedRevision(r => r + 1); }} /></section></FieldGate>
       <FieldGate field="certifications"><section id="certifications"><SectionRequiredStatus sectionId="certifications" className="mb-2" /><EmbeddedGuideCard section="certifications" stepKey="certifications" />{section(['certifications'], <><p className="text-xs text-muted-foreground">{t('profile_save.cert_manual', 'Certificate changes require another verification check. Save them manually.')}</p><CertificationsStep data={data} onChange={updateData} /></>, true)}</section></FieldGate>

@@ -363,6 +363,16 @@ serve(async (req) => {
         supabase.from("availability_slots").select("consultant_id, day_of_week, start_time, end_time, specific_date, is_recurring").in("consultant_id", consultantIds),
       ]);
       for (const result of enrichmentResults) if (result.error) throw result.error;
+      // Public success stories (optional until consultant-achievements.sql is applied): their industries add a small
+      // context-fit signal through the existing industry criterion; story text is never sent anywhere.
+      const storyIndustries = new Map<string, string[]>();
+      {
+        const st = await supabase.from("consultant_achievements").select("consultant_id, industry")
+          .in("consultant_id", consultantIds).eq("is_public", true).in("status", ["verified", "self_declared"]);
+        if (!st.error) for (const r of (st.data ?? []) as Array<{ consultant_id: string; industry: string | null }>)
+          if (r.industry?.trim()) storyIndustries.set(r.consultant_id, [...(storyIndustries.get(r.consultant_id) ?? []), r.industry.trim()]);
+      }
+      const withStories = (c: any) => (storyIndustries.has(c.id) ? { ...c, industries: [...new Set([...(c.industries ?? []), ...storyIndustries.get(c.id)!])] } : c);
       const [
         { data: skills }, { data: certs }, { data: profiles }, { data: interviews },
         { data: projects }, { data: ndaAgreements }, { data: sessionStats }, { data: solvedBefore },
@@ -440,7 +450,7 @@ serve(async (req) => {
           working_week: c.working_week,
           language_levels: c.language_levels,
           // computed on the server from the stated request context: the model is told the result and must not score it itself
-          context_fit: contextFit(requestContext, c),
+          context_fit: contextFit(requestContext, withStories(c)),
           has_active_nda: hasActiveNDA,
           links_checked: Boolean(c.credly_checked_at || c.linkedin_checked_at),
           education: (education || []).filter(e => e.consultant_id === c.id).map(e => ({ degree: e.degree, field: e.field_of_study, start_year: e.start_year, end_year: e.end_year })),
@@ -566,7 +576,7 @@ serve(async (req) => {
           certifications: e.certifications.map((x: any) => ({ name: x.name, verified: x.verified, expired: x.expired })),
           project_modules: e.project_history.flatMap((p: any) => p.modules ?? []),
           technologies: c.sap_technologies, sap_roles: e.sap_roles, languages: c.languages,
-          industries: c.industries, customer_segments: c.customer_segments, localization_countries: c.localization_countries,
+          industries: withStories(c).industries, customer_segments: c.customer_segments, localization_countries: c.localization_countries,
           onsite_countries: c.onsite_countries, vertical_solutions: c.vertical_solutions, localization_solutions: c.localization_solutions,
           project_types: c.project_types, deployment_experience: c.deployment_experience, work_modes: c.work_modes,
           timezone: c.timezone, hourly_rate: Number(c.hourly_rate) || 0, ai_interview_badge: c.ai_interview_badge,

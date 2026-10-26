@@ -149,6 +149,8 @@ export type DirectoryContext = {
   respLevels?: ReadonlyMap<string, RespLevel> | null;
   /** Public success views; null/absent while the success display is off (the success filters then do nothing). */
   success?: ReadonlyMap<string, SuccessView> | null;
+  /** Industries and roles from public success stories (consultant-achievements.sql); absent = not used. */
+  stories?: ReadonlyMap<string, { industries: string[]; roles: string[] }> | null;
 };
 const RESP_RANK: Record<string, number> = { excellent: 3, good: 2, fair: 1 };
 
@@ -192,11 +194,11 @@ export const PREDICATES: Partial<Record<keyof DirectoryFilters, Pred>> = {
   },
   sub: (c, f) => !f.sub || subsOf(c).has(f.sub),
   // Stored roles may still be labels or old keys: compare as catalogue keys.
-  role: (c, f) => !f.role || normalizeRoles(c.sap_roles).roles.some((r) => (roleKeyFor(r) ?? r) === f.role),
+  role: (c, f, x) => !f.role || normalizeRoles(c.sap_roles).roles.some((r) => (roleKeyFor(r) ?? r) === f.role) || (x.stories?.get(c.id)?.roles ?? []).includes(f.role),
   skill: (c, f) => !f.skill || [...(c.skills ?? []), ...(c.technologies ?? [])].some((s) => lc(s) === lc(f.skill)),
   cert: (c, f) => !f.cert || (c.certifications ?? []).some((n) => lc(n).includes(lc(f.cert))),
   years: (c, f) => !f.years || (c.total_sap_years ?? 0) >= f.years,
-  industry: (c, f) => !f.industry || (c.industries ?? []).includes(f.industry),
+  industry: (c, f, x) => !f.industry || (c.industries ?? []).includes(f.industry) || (x.stories?.get(c.id)?.industries ?? []).some((i) => lc(i) === lc(f.industry)),
   segment: (c, f) => !f.segment || (c.customer_segments ?? []).includes(f.segment),
   country: (c, f) => !f.country || (c.localization_countries ?? []).includes(f.country) || lc(c.country) === lc(f.country),
   vertical: (c, f) => !f.vertical || (c.vertical_solutions ?? []).includes(f.vertical),

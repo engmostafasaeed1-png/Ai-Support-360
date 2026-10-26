@@ -1,4 +1,5 @@
 import FoundingBadge from '@/components/consultant/FoundingBadge';
+import PublicRoleCard from '@/components/consultant/PublicRoleCard';
 import FavouriteButton, { BlockToggle } from '@/components/favourites/FavouriteButton';
 import ResponsivenessChip from '@/components/consultant/ResponsivenessChip';
 import { BlendedRatingStars, ResponsivenessReviewLine } from '@/components/consultant/ResponsivenessRating';
@@ -589,6 +590,7 @@ export default function ConsultantProfilePage() {
 
           {/* One "Experience" card: it includes the industries (the old industries card is replaced by it). */}
           <ConsultantExperienceCard data={detail.experience ?? { industries: detail.industries }} />
+          {id && <PublicRoleCard consultantId={id} />}
         </TabsContent>
 
         {/* Skills Tab */}
