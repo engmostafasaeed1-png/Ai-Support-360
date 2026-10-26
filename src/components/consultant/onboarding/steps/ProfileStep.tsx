@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import SuggestedRateHint from '@/components/consultant/SuggestedRateHint';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -141,6 +142,7 @@ export default function ProfileStep({ data, onChange, renderSection }: Props) {
         <FieldGate field="hourly_rate"><div className="space-y-1.5">
           <Label htmlFor="hourlyRate">{t('onboarding.hourly_rate')}<RequiredMark field="hourly_rate" /></Label><FieldHint field="hourlyRate" />
           <Input id="hourlyRate" type="number" min={0} step="0.01" value={data.hourlyRate} onChange={e => onChange({ hourlyRate: Number(e.target.value) })} />
+          <SuggestedRateHint currency={data.currency} />
         </div></FieldGate>
         <div className="space-y-1.5">
           <Label>{t('onboarding.currency')}</Label>
