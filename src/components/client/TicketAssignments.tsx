@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { normalizeRoles, roleLabel } from '@/lib/consultantRoles';
 import ClientViewHint from '@/components/admin/ClientViewHint';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,6 +38,8 @@ interface Assignment {
   notes: string | null;
   created_at: string;
   consultant_name: string;
+  /** The consultant's main professional role (catalogue key or legacy text). */
+  professional_role?: string | null;
   city?: string | null;
   country?: string | null;
   avatar_url: string | null;
@@ -77,7 +80,7 @@ function useTicketAssignments(ticketId: string) {
         let avatar_url: string | null = null;
         const { data: c } = await supabase
           .from('consultants')
-          .select('user_id, city, country')
+          .select('user_id, city, country, sap_role, sap_roles')
           .eq('id', a.consultant_id)
           .single();
         if (c) {
@@ -91,7 +94,8 @@ function useTicketAssignments(ticketId: string) {
             avatar_url = p.avatar_url;
           }
         }
-        assignments.push({ ...a, consultant_name, avatar_url, city: (c as any)?.city ?? null, country: (c as any)?.country ?? null });
+        const professional_role = c ? normalizeRoles((c as any).sap_roles ?? [], (c as any).sap_role).roles[0] ?? null : null;
+        assignments.push({ ...a, consultant_name, avatar_url, city: (c as any)?.city ?? null, country: (c as any)?.country ?? null, professional_role });
       }
       return assignments;
     },
@@ -212,6 +216,11 @@ export default function TicketAssignments({ ticketId, isReadOnly }: TicketAssign
                         <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 gap-0.5 ${roleColors[a.role]}`}>
                           <RoleIcon className="w-2.5 h-2.5" /> {a.role}
                         </Badge>
+                        {a.professional_role && (
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0" title={t('roles.professional_role', 'Professional role')}>
+                            {roleLabel(a.professional_role, i18n.language)}
+                          </Badge>
+                        )}
                         <Badge variant="outline" className="text-[9px] px-1.5 py-0 gap-0.5">
                           <WorkIcon className="w-2.5 h-2.5" /> {a.work_mode}
                         </Badge>
