@@ -206,7 +206,8 @@ DROP POLICY IF EXISTS "Achievement evidence: owner deletes" ON storage.objects;
 CREATE POLICY "Achievement evidence: owner deletes" ON storage.objects FOR DELETE TO authenticated
   USING (bucket_id = 'achievement-evidence' AND (auth.uid())::text = (storage.foldername(name))[1]);
 
--- Profile completion: same body as live consultant_completion plus the "Success stories" item.
+-- Profile completion: same body as live consultant_completion plus the optional "Success stories" item. It counts in the
+-- percent only; fields_complete and missing_items leave it out, so profile reminders never ask for it.
 CREATE OR REPLACE FUNCTION public.consultant_completion(_cid uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -267,11 +268,11 @@ BEGIN
   RETURN jsonb_build_object(
     'percent', round(((100 - v_weight)::numeric * v_done) / v_total + CASE WHEN v_interview THEN v_weight ELSE 0 END)::INT,
     'fields_percent', round(100.0 * v_done / v_total)::INT,
-    'fields_complete', v_done = v_total,
+    'fields_complete', NOT EXISTS (SELECT 1 FROM jsonb_array_elements(v_items) i WHERE NOT (i ->> 'done')::BOOLEAN AND i ->> 'key' <> 'achievements'),
     'interview_done', v_interview,
     'interview_weight', v_weight,
     'payout_ready', v_payout,
-    'missing_items', COALESCE((SELECT jsonb_agg(i ->> 'label') FROM jsonb_array_elements(v_items) i WHERE NOT (i ->> 'done')::BOOLEAN), '[]'::jsonb),
+    'missing_items', COALESCE((SELECT jsonb_agg(i ->> 'label') FROM jsonb_array_elements(v_items) i WHERE NOT (i ->> 'done')::BOOLEAN AND i ->> 'key' <> 'achievements'), '[]'::jsonb),
     'missing_fields', to_jsonb(COALESCE(public.consultant_missing_fields(_cid), ARRAY[]::TEXT[]))
   );
 END;
