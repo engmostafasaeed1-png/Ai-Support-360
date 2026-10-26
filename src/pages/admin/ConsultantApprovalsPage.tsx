@@ -110,6 +110,7 @@ export default function ConsultantApprovalsPage() {
         status: c.verification_status || 'pending',
         bio: c.bio || '',
         modules: (c.consultant_skills || []).map((s: any) => s.sap_module),
+        sap_roles: (c.sap_roles?.length ? c.sap_roles : c.sap_role ? [c.sap_role] : []) as string[],
         certificates: c.certifications || [],
         languages: c.languages || [],
         hourlyRate: c.hourly_rate || 0,
@@ -430,7 +431,7 @@ export default function ConsultantApprovalsPage() {
                           </Button>
                         )}
                         {!isGuest && ['pending', 'under_review', 'on_hold'].includes(status) && (
-                          <Button variant="outline" size="sm" onClick={() => setConditionalTarget({ id: c.id, name: c.name, roles: (c as any).sap_roles?.length ? (c as any).sap_roles : (c as any).sap_role ? [(c as any).sap_role] : [] })}>
+                          <Button variant="outline" size="sm" onClick={() => setConditionalTarget({ id: c.id, name: c.name, roles: c.sap_roles })}>
                             Approve with items to verify
                           </Button>
                         )}
