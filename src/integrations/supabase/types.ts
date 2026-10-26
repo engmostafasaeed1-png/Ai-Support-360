@@ -1864,6 +1864,87 @@ export type Database = {
         }
         Relationships: []
       }
+      consultant_achievements: {
+        Row: {
+          consultant_id: string
+          created_at: string
+          evidence_path: string | null
+          id: string
+          industry: string | null
+          is_public: boolean
+          outcome: string
+          reference_url: string | null
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role_played: string | null
+          sap_area: string | null
+          sap_version: string | null
+          sort: number
+          status: string
+          title: string
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          consultant_id: string
+          created_at?: string
+          evidence_path?: string | null
+          id?: string
+          industry?: string | null
+          is_public?: boolean
+          outcome: string
+          reference_url?: string | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role_played?: string | null
+          sap_area?: string | null
+          sap_version?: string | null
+          sort?: number
+          status?: string
+          title: string
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          consultant_id?: string
+          created_at?: string
+          evidence_path?: string | null
+          id?: string
+          industry?: string | null
+          is_public?: boolean
+          outcome?: string
+          reference_url?: string | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role_played?: string | null
+          sap_area?: string | null
+          sap_version?: string | null
+          sort?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultant_achievements_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultant_contact_links"
+            referencedColumns: ["consultant_id"]
+          },
+          {
+            foreignKeyName: "consultant_achievements_consultant_id_fkey"
+            columns: ["consultant_id"]
+            isOneToOne: false
+            referencedRelation: "consultants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultant_cv_profiles: {
         Row: {
           consultant_id: string
@@ -2478,6 +2559,39 @@ export type Database = {
           },
         ]
       }
+      consultant_role_catalog: {
+        Row: {
+          category: string
+          enabled: boolean
+          key: string
+          label_ar: string
+          label_en: string
+          legacy_labels: string[]
+          sort: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          enabled?: boolean
+          key: string
+          label_ar: string
+          label_en: string
+          legacy_labels?: string[]
+          sort?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          enabled?: boolean
+          key?: string
+          label_ar?: string
+          label_en?: string
+          legacy_labels?: string[]
+          sort?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       consultant_skills: {
         Row: {
           certified: boolean | null
@@ -2832,6 +2946,7 @@ export type Database = {
           project_types: string[]
           rating: number | null
           response_time_minutes: number | null
+          role_details: Json
           sap_role: string | null
           sap_roles: string[]
           sap_technologies: string[]
@@ -2893,6 +3008,7 @@ export type Database = {
           project_types?: string[]
           rating?: number | null
           response_time_minutes?: number | null
+          role_details?: Json
           sap_role?: string | null
           sap_roles?: string[]
           sap_technologies?: string[]
@@ -2954,6 +3070,7 @@ export type Database = {
           project_types?: string[]
           rating?: number | null
           response_time_minutes?: number | null
+          role_details?: Json
           sap_role?: string | null
           sap_roles?: string[]
           sap_technologies?: string[]
@@ -15906,6 +16023,8 @@ export type Database = {
         Args: { _client_notes?: string; _proposal_id: string }
         Returns: undefined
       }
+      achievement_text_problem: { Args: { _text: string }; Returns: string }
+      achievement_url_ok: { Args: { _url: string }; Returns: boolean }
       ack_responsiveness_notice: {
         Args: { _notice_id: string }
         Returns: undefined
@@ -15919,6 +16038,11 @@ export type Database = {
         Returns: string
       }
       admin_access_review: { Args: never; Returns: Json }
+      admin_achievement_review: {
+        Args: { _action: string; _id: string; _reason: string }
+        Returns: undefined
+      }
+      admin_achievements: { Args: { _status?: string }; Returns: Json }
       admin_adjust_credits: {
         Args: { _amount: number; _consultant_id: string; _note: string }
         Returns: undefined
@@ -17164,6 +17288,10 @@ export type Database = {
         Args: { _consultant_id: string; _ticket_id: string }
         Returns: boolean
       }
+      consultant_field_applies: {
+        Args: { _cid: string; _key: string }
+        Returns: boolean
+      }
       consultant_has_environment_for_client: {
         Args: { _client_id: string; _consultant_id: string }
         Returns: boolean
@@ -17217,6 +17345,15 @@ export type Database = {
       consultant_request_assignment_info: {
         Args: { _question: string; _request_id: string; _topics: string[] }
         Returns: string
+      }
+      consultant_role_detail_filled: {
+        Args: { _cid: string; _key: string }
+        Returns: boolean
+      }
+      consultant_role_key: { Args: { _v: string }; Returns: string }
+      consultant_roles_normalize: {
+        Args: { _primary: string; _roles: string[] }
+        Returns: string[]
       }
       consultant_set_capacity: { Args: { _max: number }; Returns: undefined }
       consultant_set_ticket_status: {
@@ -17536,6 +17673,20 @@ export type Database = {
       mask_contact_details: { Args: { _text: string }; Returns: string }
       matching_inactive_consultants: { Args: never; Returns: string[] }
       matching_v2_ready: { Args: never; Returns: boolean }
+      my_achievement_delete: { Args: { _id: string }; Returns: undefined }
+      my_achievement_save: {
+        Args: { _data: Json; _id: string }
+        Returns: string
+      }
+      my_achievement_set_evidence: {
+        Args: { _id: string; _path: string }
+        Returns: undefined
+      }
+      my_achievement_set_public: {
+        Args: { _id: string; _public: boolean }
+        Returns: undefined
+      }
+      my_achievements: { Args: never; Returns: Json }
       my_admin_permissions: { Args: never; Returns: Json }
       my_broadcast_message: {
         Args: { _notification_id: string }
@@ -17557,6 +17708,7 @@ export type Database = {
         Args: { _connectable?: boolean; _env: string }
         Returns: boolean
       }
+      my_consultant_id: { Args: never; Returns: string }
       my_consultant_policy_status: { Args: never; Returns: Json }
       my_feedback: { Args: never; Returns: Json }
       my_location_status: { Args: never; Returns: Json }

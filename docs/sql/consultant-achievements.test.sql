@@ -61,10 +61,13 @@ BEGIN
     EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   RAISE NOTICE 'PASS 4 admin hide audited';
 
-  -- 5 completion counts success stories
+  -- 5 stories raise the completion percent but are never asked for by reminders (optional)
   RESET ROLE;
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', cu, 'role', 'authenticated')::text, true);
-  IF (consultant_completion(c) -> 'missing_items') ? 'Success stories' THEN RAISE EXCEPTION 'FAIL 5 stories not counted'; END IF;
-  RAISE NOTICE 'PASS 5 completion item';
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', au, 'role', 'authenticated')::text, true);
+  IF (consultant_completion(c) ->> 'fields_percent')::int <= (consultant_completion((SELECT id FROM consultants WHERE user_id = ou)) ->> 'fields_percent')::int THEN
+    RAISE EXCEPTION 'FAIL 5 stories not counted'; END IF;
+  IF (consultant_completion((SELECT id FROM consultants WHERE user_id = ou)) -> 'missing_items') ? 'Success stories' THEN
+    RAISE EXCEPTION 'FAIL 5 optional item in reminders'; END IF;
+  RAISE NOTICE 'PASS 5 completion item, optional';
 END $$;
 ROLLBACK;
