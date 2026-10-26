@@ -254,6 +254,9 @@ CREATE POLICY "Signed-in users can read consultant_roles" ON public.platform_set
   USING (key = 'consultant_roles');
 
 -- 7. Interview templates per role category (general area; admins can edit or switch them off). ------------------------
+ALTER TABLE public.interview_templates DROP CONSTRAINT IF EXISTS interview_templates_role_focus_check;
+ALTER TABLE public.interview_templates ADD CONSTRAINT interview_templates_role_focus_check
+  CHECK (role_focus IN ('any', 'functional', 'technical', 'architect', 'manager', 'presales'));
 INSERT INTO public.interview_templates (sap_module, seniority, role_focus, title, focus_areas, instructions, sample_questions, question_count, is_active)
 SELECT 'general', 'any', v.role_focus, v.title, v.focus_areas, v.instructions, v.sample_questions, 8, true
   FROM (VALUES
