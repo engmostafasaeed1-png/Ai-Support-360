@@ -153,27 +153,28 @@ ON CONFLICT (field_key) DO NOTHING;
 
 -- Same category lists as ROLE_FIELD_CATEGORIES in _shared/consultantRoles.ts.
 CREATE OR REPLACE FUNCTION public.consultant_field_applies(_cid uuid, _key text)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  WITH cats AS (
-    SELECT DISTINCT COALESCE((SELECT k.category FROM public.consultant_role_catalog k WHERE k.key = public.consultant_role_key(r)), 'other') AS cat
-      FROM public.consultants c, unnest(COALESCE(c.sap_roles, ARRAY[]::text[])) r
-     WHERE c.id = _cid AND NULLIF(btrim(r), '') IS NOT NULL
-  ), rule AS (
-    SELECT CASE _key
-      WHEN 'sap_technologies' THEN ARRAY['functional','technical','basis_security','data_analytics','integration_btp','architecture','testing_quality']
-      WHEN 'certifications'   THEN ARRAY['functional','technical','basis_security','data_analytics','integration_btp','architecture','testing_quality']
-      WHEN 'methodologies'    THEN ARRAY['delivery_management','architecture','testing_quality','change_training']
-      WHEN 'team_size_managed' THEN ARRAY['delivery_management','architecture','testing_quality','change_training']
-      WHEN 'solution_areas'   THEN ARRAY['presales_sales','architecture']
-      WHEN 'presales_experience' THEN ARRAY['presales_sales']
-    END AS allowed, _key IN ('methodologies','team_size_managed','solution_areas','presales_experience') AS detail
-  )
-  SELECT CASE
-    WHEN (SELECT allowed FROM rule) IS NULL THEN true
-    WHEN NOT EXISTS (SELECT 1 FROM cats) THEN NOT (SELECT detail FROM rule)
-    ELSE EXISTS (SELECT 1 FROM cats WHERE cat = ANY ((SELECT allowed FROM rule)) OR (cat = 'other' AND NOT (SELECT detail FROM rule)))
-  END
-$$;
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  _allowed text[];
+  _detail boolean := _key IN ('methodologies','team_size_managed','solution_areas','presales_experience');
+  _cats text[];
+BEGIN
+  _allowed := CASE _key
+    WHEN 'sap_technologies' THEN ARRAY['functional','technical','basis_security','data_analytics','integration_btp','architecture','testing_quality']
+    WHEN 'certifications'   THEN ARRAY['functional','technical','basis_security','data_analytics','integration_btp','architecture','testing_quality']
+    WHEN 'methodologies'    THEN ARRAY['delivery_management','architecture','testing_quality','change_training']
+    WHEN 'team_size_managed' THEN ARRAY['delivery_management','architecture','testing_quality','change_training']
+    WHEN 'solution_areas'   THEN ARRAY['presales_sales','architecture']
+    WHEN 'presales_experience' THEN ARRAY['presales_sales']
+  END;
+  IF _allowed IS NULL THEN RETURN true; END IF;
+  SELECT array_agg(DISTINCT COALESCE((SELECT k.category FROM public.consultant_role_catalog k WHERE k.key = public.consultant_role_key(r)), 'other'))
+    INTO _cats
+    FROM public.consultants c, unnest(COALESCE(c.sap_roles, ARRAY[]::text[])) r
+   WHERE c.id = _cid AND NULLIF(btrim(r), '') IS NOT NULL;
+  IF _cats IS NULL THEN RETURN NOT _detail; END IF;  -- no roles yet: today's fields apply, new detail fields do not
+  RETURN _cats && _allowed OR ('other' = ANY (_cats) AND NOT _detail);
+END $$;
 
 CREATE OR REPLACE FUNCTION public.consultant_role_detail_filled(_cid uuid, _key text)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
