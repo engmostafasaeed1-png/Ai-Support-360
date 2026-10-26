@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { usePublicAchievementsMap } from '@/hooks/useAchievements';
+import { TopAchievements } from '@/components/consultant/AchievementsSection';
 import { useTranslation } from 'react-i18next';
 import { normalizeRoles, roleLabel } from '@/lib/consultantRoles';
 import ClientViewHint from '@/components/admin/ClientViewHint';
@@ -148,6 +150,7 @@ interface TicketAssignmentsProps {
 export default function TicketAssignments({ ticketId, isReadOnly }: TicketAssignmentsProps) {
   const { t, i18n } = useTranslation();
   const { data: assignments, isLoading } = useTicketAssignments(ticketId);
+  const storiesById = usePublicAchievementsMap((assignments ?? []).map((a) => a.consultant_id));
   const [addOpen, setAddOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -230,6 +233,7 @@ export default function TicketAssignments({ ticketId, isReadOnly }: TicketAssign
                           {formatDistanceToNow(new Date(a.created_at), { addSuffix: true })}
                         </span>
                       </div>
+                      <TopAchievements consultantId={a.consultant_id} stories={storiesById.get(a.consultant_id)} />
                       {a.notes && (
                         <p className="text-[11px] text-muted-foreground mt-1 italic">"{a.notes}"</p>
                       )}
