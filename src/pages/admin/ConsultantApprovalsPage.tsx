@@ -45,10 +45,10 @@ export default function ConsultantApprovalsPage() {
   };
   const [expanded, setExpanded] = useState<string | null>(null);
   const [filterKey, setFilterKey] = useState(STATUS_FILTERS[0].key);
-  const [reinterviewTarget, setReinterviewTarget] = useState<{ id: string; name: string } | null>(null);
+  const [reinterviewTarget, setReinterviewTarget] = useState<{ id: string; name: string; roles?: string[] } | null>(null);
   const [liveTarget, setLiveTarget] = useState<{ id: string; userId: string; name: string } | null>(null);
   const [decisionTarget, setDecisionTarget] = useState<{ id: string; name: string; option: DecisionOption } | null>(null);
-  const [conditionalTarget, setConditionalTarget] = useState<{ id: string; name: string } | null>(null);
+  const [conditionalTarget, setConditionalTarget] = useState<{ id: string; name: string; roles?: string[] } | null>(null);
   const [decisionReason, setDecisionReason] = useState('');
   const [bankMissingOnly, setBankMissingOnly] = useState(false);
   const payoutStatusQ = useAdminPayoutStatus();
