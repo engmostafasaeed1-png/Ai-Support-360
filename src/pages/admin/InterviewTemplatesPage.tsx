@@ -32,6 +32,7 @@ const ROLES = [
   { v: 'technical', l: 'Technical / developer' },
   { v: 'architect', l: 'Solution architect' },
   { v: 'manager', l: 'Project / delivery manager' },
+  { v: 'presales', l: 'Pre-sales / sales consultant' },
 ];
 
 type Tpl = {
