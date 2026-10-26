@@ -2478,6 +2478,39 @@ export type Database = {
           },
         ]
       }
+      consultant_role_catalog: {
+        Row: {
+          category: string
+          enabled: boolean
+          key: string
+          label_ar: string
+          label_en: string
+          legacy_labels: string[]
+          sort: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          enabled?: boolean
+          key: string
+          label_ar: string
+          label_en: string
+          legacy_labels?: string[]
+          sort?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          enabled?: boolean
+          key?: string
+          label_ar?: string
+          label_en?: string
+          legacy_labels?: string[]
+          sort?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       consultant_skills: {
         Row: {
           certified: boolean | null
@@ -2832,6 +2865,7 @@ export type Database = {
           project_types: string[]
           rating: number | null
           response_time_minutes: number | null
+          role_details: Json
           sap_role: string | null
           sap_roles: string[]
           sap_technologies: string[]
@@ -2893,6 +2927,7 @@ export type Database = {
           project_types?: string[]
           rating?: number | null
           response_time_minutes?: number | null
+          role_details?: Json
           sap_role?: string | null
           sap_roles?: string[]
           sap_technologies?: string[]
@@ -2954,6 +2989,7 @@ export type Database = {
           project_types?: string[]
           rating?: number | null
           response_time_minutes?: number | null
+          role_details?: Json
           sap_role?: string | null
           sap_roles?: string[]
           sap_technologies?: string[]
@@ -17164,6 +17200,10 @@ export type Database = {
         Args: { _consultant_id: string; _ticket_id: string }
         Returns: boolean
       }
+      consultant_field_applies: {
+        Args: { _cid: string; _key: string }
+        Returns: boolean
+      }
       consultant_has_environment_for_client: {
         Args: { _client_id: string; _consultant_id: string }
         Returns: boolean
@@ -17217,6 +17257,15 @@ export type Database = {
       consultant_request_assignment_info: {
         Args: { _question: string; _request_id: string; _topics: string[] }
         Returns: string
+      }
+      consultant_role_detail_filled: {
+        Args: { _cid: string; _key: string }
+        Returns: boolean
+      }
+      consultant_role_key: { Args: { _v: string }; Returns: string }
+      consultant_roles_normalize: {
+        Args: { _primary: string; _roles: string[] }
+        Returns: string[]
       }
       consultant_set_capacity: { Args: { _max: number }; Returns: undefined }
       consultant_set_ticket_status: {
