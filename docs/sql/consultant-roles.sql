@@ -130,6 +130,11 @@ BEGIN
   END IF;
   RETURN NEW;
 END $$;
+-- The old fixed list of 8 main-role keys becomes "any catalogue key" (the trigger maps every value to the catalogue).
+ALTER TABLE public.consultants DROP CONSTRAINT IF EXISTS consultants_sap_role_chk;
+ALTER TABLE public.consultants ADD CONSTRAINT consultants_sap_role_chk
+  CHECK (sap_role IS NULL OR sap_role ~ '^[a-z][a-z0-9_]{1,39}$');
+
 DROP TRIGGER IF EXISTS trg_consultant_roles_guard ON public.consultants;
 CREATE TRIGGER trg_consultant_roles_guard BEFORE INSERT OR UPDATE OF sap_role, sap_roles, role_details ON public.consultants
   FOR EACH ROW EXECUTE FUNCTION public.consultant_roles_guard();
