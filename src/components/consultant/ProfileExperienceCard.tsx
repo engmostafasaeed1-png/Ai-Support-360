@@ -126,6 +126,7 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
   }, [consultantId, sourceRevision]);
 
   const completeness = useMemo(() => profileCompleteness({
+    achievements_count: storyCount,
     country: (base as any)?.country, city: (base as any)?.city,
     sap_roles: base?.sap_roles,
     seniority_level: base?.seniority_level,

@@ -21,6 +21,8 @@ export type ProfileForCompleteness = {
   skills_count?: number | null;
   /** Bank details saved with the current payout disclaimer acknowledged. */
   payout_ready?: boolean | null;
+  /** Number of own success stories; the "Success stories" item counts only when the caller knows it (consultant-achievements.sql). */
+  achievements_count?: number | null;
   /** A completed AI interview (consultants.ai_interview_completed_at or an earned interview badge). Pending or not taken = false. */
   interview_done?: boolean | null;
 };
@@ -78,6 +80,7 @@ export function profileCompleteness(
     { key: 'scale', label: 'Project scale', hint: 'Add the largest project size you worked on.', done: filled(p.project_scale) },
     { key: 'work', label: 'Work mode and working week', hint: 'Add remote or on-site, and your working week, so urgent requests reach you at the right time.', done: filled(p.work_modes) && filled(p.working_week) },
     { key: 'languages', label: 'Language levels', hint: 'Add your level in each language you speak.', done: filled(p.language_levels) },
+    ...(typeof p.achievements_count === 'number' ? [{ key: 'achievements', label: 'Success stories', hint: 'Add a success story with a measurable result (optional, no client names).', done: p.achievements_count > 0 }] : []),
     // Client-facing views pass includePayout: false so payout status is never exposed.
     ...(includePayout ? [{ key: 'payout', label: 'Bank details for payouts', hint: 'Add your bank details to receive payouts', done: p.payout_ready === true }] : []),
   ];
