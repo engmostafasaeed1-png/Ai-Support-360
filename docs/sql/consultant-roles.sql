@@ -88,6 +88,7 @@ END $$;
 ALTER TABLE public.consultants ADD COLUMN IF NOT EXISTS role_details jsonb NOT NULL DEFAULT '{}'::jsonb;
 COMMENT ON COLUMN public.consultants.role_details IS
   'Role-specific profile details per role category (keys and kinds: ROLE_DETAIL_SPEC in _shared/consultantRoles.ts)';
+GRANT SELECT (role_details) ON public.consultants TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.consultant_roles_guard()
 RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
