@@ -1,4 +1,5 @@
 import { useSectionAutosave } from '@/hooks/useSectionAutosave';
+import { useMyAchievements } from '@/hooks/useAchievements';
 import { useProfileAutosaveReady } from '@/hooks/useProfileAutosaveReady';
 import { useProfileSavePrompt } from './saving/ProfileImportance';
 import SectionSaveControls from './saving/SectionSaveControls';
@@ -57,6 +58,8 @@ type Row = {
 export default function ProfileExperienceCard({ payoutReady = false, onCompletenessChange, sourceRevision = 0 }: { sourceRevision?: number; payoutReady?: boolean; onCompletenessChange?: (value: ReturnType<typeof profileCompleteness>) => void } = {}) {
   const interviewWeight = useInterviewWeight();
   const interviewDone = useInterviewEligibility().data?.interviewDone === true;
+  const myStories = useMyAchievements();
+  const storyCount = myStories.applied ? myStories.list.filter((x) => x.status === 'self_declared' || x.status === 'verified').length : undefined;
   const [consultantId, setConsultantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -146,7 +149,7 @@ export default function ProfileExperienceCard({ payoutReady = false, onCompleten
     language_levels: languageLevels,
     payout_ready: payoutReady,
     interview_done: interviewDone,
-  }, { interviewWeight }), [interviewDone, interviewWeight, payoutReady, base, skillsCount, industries, segments, verticals, locCountries, locSolutions, projectTypes, deployment, scale, workModes, workingWeek, languageLevels]);
+  }, { interviewWeight }), [storyCount, interviewDone, interviewWeight, payoutReady, base, skillsCount, industries, segments, verticals, locCountries, locSolutions, projectTypes, deployment, scale, workModes, workingWeek, languageLevels]);
 
   const missing = completeness.items.filter((i) => !i.done).slice(0, 4);
   useEffect(() => { if (!loading) onCompletenessChange?.(completeness); }, [loading, completeness, onCompletenessChange]);
