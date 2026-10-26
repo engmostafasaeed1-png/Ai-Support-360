@@ -10,7 +10,7 @@ const CROSS_PORTAL = ['/admin', '/super-admin'];
 const portals: Array<[string, NavGroup[], string, NavItem[], number]> = [
   ['client', clientNavGroups, '/client', [clientPrimaryAction], 40],  // +1: Support agreements, +1: Partner portal
   ['consultant', consultantNavGroups, '/consultant', [], 26],  // +1: Support agreements, +1: NDA agreements
-  ['admin', adminNavGroups, '/admin', [], 31],  // +1: SLA policies, +1: Support agreements, +1: Partner companies, +1: Consultant roles
+  ['admin', adminNavGroups, '/admin', [], 32],  // +1: SLA policies, +1: Support agreements, +1: Partner companies, +1: Consultant roles, +1: Success stories
   ['super-admin', superAdminNavGroups, '/super-admin', [], 10],
 ];
 

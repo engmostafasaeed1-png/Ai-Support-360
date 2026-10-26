@@ -115,6 +115,7 @@ const ResponsivenessAdminPage = lazyWithRetry(() => import("./pages/admin/Respon
 const ReferralsAdminPage = lazyWithRetry(() => import("./pages/admin/ReferralsAdminPage.tsx"), 'ReferralsAdminPage');
 const AdminPartnersPage = lazyWithRetry(() => import("./pages/admin/AdminPartnersPage.tsx"), 'AdminPartnersPage');
 const AdminConsultantRolesPage = lazyWithRetry(() => import("./pages/admin/AdminConsultantRolesPage.tsx"), 'AdminConsultantRolesPage');
+const AdminAchievementsPage = lazyWithRetry(() => import("./pages/admin/AdminAchievementsPage.tsx"), 'AdminAchievementsPage');
 const ReferAndEarnPage = lazyWithRetry(() => import("./pages/consultant/ReferAndEarnPage.tsx"), 'ReferAndEarnPage');
 const ReferralTermsPage = lazyWithRetry(() => import("./pages/ReferralTermsPage.tsx"), 'ReferralTermsPage');
 const ProposalsPage = lazyWithRetry(() => import("./pages/consultant/ProposalsPage.tsx"), 'ProposalsPage');
@@ -543,6 +544,7 @@ const App = () => (
               <Route path="referrals" element={<ReferralsAdminPage />} />
               <Route path="partners" element={<AdminPartnersPage />} />
               <Route path="consultant-roles" element={<AdminConsultantRolesPage />} />
+              <Route path="success-stories" element={<AdminAchievementsPage />} />
               <Route path="knowledge-review" element={<AdminKnowledgeReviewPage />} />
               <Route path="client-approvals" element={<AdminClientApprovalsPage />} />
               <Route path="client-reviews" element={<AdminClientReviewsPage />} />
