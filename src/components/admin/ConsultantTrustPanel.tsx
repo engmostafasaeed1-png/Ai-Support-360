@@ -24,9 +24,9 @@ export interface TrustFields {
 
 interface Props {
   consultant: TrustFields;
-  /** True in the demo: nothing can be saved. */
   /** Shows where the LinkedIn / Credly check e-mail goes. */
   emailNotice?: boolean;
+  /** True in the demo: nothing can be saved. */
   readOnly?: boolean;
   onChanged?: () => void;
 }
