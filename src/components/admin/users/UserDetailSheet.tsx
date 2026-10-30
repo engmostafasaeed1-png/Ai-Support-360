@@ -55,6 +55,7 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
   const { data, isLoading, error, refetch } = useUserDetail(userId, installed);
   const { busy, run } = useUserActions(installed);
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [liveReason, setLiveReason] = useState('');
   const [note, setNote] = useState('');
   const [tagInput, setTagInput] = useState('');
   const can = (p: string) => perms.includes(p);
@@ -316,7 +317,9 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
         onConfirm={async (reason, until) => after(await run('suspend', u.id, { payload: { until: until || null }, reason, ok: t('um.suspended_ok', 'Suspended and signed out'),
           undo: () => run('reactivate', u.id, { ok: t('um.reactivated_ok', 'Reactivated') }) }))} />
       {(['reactivate', 'force_sign_out', 'password_reset', 'resend_verification', 'confirm_email', 'mfa_reset', 'soft_delete', 'restore', 'anonymise', 'delete', 'unmerge'] as const).map((a) => (
-        <ReasonDialog key={a} open={dialog === a} busy={busy} onClose={close} {...confirmCopy(t, a, u)} onConfirm={act(a, confirmCopy(t, a, u).ok)} />
+        <ReasonDialog key={a} open={dialog === a} busy={busy} onClose={close} {...confirmCopy(t, a, u)} onConfirm={act(a, confirmCopy(t, a, u).ok)}
+          onReasonChange={a === 'reactivate' ? setLiveReason : undefined}
+          footerNote={a === 'reactivate' && dialog === a ? <DecisionEmailNotice userId={u.id} subject="account" outcomes={['reactivated']} comment={liveReason} link="/login" /> : undefined} />
       ))}
     </div>
   );
