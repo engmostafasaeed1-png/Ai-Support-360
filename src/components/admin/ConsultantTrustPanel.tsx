@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DecisionEmailNotice from '@/components/admin/DecisionEmailNotice';
 import { Award, ExternalLink, Github, Globe, Linkedin, Loader2, MapPin } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -24,6 +25,8 @@ export interface TrustFields {
 interface Props {
   consultant: TrustFields;
   /** True in the demo: nothing can be saved. */
+  /** Shows where the LinkedIn / Credly check e-mail goes. */
+  emailNotice?: boolean;
   readOnly?: boolean;
   onChanged?: () => void;
 }
@@ -69,7 +72,7 @@ function LinkRow({ icon: Icon, label, href, state, busy, readOnly, onCheck }: Ro
 }
 
 /** For the administrator: the place and the links that a consultant gave, with a button to mark LinkedIn and Credly as checked after the administrator opened them. */
-export default function ConsultantTrustPanel({ consultant, readOnly = false, onChanged }: Props) {
+export default function ConsultantTrustPanel({ consultant, readOnly = false, onChanged, emailNotice = false }: Props) {
   const [busy, setBusy] = useState<Column | null>(null);
 
   const linkedin = normalizeLinkedinUrl(consultant.linkedin_url);
@@ -98,6 +101,7 @@ export default function ConsultantTrustPanel({ consultant, readOnly = false, onC
   return (
     <div className="space-y-3 rounded-xl border border-border/50 bg-background/50 p-3" data-testid="trust-panel">
       <h4 className="text-xs font-semibold uppercase text-muted-foreground">Place and links</h4>
+      {emailNotice && <DecisionEmailNotice compact consultantId={consultant.id} subject="linkedin" outcomes={['approved', 'unverified']} />}
       <p className="flex items-center gap-1.5 text-sm" data-testid="trust-place">
         <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
         {place || 'No city chosen, so the consultant is not on the map.'}

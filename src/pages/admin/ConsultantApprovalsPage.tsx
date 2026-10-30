@@ -364,6 +364,7 @@ export default function ConsultantApprovalsPage() {
                           }}
                           readOnly={isGuest}
                           onChanged={refreshList}
+                          emailNotice={!isGuest}
                         />
                       </div>
 
