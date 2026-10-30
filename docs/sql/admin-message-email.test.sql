@@ -184,8 +184,11 @@ DO $$ DECLARE i _ids; r jsonb; ok boolean := false; t1 uuid := gen_random_uuid()
   IF m ->> 'category' <> 'action' OR m #>> '{context,label}' <> 'SAP FI posting error' OR m #>> '{context,status}' <> 'in progress' THEN RAISE EXCEPTION '10 meta %', m; END IF;
   IF (r #>> '{email,status}') <> 'queued' THEN RAISE EXCEPTION '10 not queued'; END IF;
   PERFORM pg_temp.next_action();
-  r := admin_message_send(i.u2, jsonb_build_object('category', 'notice', 'subject', 'Minor', 'body', 'ok', 'email', false));
+  r := admin_message_send(i.u2, jsonb_build_object('category', 'update', 'subject', 'Minor', 'body', 'ok', 'email', false));
   IF (r #>> '{email,reason}') <> 'admin_unticked_email' THEN RAISE EXCEPTION '10 untick via compose'; END IF;
+  PERFORM pg_temp.next_action();
+  r := admin_message_send(i.u2, jsonb_build_object('category', 'decision', 'subject', 'Decision', 'body', 'ok', 'email', false));
+  IF (r #>> '{email,status}') <> 'queued' THEN RAISE EXCEPTION '10 decision unticked'; END IF;
   PERFORM pg_temp.next_action();
   r := admin_message_send(i.u2, jsonb_build_object('category', 'notice', 'subject', 'Test', 'body', 'ok', 'test', true));
   IF (SELECT user_id FROM notifications WHERE id = (r ->> 'id')::uuid) <> i.adm
