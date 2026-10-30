@@ -13,6 +13,9 @@ import {
 } from '@/components/ui/dialog';
 import { AlertTriangle, Check, Trash2, Plus, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import DecisionEmailNotice from '@/components/admin/DecisionEmailNotice';
+import { safeRpc } from '@/lib/safeRpc';
+import { isNotInstalled } from '@/lib/userAdmin';
 
 export const ITEM_KINDS = [
   { kind: 'certificates', label: 'Certificates' },
@@ -22,6 +25,11 @@ export const ITEM_KINDS = [
 ] as const;
 
 export const DEFAULT_PERIOD_DAYS = 14;
+
+/** The comment saved and e-mailed with "approve with items" (at most 1000 characters). */
+export function approveWithItemsComment(labels: string[], days: number, note: string): string {
+  return `Approved with ${labels.length} item(s) to verify within ${days} days: ${labels.join('; ')}${note.trim() ? ` — ${note.trim()}` : ''}`.slice(0, 1000);
+}
 
 export interface VerificationItem {
   id: string;
