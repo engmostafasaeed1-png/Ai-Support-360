@@ -5,3 +5,8 @@ declare module '*.asset.json' {
   export default value;
 }
 
+
+// Browser build of the React server renderer (used for the admin e-mail preview).
+declare module 'react-dom/server.browser' {
+  export { renderToStaticMarkup } from 'react-dom/server';
+}
