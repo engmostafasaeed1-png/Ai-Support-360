@@ -14,7 +14,6 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import AdminEmailChoice from '@/components/admin/AdminEmailChoice';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -270,7 +269,6 @@ function DisputesTab() {
               <div className="mt-4 space-y-2">
                 <Label htmlFor={`note-${d.id}`} className="text-xs">{t('admin.resp_note', 'Note to the consultant (optional, audited)')}</Label>
                 <Textarea id={`note-${d.id}`} rows={2} maxLength={500} value={notes[d.id] ?? ''} onChange={(e) => setNotes((n) => ({ ...n, [d.id]: e.target.value }))} />
-                <AdminEmailChoice type="responsiveness" />
                 <div className="flex flex-wrap justify-end gap-2 pt-1">
                   <Button size="sm" variant="outline" busy={busy === d.id} onClick={() => act(d.id, false)}>{t('admin.resp_reject', 'Reject dispute')}</Button>
                   <Button size="sm" busy={busy === d.id} onClick={() => act(d.id, true)}>{t('admin.resp_void', 'Void the no-response')}</Button>
