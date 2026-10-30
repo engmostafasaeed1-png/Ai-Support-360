@@ -3,6 +3,7 @@ import MatchWeightsCard from '@/components/admin/MatchWeightsCard';
 import ProfileRemindersCard from '@/components/admin/ProfileRemindersCard';
 import AssignmentRemindersCard from '@/components/admin/AssignmentRemindersCard';
 import NotificationPauseAdminCard from '@/components/admin/NotificationPauseAdminCard';
+import AdminMessageEmailSettingsCard from '@/components/admin/AdminMessageEmailSettingsCard';
 import SocialSigninSettingsCard from '@/components/admin/SocialSigninSettingsCard';
 import BrdSettingsCard from '@/components/admin/BrdSettingsCard';
 import TrackingSettingsCard from '@/components/tracking/TrackingSettingsCard';
@@ -242,6 +243,8 @@ export default function AdminSettingsPage() {
       <AssignmentRemindersCard />
 
       <NotificationPauseAdminCard />
+
+      <AdminMessageEmailSettingsCard />
 
       <MatchWeightsCard />
 

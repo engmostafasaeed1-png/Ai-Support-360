@@ -51,7 +51,7 @@ export default function AdminMessageEmailSettingsCard() {
           <>
             <div className="flex items-center justify-between gap-3">
               <Label htmlFor="ame-enabled">{t('ame.enabled', 'E-mail admin messages')}</Label>
-              <Switch id="ame-enabled" checked={q.data.enabled} disabled={busy} onCheckedChange={(v) => save(v, q.data!.daily_cap)} />
+              <Switch id="ame-enabled" checked={q.data.enabled} disabled={busy} /* disabled-ok: saving */ onCheckedChange={(v) => save(v, q.data!.daily_cap)} />
             </div>
             <div className="flex flex-wrap items-end gap-2">
               <div className="space-y-1">
