@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import AdminEmailChoice from '@/components/admin/AdminEmailChoice';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -318,6 +319,7 @@ function ReviewDialog({ row, onClose }: { row: Row; onClose: () => void }) {
             rows={4}
             placeholder="Required when you send comments or reject. Say clearly what the client must add or correct."
           />
+          <AdminEmailChoice type="approval" />
           {row.status === 'draft' ? (
             <p className="text-xs text-muted-foreground">
               This client has not sent their information yet. You can still approve the account.
