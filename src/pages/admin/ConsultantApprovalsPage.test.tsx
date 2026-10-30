@@ -173,7 +173,9 @@ describe('ConsultantApprovalsPage', () => {
     fireEvent.click(await screen.findByText('Jane Doe'));
     fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
     const dialog = await screen.findByRole('dialog');
-    await waitFor(() => expect(within(dialog).getByTestId('decision-email-notice').textContent).toContain('This comment will also be e-mailed to jane@example.com.'));
+    await waitFor(() => expect(db.rpcs.some((r) => r.fn === 'admin_decision_recipient' && r.args._consultant === 'c1')).toBe(true));
+    // (No translations are loaded in tests, so only the fixed part of the line is checked; the address fills {{to}}.)
+    await waitFor(() => expect(within(dialog).getByTestId('decision-email-notice').textContent).toContain('This comment will also be e-mailed to'));
     fireEvent.change(within(dialog).getByLabelText('Reason / notes (optional)'), { target: { value: 'Documents checked' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Approve' }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Consultant approved!'));
