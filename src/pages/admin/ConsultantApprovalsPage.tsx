@@ -24,6 +24,10 @@ import InterviewHistory from '@/components/consultant/InterviewHistory';
 import ConsultantVerificationAuditLog from '@/components/admin/ConsultantVerificationAuditLog';
 import ConsultantTrustPanel from '@/components/admin/ConsultantTrustPanel';
 import CertificateReview from '@/components/admin/CertificateReview';
+import DecisionEmailNotice from '@/components/admin/DecisionEmailNotice';
+import { consultantOutcome } from '@/lib/adminMessageEmail';
+import { isNotInstalled } from '@/lib/userAdmin';
+import { safeRpc } from '@/lib/safeRpc';
 import { ApproveWithItemsDialog, AdminVerificationItemsPanel, OverdueItemsBanner } from '@/components/admin/PendingVerificationItems';
 import { placeLabel } from '@/lib/geo';
 import { useAdminPayoutStatus } from '@/hooks/useBilling';
@@ -47,7 +51,7 @@ export default function ConsultantApprovalsPage() {
   const [filterKey, setFilterKey] = useState(STATUS_FILTERS[0].key);
   const [reinterviewTarget, setReinterviewTarget] = useState<{ id: string; name: string; roles?: string[] } | null>(null);
   const [liveTarget, setLiveTarget] = useState<{ id: string; userId: string; name: string } | null>(null);
-  const [decisionTarget, setDecisionTarget] = useState<{ id: string; name: string; option: DecisionOption } | null>(null);
+  const [decisionTarget, setDecisionTarget] = useState<{ id: string; name: string; option: DecisionOption; from?: string } | null>(null);
   const [conditionalTarget, setConditionalTarget] = useState<{ id: string; name: string; roles?: string[] } | null>(null);
   const [decisionReason, setDecisionReason] = useState('');
   const [bankMissingOnly, setBankMissingOnly] = useState(false);
@@ -158,6 +162,11 @@ export default function ConsultantApprovalsPage() {
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status, reason }: { id: string; status: string; reason?: string; done: string }) => {
+      // One request: status + the admin's comment, so the in-app notice and the decision e-mail carry the comment
+      // (admin_review_consultant in docs/sql/admin-message-email.sql). Older path below until that file is applied.
+      const viaRpc = await safeRpc('admin_review_consultant', { _cid: id, _status: status, _comment: reason?.trim() || null });
+      if (!viaRpc.error) return;
+      if (!isNotInstalled(viaRpc.error)) throw new Error(viaRpc.error.message);
       const { error } = await supabase
         .from('consultants')
         .update({ verification_status: status as any })
@@ -194,8 +203,8 @@ export default function ConsultantApprovalsPage() {
     },
   });
 
-  const openDecision = (id: string, name: string, option: DecisionOption) => {
-    setDecisionTarget({ id, name, option });
+  const openDecision = (id: string, name: string, option: DecisionOption, from?: string) => {
+    setDecisionTarget({ id, name, option, from });
     setDecisionReason('');
   };
 
@@ -360,7 +369,7 @@ export default function ConsultantApprovalsPage() {
 
                       <div className="mb-4">
                         <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">{t('approvals_page.certifications')}</h4>
-                        <CertificateReview certificates={certificates} readOnly={isGuest} onChanged={refreshList} />
+                        <CertificateReview certificates={certificates} readOnly={isGuest} onChanged={refreshList} consultantId={isGuest ? null : c.id} />
                       </div>
 
                       {c.modules.length > 0 && (
@@ -441,7 +450,7 @@ export default function ConsultantApprovalsPage() {
                             variant={option.tone === 'primary' ? 'default' : 'outline'}
                             size="sm"
                             className={option.tone === 'danger' ? 'text-destructive hover:bg-destructive/10' : option.tone === 'primary' ? 'gradient-primary border-0' : ''}
-                            onClick={() => openDecision(c.id, c.name, option)}
+                            onClick={() => openDecision(c.id, c.name, option, status)}
                             busy={updateStatus.isPending}
                           >
                             {option.label}
@@ -463,7 +472,7 @@ export default function ConsultantApprovalsPage() {
               {decisionTarget?.option.title}
             </DialogTitle>
             <DialogDescription>
-              {decisionTarget?.name} — add an optional note to record with this decision in the audit log.
+              {decisionTarget?.name} — {t('approvals_page.decision_desc', 'add an optional comment. It is saved in the audit log and e-mailed to the consultant with this decision.')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
@@ -477,6 +486,10 @@ export default function ConsultantApprovalsPage() {
               maxLength={1000}
             />
             <p className="text-[11px] text-muted-foreground text-end">{decisionReason.length}/1000</p>
+            {decisionTarget && !isGuest && consultantOutcome(decisionTarget.from, decisionTarget.option.to) && (
+              <DecisionEmailNotice consultantId={decisionTarget.id} subject="consultant_profile" comment={decisionReason}
+                outcomes={[consultantOutcome(decisionTarget.from, decisionTarget.option.to)!]} link="/consultant/verification" />
+            )}
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDecisionTarget(null)} busy={updateStatus.isPending}>
