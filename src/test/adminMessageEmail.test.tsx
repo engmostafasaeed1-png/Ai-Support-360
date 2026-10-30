@@ -3,10 +3,11 @@ import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   adminMessageSubject, adminMessageText, buildAdminMessageData, buildMessageView, categoryForType, clip, finishFor, formatBody, renderAdminMessage, safePortalPath,
+  badgeFor, decisionSteps, DECISION_OUTCOMES, DECISION_SUBJECTS,
 } from '../../supabase/functions/_shared/adminMessageEmail';
 import {
   adminEmailHeader, canUntickEmail, emailKindOf, typeAlreadyEmailed, MAX_RECIPIENTS_PER_ACTION, PER_RECIPIENT_PER_HOUR,
-  planRecipientMail, canUntickCategory, fillTemplateVars, historyCsv, type HistoryRow,
+  planRecipientMail, canUntickCategory, fillTemplateVars, historyCsv, type HistoryRow, consultantOutcome, decisionNoticeState,
 } from '@/lib/adminMessageEmail';
 import { dayGroups } from '@/lib/notificationGroups';
 
@@ -163,3 +164,94 @@ describe('organised messages — shared layout', () => {
     expect(g.map((x) => x.label)).toEqual(['today', 'yesterday', 'date']);
   });
 });
+
+describe('review decisions — one shared sender and layout', () => {
+  const decisionMail = (decision: Record<string, unknown>, lang = 'en') => buildAdminMessageData({
+    mail_key: 'k', recipient: 'u', email: 'a@example.com', lang, digest: false,
+    items: [{ id: '1', title: 'Your consultant profile is approved', body: 'stored English copy', link: '/consultant/verification', type: 'approval',
+      created_at: '2026-10-30T12:40:00Z', meta: { v: 1, category: 'decision', decision } }],
+  }, SITE);
+
+  it('every outcome maps to one of the status badges (Approved / Needs changes / Rejected, plus Suspended and In review)', () => {
+    expect(DECISION_OUTCOMES.map((o) => badgeFor(o))).toEqual(['approved', 'approved', 'changes', 'changes', 'rejected', 'changes', 'suspended', 'approved', 'review']);
+    expect(DECISION_SUBJECTS).toHaveLength(8);
+  });
+
+  it('empty comment: approved sends the welcome text with next steps', () => {
+    const d = decisionMail({ subject: 'consultant_profile', outcome: 'approved', comment: '' });
+    const v = d.items[0];
+    expect(v.category).toBe('decision');
+    expect(v.title).toBe('Your consultant profile is approved');
+    expect(plainBody(v)).toMatch(/^Welcome!/);
+    expect(v.decision?.comment).toBe('');
+    expect(v.decision?.steps).toEqual(decisionSteps('consultant_profile', 'approved', 'en'));
+    expect(v.decision!.steps.length).toBeGreaterThan(1);
+    const out = html(d);
+    expect(out).toContain('Approved');
+    expect(out).toContain('What you need to do next');
+    expect(out).not.toContain('Comment from the administrator');
+    expect(out).toContain('Open your profile');
+    expect(out).toContain('href="https://www.aisupport360.com/consultant/verification"');
+  });
+
+  it('empty comment: rejected states a reason and how to appeal', () => {
+    const v = decisionMail({ subject: 'client_account', outcome: 'rejected', comment: null }).items[0];
+    expect(plainBody(v)).toContain('does not meet our current requirements');
+    expect(v.decision?.steps.at(-1)).toContain('To appeal');
+    expect(v.decision?.badge).toBe('rejected');
+  });
+
+  it("the admin's comment is shown in a quote card, escaped and as plain text", () => {
+    const d = decisionMail({ subject: 'consultant_profile', outcome: 'changes', comment: 'Add your <script>alert(1)</script> S/4HANA projects\nand a CV' });
+    const out = html(d);
+    expect(out).toContain('Comment from the administrator');
+    expect(out).toContain('&lt;script&gt;');
+    expect(out).not.toContain('<script>');
+    expect(out).toContain('Needs changes');
+    expect(adminMessageSubject(d)).toBe('Decision: Your consultant profile needs changes (Needs changes) — AI Support 360');
+    expect(adminMessageText(d)).toContain('"Add your <script>alert(1)</script> S/4HANA projects\nand a CV"');
+  });
+
+  it('Arabic readers get the decision in Arabic, right to left', () => {
+    const d = decisionMail({ subject: 'consultant_profile', outcome: 'approved' }, 'ar');
+    const out = html(d);
+    expect(d.items[0].title).toBe('تمت الموافقة على ملفك كمستشار');
+    expect(out).toContain('dir="rtl"');
+    expect(out).toContain('ما الذي عليك فعله بعد ذلك');
+    expect(out).toContain('افتح ملفك');
+  });
+
+  it('unknown decision data falls back to the stored notice (never a broken e-mail)', () => {
+    const v = decisionMail({ subject: 'nope', outcome: 'approved' }).items[0];
+    expect(v.decision).toBeNull();
+    expect(v.title).toBe('Your consultant profile is approved');
+  });
+
+  it('consultant status changes map to the same decisions as the database trigger', () => {
+    expect(consultantOutcome('pending', 'verified')).toBe('approved');
+    expect(consultantOutcome('rejected', 'verified')).toBe('reapproved');
+    expect(consultantOutcome('suspended', 'verified')).toBe('reactivated');
+    expect(consultantOutcome('under_review', 'on_hold')).toBe('info');
+    expect(consultantOutcome('verified', 'pending')).toBe('unverified');
+    expect(consultantOutcome('verified', 'suspended')).toBe('suspended');
+    expect(consultantOutcome('pending', 'under_review')).toBe('review');
+    expect(consultantOutcome('under_review', 'pending')).toBeNull();
+  });
+
+  it('the line next to the comment box says where it goes, or why not (recorded)', () => {
+    expect(decisionNoticeState({ found: true, email: 'a@b.com', confirmed: true, enabled: true })).toEqual({ kind: 'send', email: 'a@b.com' });
+    expect(decisionNoticeState({ found: true, email: null, confirmed: false }).kind).toBe('no_email');
+    expect(decisionNoticeState({ found: true, email: 'a@b.com', confirmed: true, test: true }).kind).toBe('test');
+    expect(decisionNoticeState({ found: true, email: 'a@b.com', confirmed: true, suppressed: true }).kind).toBe('suppressed');
+    expect(decisionNoticeState({ found: true, email: 'a@b.com', confirmed: false }).kind).toBe('not_confirmed');
+    expect(decisionNoticeState(null).kind).toBe('unknown');
+  });
+
+  it('decision e-mail HTML snapshot (EN, comment quote, next steps)', () => {
+    expect(html(decisionMail({ subject: 'certificate', outcome: 'unverified', comment: 'The file is unreadable.' }))).toMatchSnapshot();
+  });
+});
+
+function plainBody(v: { blocks: ReturnType<typeof formatBody> }) {
+  return v.blocks.map((b) => (b.t === 'p' ? b.lines.map((l) => l.map((p) => p.text).join('')).join('\n') : '')).join('\n');
+}
