@@ -12,6 +12,7 @@ import { APP_ROLES, MIN_REASON, checkRoleChange, reasonOk, type UserRow } from '
 import { callRpc } from '@/hooks/useUserAdmin';
 import { roleLabel } from './labels';
 import AdminEmailChoice, { DEFAULT_ADMIN_EMAIL, headerFor, type AdminEmailValue } from '@/components/admin/AdminEmailChoice';
+import AdminMessageComposer from '@/components/admin/AdminMessageComposer';
 import type { BlockedInput } from '@/lib/blockedReasons';
 
 /** Confirmation with an optional required reason. */
@@ -142,6 +143,21 @@ export function MessageDialog({ user, count, busy, onClose, onSend }: {
   const [body, setBody] = useState('');
   const [link, setLink] = useState('');
   const linkBad = !!link && !/^\/[A-Za-z0-9/_?=&.-]*$/.test(link);
+  if (user) {
+    // One person: the shared admin compose box (category, related item, preview, test send, e-mail copy).
+    return (
+      <Dialog open onOpenChange={(o) => !o && onClose()}>
+        <DialogContent className="max-h-[92vh] max-w-6xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t('amc.title', 'Write a message')}</DialogTitle>
+            <DialogDescription>{t('um.message_hint_one', 'Shown in their notifications and, unless you untick it, also sent to their e-mail.')}</DialogDescription>
+          </DialogHeader>
+          <AdminMessageComposer recipient={{ id: user.id, name: user.name, email: user.email }} onSent={onClose} onCancel={onClose}
+            fallbackSend={(v, h) => onSend(v, h)} />
+        </DialogContent>
+      </Dialog>
+    );
+  }
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
