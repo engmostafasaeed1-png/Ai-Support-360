@@ -3,7 +3,7 @@
  * claim limits). The database decides; this file only labels send boxes, builds the admin's choice header and is
  * covered by src/test/adminMessageEmail.test.tsx so screen and server agree.
  */
-import type { MessageCategory } from '../../supabase/functions/_shared/adminMessageEmail';
+import type { DecisionOutcome as Outcome, MessageCategory } from '../../supabase/functions/_shared/adminMessageEmail';
 
 export type EmailKind = 'comment' | 'decision';
 export type DeliveryStatus = 'queued' | 'sending' | 'sent' | 'skipped' | 'failed';
@@ -65,7 +65,7 @@ export const firstNameOf = (name: string | null | undefined) => String(name ?? '
 export interface HistoryRow {
   id: string; notification_id: string; created_at: string; recipient: string; recipient_name: string | null; actor_name: string | null;
   category: MessageCategory; subject: string | null; status: DeliveryStatus; reason: string | null; is_read: boolean; in_app: boolean;
-  important: boolean; is_test: boolean; digest: boolean; send_after: string;
+  important: boolean; is_test: boolean; digest: boolean; send_after: string; decision?: string | null;
 }
 
 /** Spreadsheet-safe cell (= + - @ would run as formulas). */
@@ -85,7 +85,6 @@ export function historyCsv(rows: HistoryRow[]): string {
 // ------------------------------------------------------------------ review decisions (mirrors ame_decision_notice)
 
 export type { DecisionOutcome, DecisionSubject } from '../../supabase/functions/_shared/adminMessageEmail';
-import type { DecisionOutcome as Outcome } from '../../supabase/functions/_shared/adminMessageEmail';
 
 /** What admin_decision_recipient returns (null before docs/sql/admin-message-email.sql is applied). */
 export interface DecisionRecipient { found?: boolean; email?: string | null; confirmed?: boolean; test?: boolean; suppressed?: boolean; lang?: 'en' | 'ar' | null; enabled?: boolean }
