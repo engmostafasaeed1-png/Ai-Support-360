@@ -14,12 +14,24 @@ const BOX: Record<string, [number, number, number, number]> = {
   Indonesia: [-11, 6, 95, 141], Thailand: [5.6, 20.5, 97.3, 105.7], Vietnam: [8.5, 23.4, 102, 109.5], Italy: [36.6, 47.1, 6.6, 18.6],
   Spain: [36, 43.8, -9.3, 3.4], Poland: [49, 54.9, 14.1, 24.2], Switzerland: [45.8, 47.9, 5.9, 10.6], Sweden: [55.3, 69.1, 11, 24.2],
   Ireland: [51.4, 55.4, -10.7, -5.9],
+  Libya: [19.5, 33.2, 9.3, 25.2], Algeria: [19, 37.1, -8.7, 12], Sudan: [8.6, 22.3, 21.8, 38.6], Mauritania: [14.7, 27.3, -17.1, -4.8],
+  Belgium: [49.5, 51.5, 2.5, 6.4], Austria: [46.3, 49.1, 9.5, 17.2], Portugal: [36.9, 42.2, -9.6, -6.2], Greece: [34.8, 41.8, 19.3, 29.7],
+  Norway: [57.9, 71.2, 4.5, 31.2], Denmark: [54.5, 57.8, 8, 15.2], Finland: [59.8, 70.1, 20.5, 31.6], Iceland: [63.3, 66.6, -24.6, -13.4],
+  Luxembourg: [49.4, 50.2, 5.7, 6.6], 'Czech Republic': [48.5, 51.1, 12, 18.9], Slovakia: [47.7, 49.7, 16.8, 22.6], Hungary: [45.7, 48.6, 16.1, 22.9],
+  Romania: [43.6, 48.3, 20.2, 29.7], Bulgaria: [41.2, 44.3, 22.3, 28.7], Croatia: [42.4, 46.6, 13.4, 19.5], Slovenia: [45.4, 46.9, 13.3, 16.7],
+  Serbia: [42.2, 46.2, 18.8, 23.1], 'Bosnia and Herzegovina': [42.5, 45.3, 15.7, 19.7], Montenegro: [41.8, 43.6, 18.4, 20.4], Kosovo: [41.8, 43.3, 20, 21.8],
+  'North Macedonia': [40.8, 42.4, 20.4, 23.1], Albania: [39.6, 42.7, 19.2, 21.1], Cyprus: [34.5, 35.8, 32.2, 34.6], Malta: [35.7, 36.1, 14.1, 14.6],
+  Estonia: [57.5, 59.7, 21.7, 28.3], Latvia: [55.6, 58.1, 20.9, 28.3], Lithuania: [53.8, 56.5, 20.9, 26.9], Ukraine: [44.3, 52.4, 22.1, 40.3],
+  Moldova: [45.4, 48.5, 26.6, 30.2], Belarus: [51.2, 56.2, 23.1, 32.8], Russia: [41, 82, 19, 180], Georgia: [41, 43.6, 40, 46.8],
+  Armenia: [38.8, 41.3, 43.4, 46.7], Azerbaijan: [38.3, 41.9, 44.7, 50.4], Andorra: [42.4, 42.7, 1.4, 1.8], Monaco: [43.7, 43.8, 7.4, 7.5],
+  Liechtenstein: [47, 47.3, 9.4, 9.7], 'San Marino': [43.8, 44, 12.4, 12.6],
 };
 
 describe('the list of places', () => {
-  it('has 40 countries, each with at least one city', () => {
-    expect(COUNTRIES).toHaveLength(40);
-    expect(new Set(COUNTRIES).size).toBe(40);
+  it('has 82 countries, each with at least one city', () => {
+    expect(COUNTRIES).toHaveLength(82);
+    expect(new Set(COUNTRIES).size).toBe(82);
+    expect(COUNTRIES).not.toContain('Israel');
     for (const p of PLACES) expect(p.cities.length).toBeGreaterThan(0);
   });
 
