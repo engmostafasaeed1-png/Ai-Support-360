@@ -161,7 +161,7 @@ export function MessageDialog({ user, count, busy, onClose, onSend }: {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{t('um.send_message', 'Send a notification')}</DialogTitle>
-          <DialogDescription>{user ? user.email : t('um.to_n_people', 'To {{n}} people', { n: count ?? 0 })} · {user ? t('um.message_hint_one', 'Shown in their notifications and, unless you untick it, also sent to their e-mail.') : t('um.message_hint_many', 'Shown in their notifications only: messages to a list are never e-mailed.')}</DialogDescription>
+          <DialogDescription>{t('um.to_n_people', 'To {{n}} people', { n: count ?? 0 })} · {t('um.message_hint_many', 'Shown in their notifications only: messages to a list are never e-mailed.')}</DialogDescription>
         </DialogHeader>
         <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (title.trim() && body.trim() && !linkBad) onSend({ title: title.trim(), body: body.trim(), link: link.trim() }); }}>
           <div className="space-y-1.5"><Label htmlFor="um-msg-title">{t('um.title', 'Title')}</Label><Input id="um-msg-title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} /></div>
