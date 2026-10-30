@@ -26,6 +26,10 @@
 --   * Organised messages: notifications.meta (jsonb, nullable) carries the admin message details (category, summary,
 --     related item, what to do, deadline) written only by admin_message_send; the e-mail, the in-app card and the
 --     compose preview share one layout (_shared/adminMessageEmail.ts). "Send test to me" e-mails only the admin.
+--   * Review decisions (approve / request changes / request info / reject / unverify / suspend / reactivate, for
+--     consultant profiles, client accounts, certificates, LinkedIn, Credly, verification documents and success stories)
+--     all go through ame_decision_notice: one in-app notice + one e-mail per decision (status badge, the admin's
+--     comment, next steps; default text when there is no comment), locked on and sent even during quiet pauses.
 
 -- ------------------------------------------------------------------ table
 
@@ -144,55 +148,44 @@ REVOKE ALL ON FUNCTION public.ame_arm() FROM PUBLIC, anon, authenticated;
 
 -- ------------------------------------------------------------------ capture (never blocks the notification)
 
-CREATE OR REPLACE FUNCTION public.ame_capture()
- RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+-- One queue row for one notification from admin _actor (the trigger below, and decisions sent by server functions).
+-- _hdr: the admin's choice ("off", "important", "tests"). Applies every skip rule in one place.
+CREATE OR REPLACE FUNCTION public.ame_enqueue(_nid uuid, _to uuid, _type text, _delivery text, _actor uuid, _hdr text)
+ RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
 AS $$
 DECLARE
-  _actor uuid := auth.uid();
-  _hdr text := '';
-  _opts text[];
-  _kind text;
+  _opts text[] := regexp_split_to_array(left(lower(COALESCE(_hdr, '')), 60), '\s*,\s*');
+  _kind text := public.ame_kind(_type);
   _status text := 'queued';
   _reason text;
   _important boolean;
   _tests boolean;
-  _off boolean;
   _tx bigint := txid_current();
   _n integer;
 BEGIN
-  IF _actor IS NULL OR NEW.user_id IS NULL OR NEW.user_id = _actor THEN RETURN NULL; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = _actor AND role IN ('admin', 'super_admin')) THEN RETURN NULL; END IF;
-  -- admin_message_send passes the choice in app.ame_choice; other admin screens send the x-admin-email header.
-  _hdr := lower(COALESCE(NULLIF(current_setting('app.ame_choice', true), ''), ''));
-  IF _hdr = '' THEN
-    BEGIN
-      _hdr := lower(COALESCE(current_setting('request.headers', true)::json ->> 'x-admin-email', ''));
-    EXCEPTION WHEN OTHERS THEN _hdr := '';
-    END;
-  END IF;
-  _opts := regexp_split_to_array(left(_hdr, 60), '\s*,\s*');
   _important := 'important' = ANY (_opts);
   _tests := 'tests' = ANY (_opts);
-  _off := 'off' = ANY (_opts);
-  _kind := public.ame_kind(NEW.type);
-
-  IF EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = NEW.user_id AND role IN ('admin', 'super_admin')) THEN
+  IF EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = _to AND role IN ('admin', 'super_admin')) THEN
     _reason := 'already_emailed';
   ELSE
-    _reason := public.ame_type_skip(NEW.type);
+    _reason := public.ame_type_skip(_type);
   END IF;
-  IF _reason IS NULL AND NEW.delivery_status = 'failed' THEN _reason := 'in_app_not_delivered'; END IF;
+  IF _reason IS NULL AND _delivery = 'failed' THEN _reason := 'in_app_not_delivered'; END IF;
   -- Decisions and notices are locked on: "off" only counts for comments.
-  IF _reason IS NULL AND _off AND _kind = 'comment' THEN _reason := 'admin_unticked_email'; END IF;
-  IF _reason IS NULL AND NOT _tests AND public.ame_is_test_user(NEW.user_id) THEN _reason := 'test_account'; END IF;
+  IF _reason IS NULL AND 'off' = ANY (_opts) AND _kind = 'comment' THEN _reason := 'admin_unticked_email'; END IF;
+  IF _reason IS NULL AND NOT _tests AND public.ame_is_test_user(_to) THEN _reason := 'test_account'; END IF;
+  -- No address on the profile: recorded at once so the admin sees "no e-mail" in the history right away.
+  IF _reason IS NULL AND NOT EXISTS (SELECT 1 FROM auth.users u WHERE u.id = _to AND NULLIF(btrim(COALESCE(u.email, '')), '') IS NOT NULL) THEN
+    _reason := 'no_email';
+  END IF;
   IF _reason IS NULL AND EXISTS (SELECT 1 FROM public.admin_message_emails e
-                                 WHERE e.tx = _tx AND e.actor = _actor AND e.recipient = NEW.user_id AND e.status = 'queued') THEN
+                                 WHERE e.tx = _tx AND e.actor = _actor AND e.recipient = _to AND e.status = 'queued') THEN
     _reason := 'one_email_per_action';
   END IF;
   IF _reason IS NOT NULL THEN _status := 'skipped'; END IF;
 
   INSERT INTO public.admin_message_emails (notification_id, recipient, actor, tx, kind, important, include_tests, status, reason, finished_at)
-  VALUES (NEW.id, NEW.user_id, _actor, _tx, _kind, _important, _tests, _status, _reason, CASE WHEN _status = 'skipped' THEN now() END)
+  VALUES (_nid, _to, _actor, _tx, _kind, _important, _tests, _status, _reason, CASE WHEN _status = 'skipped' THEN now() END)
   ON CONFLICT (notification_id) DO NOTHING;
 
   -- One action that notifies more than 5 people is a list send: in-app only (app e-mails are one-recipient).
@@ -203,6 +196,28 @@ BEGIN
   ELSIF _status = 'queued' THEN
     PERFORM public.ame_wake();
   END IF;
+END
+$$;
+REVOKE ALL ON FUNCTION public.ame_enqueue(uuid, uuid, text, text, uuid, text) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.ame_capture()
+ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+AS $$
+DECLARE
+  _actor uuid := auth.uid();
+  _hdr text := '';
+BEGIN
+  IF _actor IS NULL OR NEW.user_id IS NULL OR NEW.user_id = _actor THEN RETURN NULL; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = _actor AND role IN ('admin', 'super_admin')) THEN RETURN NULL; END IF;
+  -- admin_message_send and decisions pass the choice in app.ame_choice; other admin screens send the x-admin-email header.
+  _hdr := lower(COALESCE(NULLIF(current_setting('app.ame_choice', true), ''), ''));
+  IF _hdr = '' THEN
+    BEGIN
+      _hdr := lower(COALESCE(current_setting('request.headers', true)::json ->> 'x-admin-email', ''));
+    EXCEPTION WHEN OTHERS THEN _hdr := '';
+    END;
+  END IF;
+  PERFORM public.ame_enqueue(NEW.id, NEW.user_id, NEW.type, NEW.delivery_status, _actor, _hdr);
   RETURN NULL;
 EXCEPTION WHEN OTHERS THEN
   RAISE WARNING 'admin message e-mail capture skipped: %', SQLERRM;
@@ -583,7 +598,7 @@ BEGIN
     SELECT jsonb_agg(x ORDER BY x.created_at DESC) FROM (
       SELECT q.id, q.notification_id, q.created_at, q.recipient, q.kind, q.important, q.is_test, q.digest, q.status, q.reason,
              q.send_after, left(n.title, 120) AS subject, public.ame_category(n.type, n.meta) AS category,
-             COALESCE(n.is_read, false) AS is_read, (n.id IS NOT NULL) AS in_app,
+             COALESCE(n.is_read, false) AS is_read, (n.id IS NOT NULL) AS in_app, n.meta #>> '{decision,outcome}' AS decision,
              rp.display_name AS recipient_name, ap.display_name AS actor_name
       FROM public.admin_message_emails q
       LEFT JOIN public.notifications n ON n.id = q.notification_id
