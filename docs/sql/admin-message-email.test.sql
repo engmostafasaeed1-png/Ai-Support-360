@@ -197,4 +197,52 @@ DO $$ DECLARE i _ids; r jsonb; ok boolean := false; t1 uuid := gen_random_uuid()
   RAISE NOTICE 'PASS 10 organised messages, own items only, test send, history';
 END $$;
 
+-- 11. Review decisions: one notice + one e-mail per decision (even with an empty comment), comment carried, locked on.
+DO $$ DECLARE i _ids; cid uuid := gen_random_uuid(); r jsonb; n notifications; k int; BEGIN
+  SELECT * INTO i FROM _ids;
+  INSERT INTO consultants (id, user_id, verification_status) VALUES (cid, i.u1, 'pending');
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', i.adm, 'role', 'authenticated')::text, true);
+  PERFORM set_config('request.headers', json_build_object('x-admin-email', 'off')::text, true);   -- cannot switch decisions off
+  r := admin_review_consultant(cid, 'verified', NULL);
+  SELECT * INTO n FROM notifications WHERE user_id = i.u1 AND type = 'approval' ORDER BY created_at DESC LIMIT 1;
+  IF n.meta #>> '{decision,outcome}' <> 'approved' OR n.meta ->> 'category' <> 'decision' OR n.body NOT LIKE 'Welcome!%' THEN RAISE EXCEPTION '11 default text %', n.meta; END IF;
+  IF (pg_temp.row_of(n.id)).status <> 'queued' OR (pg_temp.row_of(n.id)).kind <> 'decision' OR NOT (pg_temp.row_of(n.id)).important THEN RAISE EXCEPTION '11 not queued'; END IF;
+  SELECT count(*) INTO k FROM notifications WHERE user_id = i.u1 AND type = 'approval';
+  PERFORM ame_decision_notice(i.u1, 'consultant_profile', 'approved', NULL, '/consultant/verification', cid::text);   -- double click
+  IF (SELECT count(*) FROM notifications WHERE user_id = i.u1 AND type = 'approval') <> k THEN RAISE EXCEPTION '11 duplicate decision'; END IF;
+  PERFORM pg_temp.next_action();
+  r := admin_review_consultant(cid, 'rejected', 'Your <b>CV</b> is missing');
+  SELECT * INTO n FROM notifications WHERE user_id = i.u1 AND type = 'approval' ORDER BY created_at DESC LIMIT 1;
+  IF n.meta #>> '{decision,comment}' <> 'Your <b>CV</b> is missing' OR n.body NOT LIKE '%To appeal%' THEN RAISE EXCEPTION '11 comment'; END IF;
+  IF (SELECT reason FROM consultant_verification_audit WHERE consultant_id = cid ORDER BY created_at DESC LIMIT 1) IS DISTINCT FROM 'Your <b>CV</b> is missing' THEN RAISE EXCEPTION '11 audit reason'; END IF;
+  PERFORM pg_temp.next_action();
+  RAISE NOTICE 'PASS 11 consultant decisions: one e-mail each, default text, comment, locked on';
+END $$;
+
+-- 12. Client decisions, certificates and success stories use the same sender; test / address-less accounts are logged skips.
+DO $$ DECLARE i _ids; n notifications; cid uuid := gen_random_uuid(); cert uuid := gen_random_uuid(); BEGIN
+  SELECT * INTO i FROM _ids;
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', i.adm, 'role', 'authenticated')::text, true);
+  PERFORM set_config('request.headers', '{}', true);
+  INSERT INTO client_profiles (user_id, approval_status) VALUES (i.u2, 'submitted') ON CONFLICT (user_id) DO UPDATE SET approval_status = 'submitted';
+  PERFORM admin_review_client(i.u2, 'request_changes', 'Please add the VAT number');
+  SELECT * INTO n FROM notifications WHERE user_id = i.u2 AND type = 'approval' ORDER BY created_at DESC LIMIT 1;
+  IF n.meta #>> '{decision,outcome}' <> 'changes' OR (pg_temp.row_of(n.id)).status <> 'queued' THEN RAISE EXCEPTION '12 client'; END IF;
+  PERFORM pg_temp.next_action();
+  INSERT INTO consultants (id, user_id, verification_status) VALUES (cid, i.u3, 'verified');
+  INSERT INTO certifications (id, consultant_id, name, verified) VALUES (cert, cid, 'ITIL 4', false);
+  UPDATE certifications SET verified = true WHERE id = cert;
+  SELECT * INTO n FROM notifications WHERE user_id = i.u3 AND type = 'approval' ORDER BY created_at DESC LIMIT 1;
+  IF n.meta #>> '{decision,subject}' <> 'certificate' OR (pg_temp.row_of(n.id)).reason IS DISTINCT FROM 'test_account' THEN RAISE EXCEPTION '12 certificate / test skip %', (pg_temp.row_of(n.id)).reason; END IF;
+  PERFORM pg_temp.next_action();
+  UPDATE auth.users SET email = NULL WHERE id = i.u4;
+  PERFORM ame_decision_notice(i.u4, 'account', 'suspended', 'Unpaid invoices', '/', 'x');
+  SELECT * INTO n FROM notifications WHERE user_id = i.u4 AND type = 'approval' ORDER BY created_at DESC LIMIT 1;
+  IF (pg_temp.row_of(n.id)).reason IS DISTINCT FROM 'no_email' THEN RAISE EXCEPTION '12 no e-mail not recorded'; END IF;
+  IF (admin_decision_recipient(i.u4, NULL) ->> 'email') IS NOT NULL THEN RAISE EXCEPTION '12 recipient line'; END IF;
+  IF (admin_decision_recipient(i.u1, NULL) ->> 'email') <> 'ame-e002@example.com' THEN RAISE EXCEPTION '12 recipient address'; END IF;
+  IF (SELECT h ->> 'decision' FROM jsonb_array_elements(admin_message_history(jsonb_build_object('q', 'suspended'))) h LIMIT 1) <> 'suspended' THEN RAISE EXCEPTION '12 history'; END IF;
+  RAISE NOTICE 'PASS 12 client / certificate / suspension decisions, test and no-e-mail skips, recipient line, history';
+END $$;
+
 ROLLBACK;
