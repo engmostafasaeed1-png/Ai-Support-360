@@ -1,4 +1,4 @@
-import { createElement, useEffect, useMemo, useRef, useState } from 'react';
+import { createElement, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Bold, Link as LinkIcon, List, Send, FlaskConical, Save, X } from 'lucide-react';
@@ -98,7 +98,7 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
     import('react-dom/server').then(({ renderToStaticMarkup }) => {
       if (!live) return;
       const data = { lang, digest: false, items: [view], url: view.url, inboxUrl: `${SITE}/notifications`, prefsUrl: `${SITE}/notifications/pause`, helpHref: 'mailto:info@aisupport360.com' };
-      setHtml('<!DOCTYPE html>' + renderToStaticMarkup(renderAdminMessage(createElement as never, data) as React.ReactElement));
+      setHtml('<!DOCTYPE html>' + renderToStaticMarkup(renderAdminMessage(createElement as never, data) as ReactElement));
     });
     return () => { live = false; };
   }, [view, lang]);
@@ -250,8 +250,7 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
             </div>
           )}
         </div>
-        <AdminEmailChoice type={emailLocked ? 'approval' : 'admin_message'} value={email} onChange={emailLocked ? undefined : setEmail} />
-        {emailLocked && <AdminEmailChoice type="admin_message" value={{ ...email, email: true }} onChange={(v) => setEmail({ ...v, email: true })} />}
+        <AdminEmailChoice type="admin_message" locked={emailLocked} value={email} onChange={setEmail} />
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border pt-3">
           <Button type="button" variant="ghost" size="sm" onClick={onCancel}><X className="me-1 h-4 w-4" />{t('common.cancel', 'Cancel')}</Button>
           <Button type="button" variant="outline" size="sm" busy={busy === 'tpl'} reason={[!subject.trim() && 'type_message_first', !body.trim() && 'type_message_first']} onClick={saveAsTemplate}><Save className="me-1 h-4 w-4" />{t('amc.save_tpl', 'Save as template')}</Button>
