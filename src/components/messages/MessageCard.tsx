@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
-  formatDeadline, MESSAGE_COPY, OWN_HOSTS, type Block, type Inline, type Lang, type MessageCategory, type MessageView,
+  DECISION_COPY, formatDeadline, MESSAGE_COPY, type DecisionBadge, OWN_HOSTS, type Block, type Inline, type Lang, type MessageCategory, type MessageView,
 } from '../../../supabase/functions/_shared/adminMessageEmail';
 
 /** Category colour and icon on design tokens (the e-mail uses the matching light colours). */
@@ -15,6 +15,13 @@ export const CATEGORY_UI: Record<MessageCategory, { icon: typeof Megaphone; chip
   reminder: { icon: AlarmClock, chip: 'bg-reminder/10 text-reminder border-reminder/25', tile: 'bg-reminder/10 text-reminder' },
   update: { icon: RefreshCw, chip: 'bg-muted text-muted-foreground border-border', tile: 'bg-muted text-muted-foreground' },
   welcome: { icon: Sparkles, chip: 'bg-success/10 text-success border-success/25', tile: 'bg-success/10 text-success' },
+};
+
+/** Decision status badge colours on design tokens (the e-mail uses DECISION_BADGE_COLOURS). */
+const BADGE_UI: Record<DecisionBadge, string> = {
+  approved: 'bg-success/10 text-success border-success/25', changes: 'bg-warning/15 text-warning border-warning/30',
+  rejected: 'bg-destructive/10 text-destructive border-destructive/25', suspended: 'bg-destructive/10 text-destructive border-destructive/25',
+  review: 'bg-info/10 text-info border-info/20',
 };
 
 /** Our own absolute links become in-app paths; everything else was already dropped by the shared formatter. */
@@ -52,7 +59,9 @@ export default function MessageCard({ view, lang = 'en', unread, time, onAction,
   const ui = CATEGORY_UI[view.category];
   const Icon = ui.icon;
   const [open, setOpen] = useState(defaultOpen);
-  const long = view.blocks.length > 1 || (view.blocks[0]?.t === 'p' && view.blocks[0].lines.length > 2) || !!view.action;
+  const d = view.decision;
+  const dc = DECISION_COPY[lang];
+  const long = view.blocks.length > 1 || (view.blocks[0]?.t === 'p' && view.blocks[0].lines.length > 2) || !!view.action || !!d;
   const preview = view.summary || '';
   return (
     <article dir={lang === 'ar' ? 'rtl' : 'ltr'} className="flex items-start gap-3" aria-label={view.title}>
@@ -60,6 +69,7 @@ export default function MessageCard({ view, lang = 'en', unread, time, onAction,
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className={cn('rounded-full px-2 py-0 text-[11px] font-semibold', ui.chip)}>{c.categories[view.category]}</Badge>
+          {d && <Badge variant="outline" className={cn('rounded-full px-2 py-0 text-[11px] font-semibold', BADGE_UI[d.badge])}>{dc.badges[d.badge]}</Badge>}
           {unread && <span className="h-2 w-2 rounded-full bg-accent" aria-label="unread" />}
           {time && <span className="ms-auto text-[11px] text-muted-foreground">{time}</span>}
         </div>
@@ -77,6 +87,18 @@ export default function MessageCard({ view, lang = 'en', unread, time, onAction,
         {(open || !long) ? (
           <>
             <MessageBlocks blocks={view.blocks} />
+            {d?.comment && (
+              <blockquote className="rounded-xl border-s-4 border-accent bg-accent/5 p-3 text-sm">
+                <p className="text-xs font-semibold text-accent">{dc.quote}</p>
+                <p className="mt-1 whitespace-pre-line text-foreground">{d.comment}</p>
+              </blockquote>
+            )}
+            {d && d.steps.length > 0 && (
+              <div className="rounded-xl border border-border bg-muted/40 p-3 text-sm">
+                <p className="text-xs font-semibold text-foreground">{dc.next}</p>
+                <ol className="mt-1 list-decimal space-y-0.5 ps-5 text-muted-foreground">{d.steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
+              </div>
+            )}
             {view.action && (
               <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-sm">
                 <p className="text-xs font-semibold text-warning">{c.todo}</p>
@@ -87,7 +109,7 @@ export default function MessageCard({ view, lang = 'en', unread, time, onAction,
           </>
         ) : !preview && <MessageBlocks blocks={view.blocks.slice(0, 1)} className="line-clamp-2" />}
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          {onAction && <Button size="sm" onClick={(e) => { e.stopPropagation(); onAction(inAppPath(view.url)); }}>{view.action?.label ? c.open + ' · ' + view.action.label.slice(0, 40) : c.open}</Button>}
+          {onAction && <Button size="sm" onClick={(e) => { e.stopPropagation(); onAction(inAppPath(view.url)); }}>{d ? d.cta : view.action?.label ? c.open + ' · ' + view.action.label.slice(0, 40) : c.open}</Button>}
           {long && <Button size="sm" variant="ghost" aria-expanded={open} onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}>{open ? c.showLess : c.showMore}</Button>}
           {actions}
         </div>
