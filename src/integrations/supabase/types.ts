@@ -79,6 +79,72 @@ export type Database = {
           },
         ]
       }
+      admin_message_emails: {
+        Row: {
+          actor: string
+          attempts: number
+          claimed_at: string | null
+          created_at: string
+          digest: boolean
+          finished_at: string | null
+          id: string
+          important: boolean
+          include_tests: boolean
+          is_test: boolean
+          kind: string
+          lease_until: string | null
+          mail_key: string | null
+          notification_id: string
+          reason: string | null
+          recipient: string
+          send_after: string
+          status: string
+          tx: number
+        }
+        Insert: {
+          actor: string
+          attempts?: number
+          claimed_at?: string | null
+          created_at?: string
+          digest?: boolean
+          finished_at?: string | null
+          id?: string
+          important?: boolean
+          include_tests?: boolean
+          is_test?: boolean
+          kind: string
+          lease_until?: string | null
+          mail_key?: string | null
+          notification_id: string
+          reason?: string | null
+          recipient: string
+          send_after?: string
+          status?: string
+          tx?: number
+        }
+        Update: {
+          actor?: string
+          attempts?: number
+          claimed_at?: string | null
+          created_at?: string
+          digest?: boolean
+          finished_at?: string | null
+          id?: string
+          important?: boolean
+          include_tests?: boolean
+          is_test?: boolean
+          kind?: string
+          lease_until?: string | null
+          mail_key?: string | null
+          notification_id?: string
+          reason?: string | null
+          recipient?: string
+          send_after?: string
+          status?: string
+          tx?: number
+        }
+        Relationships: []
+      }
       admin_permission_groups: {
         Row: {
           created_at: string
@@ -6138,6 +6204,7 @@ export type Database = {
           is_read: boolean | null
           last_attempt_at: string
           link: string | null
+          meta: Json | null
           pause_category: string | null
           retry_count: number
           silent: boolean
@@ -6157,6 +6224,7 @@ export type Database = {
           is_read?: boolean | null
           last_attempt_at?: string
           link?: string | null
+          meta?: Json | null
           pause_category?: string | null
           retry_count?: number
           silent?: boolean
@@ -6176,6 +6244,7 @@ export type Database = {
           is_read?: boolean | null
           last_attempt_at?: string
           link?: string | null
+          meta?: Json | null
           pause_category?: string | null
           retry_count?: number
           silent?: boolean
@@ -16140,6 +16209,10 @@ export type Database = {
         Args: { _approve: boolean; _id: string; _note?: string }
         Returns: Json
       }
+      admin_decision_recipient: {
+        Args: { _consultant?: string; _user?: string }
+        Returns: Json
+      }
       admin_delete_permission_group: {
         Args: { _id: string }
         Returns: undefined
@@ -16259,6 +16332,17 @@ export type Database = {
         Args: { _keep: string; _merge: string }
         Returns: Json
       }
+      admin_message_context: {
+        Args: { _kind: string; _ref: string; _to: string }
+        Returns: Json
+      }
+      admin_message_email_log: {
+        Args: { _limit?: number; _user?: string }
+        Returns: Json
+      }
+      admin_message_email_settings: { Args: never; Returns: Json }
+      admin_message_history: { Args: { _p?: Json }; Returns: Json }
+      admin_message_send: { Args: { _p: Json; _to: string }; Returns: Json }
       admin_missing_location: {
         Args: never
         Returns: {
@@ -16525,6 +16609,10 @@ export type Database = {
         Args: { p_comment?: string; p_decision: string; p_user_id: string }
         Returns: undefined
       }
+      admin_review_consultant: {
+        Args: { _cid: string; _comment?: string; _status: string }
+        Returns: Json
+      }
       admin_review_responsiveness_dispute: {
         Args: { _dispute_id: string; _note: string; _uphold: boolean }
         Returns: undefined
@@ -16594,6 +16682,10 @@ export type Database = {
         Returns: Json
       }
       admin_set_location_grace: { Args: { _days: number }; Returns: undefined }
+      admin_set_message_email_settings: {
+        Args: { _daily_cap: number; _enabled: boolean }
+        Returns: Json
+      }
       admin_set_payout_status: {
         Args: {
           _bank_reference?: string
@@ -16719,6 +16811,65 @@ export type Database = {
         Args: { _reason: string; _version: number }
         Returns: Json
       }
+      ame_arm: { Args: never; Returns: string }
+      ame_category: { Args: { _meta: Json; _type: string }; Returns: string }
+      ame_claim: { Args: { _limit?: number }; Returns: Json }
+      ame_context: {
+        Args: {
+          _kind: string
+          _label?: string
+          _ref: string
+          _status?: string
+          _to: string
+        }
+        Returns: Json
+      }
+      ame_decision_notice: {
+        Args: {
+          _actor?: string
+          _comment: string
+          _label?: string
+          _link: string
+          _outcome: string
+          _ref?: string
+          _subject: string
+          _to: string
+        }
+        Returns: string
+      }
+      ame_decision_service: {
+        Args: {
+          _actor: string
+          _comment?: string
+          _outcome: string
+          _to: string
+        }
+        Returns: string
+      }
+      ame_decision_text: {
+        Args: { _has_comment: boolean; _outcome: string; _subject: string }
+        Returns: Record<string, unknown>
+      }
+      ame_enqueue: {
+        Args: {
+          _actor: string
+          _delivery: string
+          _hdr: string
+          _nid: string
+          _to: string
+          _type: string
+        }
+        Returns: undefined
+      }
+      ame_finish: {
+        Args: { _mail_key: string; _reason?: string; _status: string }
+        Returns: undefined
+      }
+      ame_is_admin: { Args: { _uid: string }; Returns: boolean }
+      ame_is_test_user: { Args: { _uid: string }; Returns: boolean }
+      ame_kind: { Args: { _type: string }; Returns: string }
+      ame_type_skip: { Args: { _type: string }; Returns: string }
+      ame_wake: { Args: never; Returns: undefined }
       answer_ticket_question: {
         Args: { _answer: string; _question_id: string }
         Returns: undefined
@@ -18531,6 +18682,7 @@ export type Database = {
           is_read: boolean | null
           last_attempt_at: string
           link: string | null
+          meta: Json | null
           pause_category: string | null
           retry_count: number
           silent: boolean
