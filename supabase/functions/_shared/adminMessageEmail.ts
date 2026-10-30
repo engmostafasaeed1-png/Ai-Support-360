@@ -225,7 +225,7 @@ export function formatDeadline(date: string | null | undefined, lang: Lang): str
 export interface ClaimItem { id: string; title?: string | null; body?: string | null; link?: string | null; type?: string | null; kind?: string; meta?: MessageMeta | null; created_at?: string | null }
 export interface ClaimMail { mail_key: string; recipient: string; email: string; lang?: string; digest: boolean; important?: boolean; test?: boolean; items: ClaimItem[] }
 export interface AdminMessageData {
-  lang: Lang; digest: boolean; items: MessageView[]; url: string; prefsUrl: string; helpHref: string; test?: boolean;
+  lang: Lang; digest: boolean; items: MessageView[]; url: string; inboxUrl: string; prefsUrl: string; helpHref: string; test?: boolean;
 }
 
 export const MESSAGE_LOGO = 'https://www.aisupport360.com/__l5e/assets-v1/94a9cd20-ec56-41c9-897e-534889a80659/brand-navy.png';
@@ -239,6 +239,7 @@ export function buildAdminMessageData(mail: ClaimMail, siteUrl: string, helpEmai
     digest: !!mail.digest && items.length > 1,
     items,
     url: items.length === 1 ? items[0].url : `${base}${DEFAULT_PATH}`,
+    inboxUrl: `${base}${DEFAULT_PATH}`,
     prefsUrl: `${base}${PREFS_PATH}`,
     helpHref: `mailto:${help}`,
     test: !!mail.test,
@@ -353,7 +354,7 @@ export function renderAdminMessage(h: H, d: AdminMessageData) {
                 contextCard(h, one, c),
                 todoBox(h, one, c, lang),
                 h('div', { style: st.btnWrap }, h('a', { href: one.url, style: st.btn }, c.cta)),
-                h('p', { style: st.second }, h('a', { href: d.url === one.url ? d.url.replace(/\/[^/]*$/, '') + '/notifications' : d.url, style: st.a }, c.allMessages)),
+                h('p', { style: st.second }, h('a', { href: d.inboxUrl, style: st.a }, c.allMessages)),
                 h('p', { style: st.sent }, [c.sentBy, formatSentAt(one.createdAt, lang)].filter(Boolean).join(' · ')),
               ]
             : [
