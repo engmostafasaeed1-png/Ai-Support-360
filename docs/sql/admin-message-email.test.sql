@@ -166,4 +166,32 @@ DO $$ DECLARE i _ids; ok boolean := false; BEGIN
   RAISE NOTICE 'PASS 9 access';
 END $$;
 
+-- 10. Organised messages: category, related item only from the recipient's own items, test send only to the admin.
+DO $$ DECLARE i _ids; r jsonb; ok boolean := false; t1 uuid := gen_random_uuid(); t2 uuid := gen_random_uuid(); m jsonb; BEGIN
+  SELECT * INTO i FROM _ids;
+  IF ame_category('payment', NULL) <> 'decision' OR ame_category('admin_message', '{"category":"action"}') <> 'action'
+     OR ame_category('profile_reminder', NULL) <> 'reminder' OR ame_category('admin_message', NULL) <> 'notice' THEN RAISE EXCEPTION '10 category'; END IF;
+  INSERT INTO tickets (id, client_id, title, status) VALUES (t1, i.u1, 'SAP FI posting error', 'in_progress'), (t2, i.u2, 'Other client ticket', 'new');
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', i.adm, 'role', 'authenticated')::text, true);
+  BEGIN
+    PERFORM admin_message_send(i.u1, jsonb_build_object('category', 'decision', 'subject', 'Hi', 'body', 'x', 'context', jsonb_build_object('kind', 'ticket', 'ref', t2)));
+  EXCEPTION WHEN insufficient_privilege THEN ok := true; END;
+  IF NOT ok THEN RAISE EXCEPTION '10 foreign ticket shown'; END IF;
+  r := admin_message_send(i.u1, jsonb_build_object('category', 'action', 'subject', 'Please confirm', 'summary', 'One step left',
+    'body', E'Hello\n- one\n- two', 'link', '/client/tickets', 'action_label', 'Confirm the resolution', 'deadline', to_char(current_date + 3, 'YYYY-MM-DD'),
+    'context', jsonb_build_object('kind', 'ticket', 'ref', t1)));
+  SELECT meta INTO m FROM notifications WHERE id = (r ->> 'id')::uuid;
+  IF m ->> 'category' <> 'action' OR m #>> '{context,label}' <> 'SAP FI posting error' OR m #>> '{context,status}' <> 'in progress' THEN RAISE EXCEPTION '10 meta %', m; END IF;
+  IF (r #>> '{email,status}') <> 'queued' THEN RAISE EXCEPTION '10 not queued'; END IF;
+  PERFORM pg_temp.next_action();
+  r := admin_message_send(i.u2, jsonb_build_object('category', 'notice', 'subject', 'Minor', 'body', 'ok', 'email', false));
+  IF (r #>> '{email,reason}') <> 'admin_unticked_email' THEN RAISE EXCEPTION '10 untick via compose'; END IF;
+  PERFORM pg_temp.next_action();
+  r := admin_message_send(i.u2, jsonb_build_object('category', 'notice', 'subject', 'Test', 'body', 'ok', 'test', true));
+  IF (SELECT user_id FROM notifications WHERE id = (r ->> 'id')::uuid) <> i.adm
+     OR NOT (SELECT is_test FROM admin_message_emails WHERE notification_id = (r ->> 'id')::uuid) THEN RAISE EXCEPTION '10 test send'; END IF;
+  IF jsonb_array_length(admin_message_history(jsonb_build_object('category', 'action', 'q', 'confirm'))) <> 1 THEN RAISE EXCEPTION '10 history filter'; END IF;
+  RAISE NOTICE 'PASS 10 organised messages, own items only, test send, history';
+END $$;
+
 ROLLBACK;
