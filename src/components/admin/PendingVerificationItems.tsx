@@ -13,6 +13,9 @@ import {
 } from '@/components/ui/dialog';
 import { AlertTriangle, Check, Trash2, Plus, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import DecisionEmailNotice from '@/components/admin/DecisionEmailNotice';
+import { safeRpc } from '@/lib/safeRpc';
+import { isNotInstalled } from '@/lib/userAdmin';
 
 export const ITEM_KINDS = [
   { kind: 'certificates', label: 'Certificates' },
@@ -22,6 +25,11 @@ export const ITEM_KINDS = [
 ] as const;
 
 export const DEFAULT_PERIOD_DAYS = 14;
+
+/** The comment saved and e-mailed with "approve with items" (at most 1000 characters). */
+export function approveWithItemsComment(labels: string[], days: number, note: string): string {
+  return `Approved with ${labels.length} item(s) to verify within ${days} days: ${labels.join('; ')}${note.trim() ? ` — ${note.trim()}` : ''}`.slice(0, 1000);
+}
 
 export interface VerificationItem {
   id: string;
@@ -90,15 +98,21 @@ export function ApproveWithItemsDialog({
       const { error: insErr } = await db.from('consultant_verification_items')
         .insert(rows.map(r => ({ ...r, consultant_id: target.id, due_at: due })));
       if (insErr) throw insErr;
-      const { error } = await supabase.from('consultants').update({ verification_status: 'verified' as any }).eq('id', target.id);
-      if (error) throw error;
-      const reason = `Approved with ${rows.length} item(s) to verify within ${days} days: ${rows.map(r => r.label).join('; ')}${note.trim() ? ` — ${note.trim()}` : ''}`;
-      const { data: latest } = await supabase.from('consultant_verification_audit').select('id')
-        .eq('consultant_id', target.id).eq('new_status', 'verified' as any)
-        .order('created_at', { ascending: false }).limit(1).maybeSingle();
-      if (latest?.id) await supabase.from('consultant_verification_audit').update({ reason: reason.slice(0, 1000) }).eq('id', latest.id);
-      supabase.functions.invoke('verification-items-notify', { body: { action: 'assigned', consultant_id: target.id } })
-        .catch(() => toast.warning('Approved, but the email to the consultant could not be sent.'));
+      const reason = approveWithItemsComment(rows.map(r => r.label), days, note);
+      // One decision e-mail (status + the items in the comment) through the shared admin-message sender.
+      const viaRpc = await safeRpc('admin_review_consultant', { _cid: target.id, _status: 'verified', _comment: reason });
+      if (viaRpc.error && !isNotInstalled(viaRpc.error)) throw new Error(viaRpc.error.message);
+      if (viaRpc.error) {
+        // Before docs/sql/admin-message-email.sql is applied: the older two-step save and the items e-mail.
+        const { error } = await supabase.from('consultants').update({ verification_status: 'verified' as any }).eq('id', target.id);
+        if (error) throw error;
+        const { data: latest } = await supabase.from('consultant_verification_audit').select('id')
+          .eq('consultant_id', target.id).eq('new_status', 'verified' as any)
+          .order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (latest?.id) await supabase.from('consultant_verification_audit').update({ reason }).eq('id', latest.id);
+        supabase.functions.invoke('verification-items-notify', { body: { action: 'assigned', consultant_id: target.id } })
+          .catch(() => toast.warning('Approved, but the email to the consultant could not be sent.'));
+      }
       toast.success(`${target.name} is approved and now shows in the consultant list.`);
       onDone();
       onClose();
@@ -157,6 +171,10 @@ export function ApproveWithItemsDialog({
           <div>
             <Label className="text-sm">Note (optional)</Label>
             <Textarea value={note} onChange={e => setNote(e.target.value.slice(0, 500))} className="mt-1" />
+            {target && (
+              <DecisionEmailNotice className="mt-2" consultantId={target.id} subject="consultant_profile" outcomes={['approved']} link="/consultant/verification"
+                comment={approveWithItemsComment([...ITEM_KINDS.filter(k => kinds.includes(k.kind)).map(k => k.label), ...custom], days, note)} />
+            )}
           </div>
         </div>
         <DialogFooter>
@@ -197,6 +215,7 @@ export function AdminVerificationItemsPanel({ consultantId, readOnly }: { consul
   return (
     <div className="mb-4">
       <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Items to verify</h4>
+      {!readOnly && <DecisionEmailNotice compact className="mb-2" consultantId={consultantId} subject="document" outcomes={['approved']} />}
       <ul className="space-y-2">
         {items.map(item => (
           <li key={item.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-border/50 p-2 text-sm">

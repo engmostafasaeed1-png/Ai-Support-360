@@ -15,11 +15,13 @@ import AdminMessageComposer from '@/components/admin/AdminMessageComposer';
 import type { BlockedInput } from '@/lib/blockedReasons';
 
 /** Confirmation with an optional required reason. */
-export function ReasonDialog({ open, title, description, confirmLabel, destructive, needsReason, busy, onClose, onConfirm, children, canConfirm = true, blockedReason }: {
+export function ReasonDialog({ open, title, description, confirmLabel, destructive, needsReason, busy, onClose, onConfirm, children, canConfirm = true, blockedReason, onReasonChange, footerNote }: {
   open: boolean; title: string; description: ReactNode; confirmLabel: string; destructive?: boolean; needsReason?: boolean;
   busy?: boolean; onClose: () => void; onConfirm: (reason: string) => void; children?: ReactNode; canConfirm?: boolean;
   /** Why confirming is not possible yet (shown on the dimmed button); defaults to "fill in the required fields". */
   blockedReason?: BlockedInput;
+  /** Live reason text (e.g. for the decision e-mail preview) and a note shown under the reason box. */
+  onReasonChange?: (reason: string) => void; footerNote?: ReactNode;
 }) {
   const { t } = useTranslation();
   const id = useId();
@@ -35,11 +37,12 @@ export function ReasonDialog({ open, title, description, confirmLabel, destructi
           {children}
           <div className="space-y-1.5">
             <Label htmlFor={`${id}-reason`}>{needsReason ? t('um.reason_required', 'Reason (required)') : t('um.reason_optional', 'Reason (optional)')}</Label>
-            <Textarea id={`${id}-reason`} value={reason} maxLength={500} rows={3} onChange={(e) => setReason(e.target.value)}
+            <Textarea id={`${id}-reason`} value={reason} maxLength={500} rows={3} onChange={(e) => { setReason(e.target.value); onReasonChange?.(e.target.value); }}
               aria-invalid={touched && bad} aria-describedby={`${id}-hint`} />
             <p id={`${id}-hint`} className={touched && bad ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'} aria-live="polite">
               {touched && bad ? t('um.reason_short', 'Please write at least {{n}} characters.', { n: MIN_REASON }) : t('um.reason_hint', 'Saved in the history with your name.')}
             </p>
+            {footerNote}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>{t('common.cancel', 'Cancel')}</Button>

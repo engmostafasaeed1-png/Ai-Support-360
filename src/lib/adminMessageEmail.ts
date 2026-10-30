@@ -3,7 +3,7 @@
  * claim limits). The database decides; this file only labels send boxes, builds the admin's choice header and is
  * covered by src/test/adminMessageEmail.test.tsx so screen and server agree.
  */
-import type { MessageCategory } from '../../supabase/functions/_shared/adminMessageEmail';
+import type { DecisionOutcome as Outcome, MessageCategory } from '../../supabase/functions/_shared/adminMessageEmail';
 
 export type EmailKind = 'comment' | 'decision';
 export type DeliveryStatus = 'queued' | 'sending' | 'sent' | 'skipped' | 'failed';
@@ -65,7 +65,7 @@ export const firstNameOf = (name: string | null | undefined) => String(name ?? '
 export interface HistoryRow {
   id: string; notification_id: string; created_at: string; recipient: string; recipient_name: string | null; actor_name: string | null;
   category: MessageCategory; subject: string | null; status: DeliveryStatus; reason: string | null; is_read: boolean; in_app: boolean;
-  important: boolean; is_test: boolean; digest: boolean; send_after: string;
+  important: boolean; is_test: boolean; digest: boolean; send_after: string; decision?: string | null;
 }
 
 /** Spreadsheet-safe cell (= + - @ would run as formulas). */
@@ -80,4 +80,37 @@ export function historyCsv(rows: HistoryRow[]): string {
     r.status === 'skipped' ? 'in-app' : 'in-app + e-mail', r.status, r.reason ?? '', r.is_read ? 'yes' : 'no', r.actor_name ?? '',
   ].map(csvCell).join(','));
   return [head.map(csvCell).join(','), ...lines].join('\r\n');
+}
+
+// ------------------------------------------------------------------ review decisions (mirrors ame_decision_notice)
+
+export type { DecisionOutcome, DecisionSubject } from '../../supabase/functions/_shared/adminMessageEmail';
+
+/** What admin_decision_recipient returns (null before docs/sql/admin-message-email.sql is applied). */
+export interface DecisionRecipient { found?: boolean; email?: string | null; confirmed?: boolean; test?: boolean; suppressed?: boolean; lang?: 'en' | 'ar' | null; enabled?: boolean }
+export type DecisionNoticeState =
+  | { kind: 'send'; email: string } | { kind: 'unknown'; email?: undefined }
+  | { kind: 'no_email' | 'not_confirmed' | 'test' | 'suppressed' | 'off'; email?: string };
+
+/** The line beside a decision comment box, in the same order as the database skips (ame_enqueue / ame_claim). */
+export function decisionNoticeState(r: DecisionRecipient | null | undefined): DecisionNoticeState {
+  if (!r || r.found === false) return { kind: 'unknown' };
+  const email = r.email?.trim() || '';
+  if (r.test) return { kind: 'test', email };
+  if (!email) return { kind: 'no_email' };
+  if (r.enabled === false) return { kind: 'off', email };
+  if (!r.confirmed) return { kind: 'not_confirmed', email };
+  if (r.suppressed) return { kind: 'suppressed', email };
+  return { kind: 'send', email };
+}
+
+/** Consultant status change → decision (mirrors notify_consultant_verification_change). null = no notice. */
+export function consultantOutcome(from: string | null | undefined, to: string): Outcome | null {
+  if (to === 'verified') return from === 'suspended' ? 'reactivated' : from === 'rejected' ? 'reapproved' : 'approved';
+  if (to === 'rejected') return 'rejected';
+  if (to === 'on_hold') return 'info';
+  if (to === 'suspended') return 'suspended';
+  if (from === 'verified' && (to === 'pending' || to === 'under_review')) return 'unverified';
+  if (to === 'under_review') return 'review';
+  return null;
 }

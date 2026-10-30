@@ -40,6 +40,12 @@ async function can(admin: Admin, uid: string, roles: string[], perm: string): Pr
 }
 
 async function record(admin: Admin, actor: string, target: string, action: string, payload: Record<string, unknown>, reason: string | null) {
+  // Suspend / reactivate is an account decision: in-app notice + one e-mail through the shared admin-message sender
+  // (ame_decision_service in docs/sql/admin-message-email.sql). Never blocks the action; a no-op until that file is applied.
+  if (action === 'suspend' || action === 'reactivate') {
+    await admin.rpc('ame_decision_service', { _actor: actor, _to: target, _outcome: action === 'suspend' ? 'suspended' : 'reactivated', _comment: reason })
+      .then(() => {}, () => {});
+  }
   const { error } = await admin.rpc('um_record_state', { _actor: actor, _target: target, _action: action, _payload: payload, _reason: reason });
   if (!error) return;
   if (!missingFn(error)) throw new HttpError(400, error.message);

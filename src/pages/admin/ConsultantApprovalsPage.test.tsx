@@ -8,6 +8,9 @@ import { MemoryRouter } from 'react-router-dom';
 const db = vi.hoisted(() => ({
   tables: {} as Record<string, { data: unknown; error: unknown }>,
   updates: [] as Array<{ table: string; payload: unknown; eq: unknown[] }>,
+  rpcs: [] as Array<{ fn: string; args: any }>,
+  // Before docs/sql/admin-message-email.sql is applied the decision RPC does not exist.
+  rpcInstalled: false,
 }));
 
 vi.mock('@/integrations/supabase/client', () => {
@@ -29,7 +32,13 @@ vi.mock('@/integrations/supabase/client', () => {
     b.then = (resolve: any, reject: any) => Promise.resolve(result()).then(resolve, reject);
     return b;
   };
-  return { supabase: { from: (table: string) => chain(table) } };
+  const rpc = (fn: string, args: any) => {
+    db.rpcs.push({ fn, args });
+    if (fn === 'admin_review_consultant' && db.rpcInstalled) return Promise.resolve({ data: { ok: true }, error: null });
+    if (fn === 'admin_decision_recipient') return Promise.resolve({ data: { found: true, email: 'jane@example.com', confirmed: true, enabled: true }, error: null });
+    return Promise.resolve({ data: null, error: { code: 'PGRST202', message: `Could not find the function public.${fn}` } });
+  };
+  return { supabase: { from: (table: string) => chain(table), rpc } };
 });
 vi.mock('@/contexts/GuestModeContext', () => ({ useGuestMode: () => ({ isGuest: false }) }));
 vi.mock('@/data/adminMockData', () => ({ pendingConsultants: [] }));
@@ -78,6 +87,8 @@ function show(url = '/admin/approvals') {
 
 beforeEach(() => {
   db.updates.length = 0;
+  db.rpcs.length = 0;
+  db.rpcInstalled = false;
   db.tables.consultants = { data: [row('c1', 'u1', 'pending'), row('c2', 'u2', 'verified', { city: null, country: null })], error: null };
   db.tables.consultant_contact_links = { data: [{ consultant_id: 'c1', linkedin_url: 'https://www.linkedin.com/in/jane-doe', github_url: null, personal_website: null, credly_username: null }, { consultant_id: 'c2', linkedin_url: 'https://www.linkedin.com/in/jane-doe', github_url: null, personal_website: null, credly_username: null }], error: null };
   db.tables.profiles = { data: [{ user_id: 'u1', display_name: 'Jane Doe' }, { user_id: 'u2', display_name: 'Omar Ali' }], error: null };
@@ -154,5 +165,21 @@ describe('ConsultantApprovalsPage', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Consultant suspended.'));
     expect(db.updates[0].payload).toEqual({ verification_status: 'suspended' });
     expect(db.updates[0].eq).toEqual(['id', 'c2']);
+  });
+
+  it('with the decision e-mail installed: one request carries status + comment, and the dialog says where it is e-mailed', async () => {
+    db.rpcInstalled = true;
+    show();
+    fireEvent.click(await screen.findByText('Jane Doe'));
+    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() => expect(db.rpcs.some((r) => r.fn === 'admin_decision_recipient' && r.args._consultant === 'c1')).toBe(true));
+    // (No translations are loaded in tests, so only the fixed part of the line is checked; the address fills {{to}}.)
+    await waitFor(() => expect(within(dialog).getByTestId('decision-email-notice').textContent).toContain('This comment will also be e-mailed to'));
+    fireEvent.change(within(dialog).getByLabelText('Reason / notes (optional)'), { target: { value: 'Documents checked' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Approve' }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Consultant approved!'));
+    expect(db.rpcs.find((r) => r.fn === 'admin_review_consultant')?.args).toEqual({ _cid: 'c1', _status: 'verified', _comment: 'Documents checked' });
+    expect(db.updates.filter((u) => u.table === 'consultants')).toHaveLength(0);
   });
 });

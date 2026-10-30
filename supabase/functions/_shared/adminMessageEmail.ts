@@ -175,36 +175,165 @@ export const plainText = (blocks: Block[]) => blocks.map((b) => b.t === 'p'
   ? b.lines.map((l) => l.map((p) => p.text).join('')).join('\n')
   : b.items.map((it, i) => `${b.t === 'ol' ? `${i + 1}.` : '•'} ${it.map((p) => p.text).join('')}`).join('\n')).join('\n\n');
 
+
+// ------------------------------------------------------------------ account / profile review decisions
+// Written only by ame_decision_notice (docs/sql/admin-message-email.sql); the lists below mirror its checks.
+
+export const DECISION_SUBJECTS = ['consultant_profile', 'client_account', 'certificate', 'linkedin', 'credly', 'document', 'success_story', 'account'] as const;
+export const DECISION_OUTCOMES = ['approved', 'reapproved', 'changes', 'info', 'rejected', 'unverified', 'suspended', 'reactivated', 'review'] as const;
+export type DecisionSubject = (typeof DECISION_SUBJECTS)[number];
+export type DecisionOutcome = (typeof DECISION_OUTCOMES)[number];
+export type DecisionBadge = 'approved' | 'changes' | 'rejected' | 'suspended' | 'review';
+export interface DecisionMeta { subject?: string; outcome?: string; comment?: string | null; key?: string }
+export interface DecisionView { subject: DecisionSubject; outcome: DecisionOutcome; badge: DecisionBadge; comment: string; steps: string[]; cta: string }
+
+export const badgeFor = (o: DecisionOutcome): DecisionBadge =>
+  o === 'approved' || o === 'reapproved' || o === 'reactivated' ? 'approved'
+    : o === 'rejected' ? 'rejected' : o === 'suspended' ? 'suspended' : o === 'review' ? 'review' : 'changes';
+
+export const DECISION_BADGE_COLOURS: Record<DecisionBadge, { fg: string; bg: string }> = {
+  approved: { fg: '#166534', bg: '#DCFCE7' }, changes: { fg: '#92400E', bg: '#FEF3C7' }, rejected: { fg: '#991B1B', bg: '#FEE2E2' },
+  suspended: { fg: '#991B1B', bg: '#FEE2E2' }, review: { fg: '#1D4ED8', bg: '#DBEAFE' },
+};
+
+const HELP = 'info@aisupport360.com';
+export const DECISION_COPY = {
+  en: {
+    badges: { approved: 'Approved', changes: 'Needs changes', rejected: 'Rejected', suspended: 'Suspended', review: 'In review' } as Record<DecisionBadge, string>,
+    nouns: { consultant_profile: 'consultant profile', client_account: 'company account', certificate: 'certificate', linkedin: 'LinkedIn profile', credly: 'Credly badges', document: 'document', success_story: 'success story', account: 'account' } as Record<DecisionSubject, string>,
+    title: (o: DecisionOutcome, n: string) => ({
+      approved: `Your ${n} is approved`, reapproved: `Your ${n} is approved again`, changes: `Your ${n} needs changes`,
+      info: `We need more information about your ${n}`, rejected: `Your ${n} was not approved`, unverified: `Your ${n} is no longer verified`,
+      suspended: `Your ${n} is suspended`, reactivated: `Your ${n} is active again`, review: `Your ${n} is under review`,
+    })[o],
+    intro: (o: DecisionOutcome, n: string, hasComment: boolean) => ({
+      approved: `Welcome! An administrator reviewed and approved your ${n}.`,
+      reapproved: `Good news: after a new review, your ${n} is approved again.`,
+      changes: `An administrator asked you to update your ${n} before it can be approved.`,
+      info: `An administrator needs more information before deciding on your ${n}.`,
+      rejected: hasComment ? `An administrator reviewed your ${n} and could not approve it. The reason is below.`
+        : `An administrator reviewed your ${n} and could not approve it, because it does not meet our current requirements yet.`,
+      unverified: `After a review, the verified mark on your ${n} was removed.`,
+      suspended: hasComment ? `An administrator suspended your ${n}. The reason is below.` : `An administrator suspended your ${n}.`,
+      reactivated: `Your ${n} is active again. Welcome back.`,
+      review: `An administrator is reviewing your ${n}. We will tell you when a decision is made.`,
+    })[o],
+    quote: 'Comment from the administrator',
+    next: 'What you need to do next',
+    appeal: `To appeal, write to ${HELP} or use Help in the portal, with any details that support your case.`,
+    steps: {
+      approved_consultant_profile: ['Keep your weekly availability up to date.', 'Check how clients see your profile.', 'Watch the portal for new request invitations.'],
+      approved_client_account: ['Create your first support request.', 'Invite your team members.', 'Book a session with a consultant.'],
+      approved: ['Nothing else is needed. The verified mark now shows on your profile.'],
+      changes: ['Read the comment above.', 'Update the details in your profile.', 'Send it again for review.'],
+      info: ['Read the comment above.', 'Add the missing information in your profile.', 'Send it again for review.'],
+      rejected: ['Read the reason above.', 'If you can fix it, update your details and send them again.'],
+      unverified: ['Read the comment above.', 'Correct or upload the item again in your profile.', 'We will check it again.'],
+      suspended: ['Read the reason above.'],
+      reactivated: ['Sign in again.', 'Check that your details are still correct.'],
+      review: ['No action is needed now.', 'We will e-mail you when a decision is made.'],
+    } as Record<string, string[]>,
+    cta: { profile: 'Open your profile', account: 'Open the portal' },
+    previewLine: (to: string) => `This comment will also be e-mailed to ${to}.`,
+  },
+  ar: {
+    badges: { approved: 'تمت الموافقة', changes: 'يحتاج إلى تعديلات', rejected: 'مرفوض', suspended: 'موقوف', review: 'قيد المراجعة' } as Record<DecisionBadge, string>,
+    nouns: { consultant_profile: 'ملفك كمستشار', client_account: 'حساب شركتك', certificate: 'الشهادة', linkedin: 'ملف LinkedIn', credly: 'شارات Credly', document: 'المستند', success_story: 'قصة النجاح', account: 'حسابك' } as Record<DecisionSubject, string>,
+    title: (o: DecisionOutcome, n: string) => ({
+      approved: `تمت الموافقة على ${n}`, reapproved: `تمت الموافقة مجددًا على ${n}`, changes: `يحتاج ${n} إلى تعديلات`,
+      info: `نحتاج إلى مزيد من المعلومات حول ${n}`, rejected: `لم تتم الموافقة على ${n}`, unverified: `لم يعد ${n} موثّقًا`,
+      suspended: `تم إيقاف ${n} مؤقتًا`, reactivated: `تمت إعادة تفعيل ${n}`, review: `${n} قيد المراجعة`,
+    })[o],
+    intro: (o: DecisionOutcome, n: string, hasComment: boolean) => ({
+      approved: `مرحبًا بك! راجع أحد المسؤولين ${n} ووافق عليه.`,
+      reapproved: `خبر سار: بعد مراجعة جديدة تمت الموافقة مجددًا على ${n}.`,
+      changes: `طلب أحد المسؤولين تحديث ${n} قبل الموافقة عليه.`,
+      info: `يحتاج أحد المسؤولين إلى مزيد من المعلومات قبل اتخاذ قرار بشأن ${n}.`,
+      rejected: hasComment ? `راجع أحد المسؤولين ${n} ولم يتمكن من الموافقة عليه. السبب مذكور أدناه.`
+        : `راجع أحد المسؤولين ${n} ولم يتمكن من الموافقة عليه، لأنه لا يستوفي متطلباتنا الحالية بعد.`,
+      unverified: `بعد المراجعة، أُزيلت علامة التوثيق عن ${n}.`,
+      suspended: hasComment ? `أوقف أحد المسؤولين ${n} مؤقتًا. السبب مذكور أدناه.` : `أوقف أحد المسؤولين ${n} مؤقتًا.`,
+      reactivated: `أصبح ${n} نشطًا من جديد. مرحبًا بعودتك.`,
+      review: `يراجع أحد المسؤولين ${n} الآن. سنبلغك عند اتخاذ القرار.`,
+    })[o],
+    quote: 'تعليق المسؤول',
+    next: 'ما الذي عليك فعله بعد ذلك',
+    appeal: `للاعتراض، راسلنا على ${HELP} أو استخدم صفحة المساعدة في البوابة، مع أي تفاصيل تدعم طلبك.`,
+    steps: {
+      approved_consultant_profile: ['حدّث جدول توفرك الأسبوعي باستمرار.', 'تحقق من الطريقة التي يرى بها العملاء ملفك.', 'تابع البوابة لدعوات الطلبات الجديدة.'],
+      approved_client_account: ['أنشئ أول طلب دعم.', 'ادعُ أعضاء فريقك.', 'احجز جلسة مع مستشار.'],
+      approved: ['لا يلزم أي إجراء آخر. علامة التوثيق تظهر الآن في ملفك.'],
+      changes: ['اقرأ التعليق أعلاه.', 'حدّث البيانات في ملفك.', 'أرسله مجددًا للمراجعة.'],
+      info: ['اقرأ التعليق أعلاه.', 'أضف المعلومات الناقصة في ملفك.', 'أرسله مجددًا للمراجعة.'],
+      rejected: ['اقرأ السبب أعلاه.', 'إذا أمكنك معالجته، حدّث بياناتك وأرسلها مجددًا.'],
+      unverified: ['اقرأ التعليق أعلاه.', 'صحّح العنصر أو ارفعه مجددًا في ملفك.', 'سنراجعه مرة أخرى.'],
+      suspended: ['اقرأ السبب أعلاه.'],
+      reactivated: ['سجّل الدخول من جديد.', 'تحقق من أن بياناتك ما زالت صحيحة.'],
+      review: ['لا يلزم أي إجراء الآن.', 'سنراسلك بالبريد عند اتخاذ القرار.'],
+    } as Record<string, string[]>,
+    cta: { profile: 'افتح ملفك', account: 'افتح البوابة' },
+    previewLine: (to: string) => `سيُرسل هذا التعليق أيضًا بالبريد الإلكتروني إلى ${to}.`,
+  },
+};
+
+const isSubject = (v: unknown): v is DecisionSubject => (DECISION_SUBJECTS as readonly string[]).includes(String(v));
+const isOutcome = (v: unknown): v is DecisionOutcome => (DECISION_OUTCOMES as readonly string[]).includes(String(v));
+
+/** Next steps for a decision (approved profile/account get their own welcome list; rejected and suspended add how to appeal). */
+export function decisionSteps(subject: DecisionSubject, outcome: DecisionOutcome, lang: Lang): string[] {
+  const c = DECISION_COPY[lang];
+  const base = (outcome === 'approved' || outcome === 'reapproved') && c.steps[`approved_${subject}`] ? c.steps[`approved_${subject}`]
+    : outcome === 'reapproved' ? c.steps.approved : c.steps[outcome] ?? [];
+  return outcome === 'rejected' || outcome === 'suspended' ? [...base, c.appeal] : base;
+}
+
+/** The decision part of a message, or null when the notice is not a review decision. */
+export function buildDecisionView(d: DecisionMeta | null | undefined, lang: Lang): DecisionView | null {
+  if (!d || !isSubject(d.subject) || !isOutcome(d.outcome)) return null;
+  const c = DECISION_COPY[lang];
+  return {
+    subject: d.subject, outcome: d.outcome, badge: badgeFor(d.outcome), comment: clip(d.comment, 2000),
+    steps: decisionSteps(d.subject, d.outcome, lang),
+    cta: d.subject === 'account' ? c.cta.account : c.cta.profile,
+  };
+}
+export const decisionTitle = (d: DecisionView, lang: Lang) => DECISION_COPY[lang].title(d.outcome, DECISION_COPY[lang].nouns[d.subject]);
+export const decisionIntro = (d: DecisionView, lang: Lang) => DECISION_COPY[lang].intro(d.outcome, DECISION_COPY[lang].nouns[d.subject], !!d.comment);
+
 // ------------------------------------------------------------------ message view (shared by e-mail, card, preview)
 
 export interface MessageContext { kind: string; label: string; ref?: string; status?: string }
-export interface MessageMeta { v?: number; category?: string; summary?: string; context?: MessageContext | null; action_label?: string; deadline?: string; test?: boolean }
+export interface MessageMeta { v?: number; category?: string; summary?: string; context?: MessageContext | null; action_label?: string; deadline?: string; test?: boolean; decision?: DecisionMeta | null }
 export interface MessageInput { title?: string | null; body?: string | null; link?: string | null; type?: string | null; meta?: MessageMeta | null; created_at?: string | null }
 export interface MessageView {
   category: MessageCategory; title: string; summary: string; blocks: Block[]; context: MessageContext | null;
   action: { label: string; deadline: string | null } | null; url: string; createdAt: string | null; structured: boolean;
+  decision: DecisionView | null;
 }
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-export function buildMessageView(n: MessageInput, base: string): MessageView {
+export function buildMessageView(n: MessageInput, base: string, lang: Lang = 'en'): MessageView {
   const b = base.replace(/\/+$/, '');
   const meta = (n.meta && typeof n.meta === 'object' ? n.meta : null) as MessageMeta | null;
+  const decision = buildDecisionView(meta?.decision, lang);
   const ctx = meta?.context && typeof meta.context === 'object' && meta.context.label
     ? { kind: oneLine(meta.context.kind, 20) || 'other', label: oneLine(meta.context.label, 120), ref: oneLine(meta.context.ref, 40) || undefined, status: oneLine(meta.context.status, 40) || undefined }
     : null;
   const label = oneLine(meta?.action_label, 120);
   const deadline = typeof meta?.deadline === 'string' && DATE_RE.test(meta.deadline) ? meta.deadline : null;
   return {
-    category: isCategory(meta?.category) ? meta!.category as MessageCategory : categoryForType(n.type),
-    title: oneLine(n.title, 120) || '—',
+    // Decisions are shown in the reader's language from the stored decision (the stored text is the English copy).
+    category: decision ? 'decision' : isCategory(meta?.category) ? meta!.category as MessageCategory : categoryForType(n.type),
+    title: decision ? decisionTitle(decision, lang) : oneLine(n.title, 120) || '—',
     summary: oneLine(meta?.summary, 200),
-    blocks: formatBody(n.body, b),
+    blocks: decision ? formatBody(decisionIntro(decision, lang), b) : formatBody(n.body, b),
     context: ctx,
     action: label || deadline ? { label, deadline } : null,
     url: `${b}${safePortalPath(n.link)}`,
     createdAt: n.created_at ?? null,
     structured: !!meta?.v,
+    decision,
   };
 }
 
@@ -232,10 +361,11 @@ export const MESSAGE_LOGO = 'https://www.aisupport360.com/__l5e/assets-v1/94a9cd
 
 export function buildAdminMessageData(mail: ClaimMail, siteUrl: string, helpEmail = 'info@aisupport360.com'): AdminMessageData {
   const base = siteUrl.replace(/\/+$/, '');
-  const items = (mail.items ?? []).slice(0, 20).map((i) => buildMessageView(i, base));
+  const lang: Lang = mail.lang === 'ar' ? 'ar' : 'en';
+  const items = (mail.items ?? []).slice(0, 20).map((i) => buildMessageView(i, base, lang));
   const help = /^[a-z0-9._+-]+@aisupport360\.com$/i.test(helpEmail) ? helpEmail : 'info@aisupport360.com';
   return {
-    lang: mail.lang === 'ar' ? 'ar' : 'en',
+    lang,
     digest: !!mail.digest && items.length > 1,
     items,
     url: items.length === 1 ? items[0].url : `${base}${DEFAULT_PATH}`,
@@ -253,7 +383,8 @@ export function adminMessageSubject(d: Pick<AdminMessageData, 'lang' | 'digest' 
   const c = MESSAGE_COPY[d.lang === 'ar' ? 'ar' : 'en'];
   const t = oneLine(it?.title, 90);
   const cat = it ? c.categories[it.category] : '';
-  return `${cat ? `${cat}: ` : ''}${t || c.heading} — AI Support 360`;
+  const badge = it?.decision ? ` (${DECISION_COPY[d.lang === 'ar' ? 'ar' : 'en'].badges[it.decision.badge]})` : '';
+  return `${cat ? `${cat}: ` : ''}${t || c.heading}${badge} — AI Support 360`;
 }
 
 /** What the worker reports back for one e-mail (ame_finish). */
@@ -294,6 +425,10 @@ const st = {
   small: { fontSize: '12px', lineHeight: '1.55', color: '#64748b', margin: '0 0 6px' },
   test: { fontSize: '12px', fontWeight: 'bold', color: '#92400E', backgroundColor: '#FEF3C7', padding: '6px 10px', borderRadius: '8px', margin: '0 0 12px', display: 'inline-block' },
   card: { margin: '0 0 12px', padding: '14px 16px', borderRadius: '12px', border: '1px solid #e2e8f0' },
+  badge: (b: DecisionBadge) => ({ display: 'inline-block', marginInlineStart: '6px', padding: '4px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 'bold', color: DECISION_BADGE_COLOURS[b].fg, backgroundColor: DECISION_BADGE_COLOURS[b].bg, border: `1px solid ${DECISION_BADGE_COLOURS[b].fg}33` }),
+  quote: { margin: '16px 0', padding: '14px 16px', borderRadius: '12px', backgroundColor: '#EFF6FF', borderInlineStart: '4px solid #3B82F6' },
+  quoteH: { fontSize: '12px', fontWeight: 'bold', color: '#1D4ED8', margin: '0 0 6px', textTransform: 'uppercase' as const, letterSpacing: '0.04em' },
+  next: { margin: '18px 0', padding: '14px 16px', borderRadius: '12px', backgroundColor: '#F8FAFC', border: '1px solid #CBD5E1' },
 };
 
 function inlines(h: H, parts: Inline[]) {
@@ -324,6 +459,21 @@ function todoBox(h: H, v: MessageView, c: (typeof MESSAGE_COPY)['en'], lang: Lan
     v.action.deadline ? h('p', { style: { ...st.todoP, marginTop: '6px', fontWeight: 'bold' } }, `${c.deadline}: ${formatDeadline(v.action.deadline, lang)}`) : null);
 }
 
+function decisionParts(h: H, v: MessageView, lang: Lang) {
+  if (!v.decision) return [];
+  const c = DECISION_COPY[lang];
+  const d = v.decision;
+  return [
+    d.comment ? h('div', { style: st.quote },
+      h('p', { style: st.quoteH }, c.quote),
+      // Plain text only (no links), line breaks kept.
+      h('p', { style: { ...st.p, margin: 0, color: '#1e293b' } }, ...d.comment.split('\n').flatMap((l, i) => (i ? [h('br', { key: `q${i}` }), l] : [l])))) : null,
+    d.steps.length ? h('div', { style: st.next },
+      h('p', { style: { ...st.todoH, color: '#1B2559' } }, c.next),
+      h('ol', { style: { ...st.list, margin: '0' } }, ...d.steps.map((x, i) => h('li', { key: i, style: { margin: '0 0 4px' } }, x)))) : null,
+  ];
+}
+
 export function renderAdminMessage(h: H, d: AdminMessageData) {
   const lang: Lang = d.lang === 'ar' ? 'ar' : 'en';
   const c = MESSAGE_COPY[lang];
@@ -347,13 +497,16 @@ export function renderAdminMessage(h: H, d: AdminMessageData) {
           d.test ? h('p', { style: st.test }, c.test) : null,
           ...(one
             ? [
-                h('span', { style: st.chip(one.category) }, c.categories[one.category]),
+                h('p', { style: { margin: 0 } },
+                  h('span', { style: st.chip(one.category) }, c.categories[one.category]),
+                  one.decision ? h('span', { style: st.badge(one.decision.badge) }, DECISION_COPY[lang].badges[one.decision.badge]) : null),
                 h('h1', { style: st.h1 }, one.title),
                 one.summary ? h('p', { style: st.summary }, one.summary) : null,
                 ...renderBlocks(h, one.blocks),
+                ...decisionParts(h, one, lang),
                 contextCard(h, one, c),
                 todoBox(h, one, c, lang),
-                h('div', { style: st.btnWrap }, h('a', { href: one.url, style: st.btn }, c.cta)),
+                h('div', { style: st.btnWrap }, h('a', { href: one.url, style: st.btn }, one.decision?.cta ?? c.cta)),
                 h('p', { style: st.second }, h('a', { href: d.inboxUrl, style: st.a }, c.allMessages)),
                 h('p', { style: st.sent }, [c.sentBy, formatSentAt(one.createdAt, lang)].filter(Boolean).join(' · ')),
               ]
@@ -361,6 +514,7 @@ export function renderAdminMessage(h: H, d: AdminMessageData) {
                 h('h1', { style: st.h1 }, c.digest(items.length)),
                 ...items.map((it, i) => h('div', { key: i, style: st.card },
                   h('span', { style: st.chip(it.category) }, c.categories[it.category]),
+                  it.decision ? h('span', { style: st.badge(it.decision.badge) }, DECISION_COPY[lang].badges[it.decision.badge]) : null,
                   h('p', { style: { ...st.ctxLabel, margin: '10px 0 4px' } }, it.title),
                   h('p', { style: { ...st.p, margin: '0 0 8px' } }, it.summary || oneLine(plainText(it.blocks), 220)),
                   it.action?.deadline ? h('p', { style: { ...st.ctxMeta, margin: '0 0 8px', fontWeight: 'bold' } }, `${c.deadline}: ${formatDeadline(it.action.deadline, lang)}`) : null,
@@ -381,6 +535,8 @@ export function adminMessageText(d: AdminMessageData): string {
     `[${c.categories[v.category]}] ${v.title}`,
     v.summary,
     plainText(v.blocks),
+    v.decision ? [`${DECISION_COPY[lang].badges[v.decision.badge]}`, v.decision.comment ? `${DECISION_COPY[lang].quote}:\n"${v.decision.comment}"` : '',
+      `${DECISION_COPY[lang].next}:\n${v.decision.steps.map((x, i) => `${i + 1}. ${x}`).join('\n')}`].filter(Boolean).join('\n\n') : '',
     v.context ? `${c.contextKinds[v.context.kind] ?? c.contextKinds.other}: ${v.context.label}${v.context.ref ? ` (${v.context.ref})` : ''}${v.context.status ? ` — ${c.status}: ${v.context.status}` : ''}` : '',
     v.action ? `${c.todo}: ${v.action.label}${v.action.deadline ? ` — ${c.deadline}: ${formatDeadline(v.action.deadline, lang)}` : ''}` : '',
     d.digest ? v.url : '',

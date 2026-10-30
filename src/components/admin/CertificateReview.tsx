@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import DecisionEmailNotice from '@/components/admin/DecisionEmailNotice';
 import { CERT_BUCKET, certificateDocumentPath, certificateFileKind } from '@/lib/consultantReview';
 
 export interface ReviewCertificate {
@@ -22,12 +23,14 @@ interface Props {
   /** True in the demo: nothing can be saved. */
   readOnly?: boolean;
   onChanged?: () => void;
+  /** When given, shows where the decision e-mail goes (verify / remove verification is e-mailed to the consultant). */
+  consultantId?: string | null;
 }
 
 const day = (value?: string | null) => (value ? new Date(value).toLocaleDateString() : '');
 
 /** For the administrator: the certificates of a consultant, the file of each one (opened through a link that works for one minute) and a button to mark it as verified. */
-export default function CertificateReview({ certificates, readOnly = false, onChanged }: Props) {
+export default function CertificateReview({ certificates, readOnly = false, onChanged, consultantId }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
 
   const openFile = async (certificate: ReviewCertificate) => {
@@ -66,6 +69,7 @@ export default function CertificateReview({ certificates, readOnly = false, onCh
 
   return (
     <div className="space-y-2" data-testid="certificate-review">
+      {consultantId && <DecisionEmailNotice compact consultantId={consultantId} subject="certificate" outcomes={['approved', 'unverified']} />}
       {certificates.map(certificate => {
         const hasFile = !!certificateDocumentPath(certificate.document_url);
         return (

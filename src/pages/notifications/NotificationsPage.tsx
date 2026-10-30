@@ -314,7 +314,7 @@ export default function NotificationsPage() {
                 )}
                 {metaOf(n)?.v ? (
                   <div className="min-w-0 flex-1">
-                    <MessageCard view={buildMessageView({ ...n, meta: metaOf(n) }, window.location.origin)} lang={lang} unread={!n.is_read}
+                    <MessageCard view={buildMessageView({ ...n, meta: metaOf(n) }, window.location.origin, lang)} lang={lang} unread={!n.is_read}
                       time={formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale })}
                       onAction={(path) => { if (!n.is_read) markAsRead(n.id); navigate(path); }} />
                   </div>

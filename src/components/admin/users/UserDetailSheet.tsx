@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DecisionEmailNotice from '@/components/admin/DecisionEmailNotice';
 import ClientViewHint from '@/components/admin/ClientViewHint';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -54,6 +55,7 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
   const { data, isLoading, error, refetch } = useUserDetail(userId, installed);
   const { busy, run } = useUserActions(installed);
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [liveReason, setLiveReason] = useState('');
   const [note, setNote] = useState('');
   const [tagInput, setTagInput] = useState('');
   const can = (p: string) => perms.includes(p);
@@ -315,7 +317,9 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
         onConfirm={async (reason, until) => after(await run('suspend', u.id, { payload: { until: until || null }, reason, ok: t('um.suspended_ok', 'Suspended and signed out'),
           undo: () => run('reactivate', u.id, { ok: t('um.reactivated_ok', 'Reactivated') }) }))} />
       {(['reactivate', 'force_sign_out', 'password_reset', 'resend_verification', 'confirm_email', 'mfa_reset', 'soft_delete', 'restore', 'anonymise', 'delete', 'unmerge'] as const).map((a) => (
-        <ReasonDialog key={a} open={dialog === a} busy={busy} onClose={close} {...confirmCopy(t, a, u)} onConfirm={act(a, confirmCopy(t, a, u).ok)} />
+        <ReasonDialog key={a} open={dialog === a} busy={busy} onClose={close} {...confirmCopy(t, a, u)} onConfirm={act(a, confirmCopy(t, a, u).ok)}
+          onReasonChange={a === 'reactivate' ? setLiveReason : undefined}
+          footerNote={a === 'reactivate' && dialog === a ? <DecisionEmailNotice userId={u.id} subject="account" outcomes={['reactivated']} comment={liveReason} link="/login" /> : undefined} />
       ))}
     </div>
   );
@@ -324,12 +328,14 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
 function SuspendDialog({ open, user, busy, onClose, onConfirm }: { open: boolean; user: UserRow; busy: boolean; onClose: () => void; onConfirm: (reason: string, until: string) => void }) {
   const { t } = useTranslation();
   const [until, setUntil] = useState('');
+  const [reason, setReason] = useState('');
   const minDate = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
   return (
     <ReasonDialog open={open} busy={busy} needsReason destructive onClose={onClose}
       title={t('um.suspend_title', 'Suspend {{name}}?', { name: user.name || user.email })}
       description={t('um.suspend_desc', 'They are signed out now, cannot sign in, and their consultant profile leaves the directory and matching. The reason is shown in this console.')}
-      confirmLabel={t('um.suspend', 'Suspend')} onConfirm={(r) => onConfirm(r, until ? `${until}T00:00:00Z` : '')}>
+      confirmLabel={t('um.suspend', 'Suspend')} onConfirm={(r) => onConfirm(r, until ? `${until}T00:00:00Z` : '')}
+      onReasonChange={setReason} footerNote={open && <DecisionEmailNotice userId={user.id} subject="account" outcomes={['suspended']} comment={reason} link="/" />}>
       <div className="space-y-1.5">
         <Label htmlFor="um-until">{t('um.until_optional', 'Automatically end on (optional)')}</Label>
         <Input id="um-until" type="date" min={minDate} value={until} onChange={(e) => setUntil(e.target.value)} className="max-w-48" />
