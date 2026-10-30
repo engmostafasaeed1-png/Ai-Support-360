@@ -560,6 +560,7 @@
     "resolved": "Resolved"
   },
   "approvals_page": {
+    "decision_desc": "add an optional comment. It is saved in the audit log and e-mailed to the consultant with this decision.",
     "title": "Consultant Approvals",
     "subtitle": "pending applications",
     "pending": "Pending",
@@ -5745,6 +5746,17 @@
     "admin_partner": "Partner"
   },
   "ame": {
+    "decision_line": "This comment will also be e-mailed to {{to}}.",
+    "decision_line_generic": "This comment will also be e-mailed to the address on this profile.",
+    "decision_line_compact": "Your decision is also e-mailed to {{to}}.",
+    "decision_locked": "Always on for decisions.",
+    "decision_preview": "Preview e-mail",
+    "decision_hide_preview": "Hide preview",
+    "decision_skip_no_email": "No e-mail address on this profile: the decision shows in-app only and is recorded as \"no e-mail\".",
+    "decision_skip_not_confirmed": "The e-mail address {{to}} is not confirmed yet: the decision shows in-app and is recorded as not e-mailed.",
+    "decision_skip_test": "Test account: the decision shows in-app only (recorded as \"test account\").",
+    "decision_skip_suppressed": "E-mails to {{to}} are blocked (bounce or unsubscribe): the decision shows in-app and is recorded.",
+    "decision_skip_off": "Admin e-mails are switched off in settings: the decision shows in-app and is recorded as not e-mailed.",
     "locked": "Also sent by e-mail to this person (always on for decisions and notices).",
     "legend": "E-mail",
     "also_email": "Also send by e-mail",
