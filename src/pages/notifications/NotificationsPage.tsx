@@ -18,8 +18,13 @@ import { BROADCAST_TYPES } from '@/lib/bulkMessaging';
 import { isReferralNotice, referralNoticeView } from '@/lib/referralNotice';
 import { ReferralNoticeContent, ReferralNoticeIcon } from '@/components/notifications/ReferralNotice';
 import { NoticeBody, NoticeTitle } from '@/components/notifications/BrdApprovalNoticeText';
+import MessageCard, { CATEGORY_UI } from '@/components/messages/MessageCard';
+import { buildMessageView, categoryForType, isCategory, MESSAGE_CATEGORIES, MESSAGE_COPY, type MessageCategory, type MessageMeta } from '../../../supabase/functions/_shared/adminMessageEmail';
+import { dayGroups } from '@/lib/notificationGroups';
 
 const isBroadcast = (type: string | null | undefined) => (BROADCAST_TYPES as readonly string[]).includes(String(type ?? ''));
+/** Admin message details (docs/sql/admin-message-email.sql); absent on older notices. */
+const metaOf = (n: unknown) => ((n as { meta?: MessageMeta | null }).meta ?? null);
 
 const typeIcons: Record<string, typeof Bell> = {
   message: MessageSquare,
@@ -53,8 +58,13 @@ export default function NotificationsPage() {
   const [params, setParams] = useSearchParams();
   const [onlyMessages, setOnlyMessages] = useState(false);
   const [openMessage, setOpenMessage] = useState<string | null>(null);
-  const hasMessages = notifications.some((n) => isBroadcast(n.type));
-  const shown = onlyMessages ? notifications.filter((n) => isBroadcast(n.type)) : notifications;
+  const hasMessages = notifications.some((n) => isBroadcast(n.type) && !metaOf(n)?.v);
+  const [category, setCategory] = useState<MessageCategory | 'all'>('all');
+  const catOf = (n: { type?: string | null }) => { const m = metaOf(n); return isCategory(m?.category) ? m!.category as MessageCategory : categoryForType(n.type); };
+  const present = MESSAGE_CATEGORIES.filter((k) => notifications.some((n) => catOf(n) === k));
+  const shown = notifications.filter((n) => (!onlyMessages || isBroadcast(n.type)) && (category === 'all' || catOf(n) === category));
+  const lang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+  const groups = dayGroups(shown, new Date());
   const broadcastParam = params.get('broadcast');
   useEffect(() => {
     if (!broadcastParam) return;
@@ -254,13 +264,22 @@ export default function NotificationsPage() {
         )
       ) : (
         <div className="space-y-2">
-          {hasMessages && (
-            <div className="flex gap-2" role="group" aria-label={t('bmsg.r_filter', 'Show')}>
-              <Button size="sm" variant={onlyMessages ? 'outline' : 'default'} aria-pressed={!onlyMessages} onClick={() => setOnlyMessages(false)}>{t('bmsg.r_all', 'All')}</Button>
-              <Button size="sm" variant={onlyMessages ? 'default' : 'outline'} aria-pressed={onlyMessages} onClick={() => setOnlyMessages(true)}><Megaphone className="me-1 h-4 w-4" />{t('bmsg.r_messages', 'Messages from AI Support 360')}</Button>
-            </div>
-          )}
-          {shown.map((n) => {
+          <div className="flex flex-wrap gap-2" role="group" aria-label={t('bmsg.r_filter', 'Show')}>
+            <Button size="sm" variant={!onlyMessages && category === 'all' ? 'default' : 'outline'} aria-pressed={!onlyMessages && category === 'all'} onClick={() => { setOnlyMessages(false); setCategory('all'); }}>{t('bmsg.r_all', 'All')}</Button>
+            {hasMessages && <Button size="sm" variant={onlyMessages ? 'default' : 'outline'} aria-pressed={onlyMessages} onClick={() => { setOnlyMessages(true); setCategory('all'); }}><Megaphone className="me-1 h-4 w-4" />{t('bmsg.r_messages', 'Messages from AI Support 360')}</Button>}
+            {present.length > 1 && present.map((k) => (
+              <Button key={k} size="sm" variant={category === k ? 'default' : 'outline'} aria-pressed={category === k} onClick={() => { setOnlyMessages(false); setCategory(k); }}>
+                {MESSAGE_COPY[lang].categories[k]}
+              </Button>
+            ))}
+          </div>
+          {shown.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">{t('notifications.none_in_filter', 'Nothing in this category.')}</p>}
+          {groups.map((g) => (
+          <section key={g.key} className="space-y-2" aria-label={g.key}>
+          <h2 className="px-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {g.label === 'today' ? t('notifications.today', 'Today') : g.label === 'yesterday' ? t('notifications.yesterday', 'Yesterday') : new Date(g.key).toLocaleDateString(lang === 'ar' ? 'ar' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </h2>
+          {g.items.map((n) => {
             const Icon = (n.type && typeIcons[n.type]) || Info;
             const isSelected = selectedIds.has(n.id);
             const handleRowClick = () => {
@@ -269,6 +288,7 @@ export default function NotificationsPage() {
                 return;
               }
               if (!n.is_read) markAsRead(n.id);
+              if (metaOf(n)?.v) return; // organised admin message: opens in place (Show more), never a pop-up
               if (isBroadcast(n.type)) { setOpenMessage(n.id); return; }
               if (isReferralNotice(n.type)) { navigate(referralNoticeView(n).link); return; }
               if (n.link) navigate(n.link);
@@ -292,7 +312,13 @@ export default function NotificationsPage() {
                     />
                   </div>
                 )}
-                {isReferralNotice(n.type) ? (
+                {metaOf(n)?.v ? (
+                  <div className="min-w-0 flex-1">
+                    <MessageCard view={buildMessageView({ ...n, meta: metaOf(n) }, window.location.origin)} lang={lang} unread={!n.is_read}
+                      time={formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale })}
+                      onAction={(path) => { if (!n.is_read) markAsRead(n.id); navigate(path); }} />
+                  </div>
+                ) : isReferralNotice(n.type) ? (
                   <>
                     <ReferralNoticeIcon view={referralNoticeView(n)} />
                     <div className="flex-1 min-w-0">
@@ -310,7 +336,7 @@ export default function NotificationsPage() {
                 <div
                   className={cn(
                     'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
-                    !n.is_read ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                    !n.is_read ? CATEGORY_UI[catOf(n)].tile : 'bg-muted text-muted-foreground'
                   )}
                 >
                   <Icon className="w-4 h-4" />
@@ -397,6 +423,8 @@ export default function NotificationsPage() {
               </Card>
             );
           })}
+          </section>
+          ))}
         </div>
       )}
       <BroadcastMessageDialog notificationId={openMessage} onClose={() => setOpenMessage(null)} />
