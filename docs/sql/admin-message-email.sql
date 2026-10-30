@@ -540,9 +540,9 @@ BEGIN
   _meta := jsonb_strip_nulls(jsonb_build_object('v', 1, 'category', _cat, 'summary', _summary, 'context', _ctx,
     'action_label', _action, 'deadline', to_char(_deadline, 'YYYY-MM-DD'), 'test', CASE WHEN _test THEN true END));
 
-  IF COALESCE((_p ->> 'email')::boolean, true) = false THEN _choice := _choice || 'off'; END IF;
-  IF COALESCE((_p ->> 'important')::boolean, false) THEN _choice := _choice || 'important'; END IF;
-  IF COALESCE((_p ->> 'tests')::boolean, false) THEN _choice := _choice || 'tests'; END IF;
+  IF COALESCE((_p ->> 'email')::boolean, true) = false THEN _choice := array_append(_choice, 'off'); END IF;
+  IF COALESCE((_p ->> 'important')::boolean, false) THEN _choice := array_append(_choice, 'important'); END IF;
+  IF COALESCE((_p ->> 'tests')::boolean, false) THEN _choice := array_append(_choice, 'tests'); END IF;
   PERFORM set_config('app.ame_choice', array_to_string(_choice, ','), true);
   _id := public.safe_insert_notification(_to, _subject, _body, 'admin_message', _link);
   PERFORM set_config('app.ame_choice', '', true);
