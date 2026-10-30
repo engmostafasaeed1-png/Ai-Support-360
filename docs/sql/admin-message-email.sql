@@ -22,7 +22,10 @@
 --     notifications (unless the admin ticked "important"; essential notices are never paused), suppressed
 --     addresses (bounce / complaint / unsubscribe, reported by the e-mail service).
 --   * Content is only the stored notification title and text the person already sees in-app; links are only
---     relative pages on our own site. Browsers never write these rows; admins read them through two RPCs.
+--     relative pages on our own site. Browsers never write these rows; admins read them through RPCs.
+--   * Organised messages: notifications.meta (jsonb, nullable) carries the admin message details (category, summary,
+--     related item, what to do, deadline) written only by admin_message_send; the e-mail, the in-app card and the
+--     compose preview share one layout (_shared/adminMessageEmail.ts). "Send test to me" e-mails only the admin.
 
 -- ------------------------------------------------------------------ table
 
@@ -35,6 +38,7 @@ CREATE TABLE IF NOT EXISTS public.admin_message_emails (
   kind text NOT NULL CHECK (kind IN ('comment', 'decision')),
   important boolean NOT NULL DEFAULT false,
   include_tests boolean NOT NULL DEFAULT false,
+  is_test boolean NOT NULL DEFAULT false,
   status text NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'sending', 'sent', 'skipped', 'failed')),
   reason text CHECK (reason IS NULL OR char_length(reason) <= 200),
   digest boolean NOT NULL DEFAULT false,
@@ -46,6 +50,9 @@ CREATE TABLE IF NOT EXISTS public.admin_message_emails (
   created_at timestamptz NOT NULL DEFAULT now(),
   finished_at timestamptz
 );
+ALTER TABLE public.admin_message_emails ADD COLUMN IF NOT EXISTS is_test boolean NOT NULL DEFAULT false;
+-- Message details shown in the in-app card and e-mail (written only by admin_message_send; older notices have none).
+ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS meta jsonb;
 CREATE INDEX IF NOT EXISTS admin_message_emails_due_idx ON public.admin_message_emails (send_after) WHERE status IN ('queued', 'sending');
 CREATE INDEX IF NOT EXISTS admin_message_emails_recipient_idx ON public.admin_message_emails (recipient, claimed_at DESC);
 CREATE INDEX IF NOT EXISTS admin_message_emails_actor_idx ON public.admin_message_emails (actor, claimed_at DESC);
@@ -155,10 +162,14 @@ DECLARE
 BEGIN
   IF _actor IS NULL OR NEW.user_id IS NULL OR NEW.user_id = _actor THEN RETURN NULL; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = _actor AND role IN ('admin', 'super_admin')) THEN RETURN NULL; END IF;
-  BEGIN
-    _hdr := lower(COALESCE(current_setting('request.headers', true)::json ->> 'x-admin-email', ''));
-  EXCEPTION WHEN OTHERS THEN _hdr := '';
-  END;
+  -- admin_message_send passes the choice in app.ame_choice; other admin screens send the x-admin-email header.
+  _hdr := lower(COALESCE(NULLIF(current_setting('app.ame_choice', true), ''), ''));
+  IF _hdr = '' THEN
+    BEGIN
+      _hdr := lower(COALESCE(current_setting('request.headers', true)::json ->> 'x-admin-email', ''));
+    EXCEPTION WHEN OTHERS THEN _hdr := '';
+    END;
+  END IF;
   _opts := regexp_split_to_array(left(_hdr, 60), '\s*,\s*');
   _important := 'important' = ANY (_opts);
   _tests := 'tests' = ANY (_opts);
@@ -300,7 +311,8 @@ BEGIN
         _out := _out || jsonb_build_array(jsonb_build_object('mail_key', _key, 'recipient', r.recipient, 'email', _email,
           'lang', COALESCE(_lang, 'en'), 'digest', false,
           'important', (SELECT q.important FROM public.admin_message_emails q WHERE q.id = _ids[i]),
-          'items', (SELECT jsonb_agg(jsonb_build_object('id', q.id, 'title', n.title, 'body', n.body, 'link', n.link, 'type', n.type, 'kind', q.kind))
+          'test', (SELECT q.is_test FROM public.admin_message_emails q WHERE q.id = _ids[i]),
+          'items', (SELECT jsonb_agg(jsonb_build_object('id', q.id, 'title', n.title, 'body', n.body, 'link', n.link, 'type', n.type, 'kind', q.kind, 'meta', n.meta, 'created_at', n.created_at))
                     FROM public.admin_message_emails q JOIN public.notifications n ON n.id = q.notification_id WHERE q.id = _ids[i])));
       END LOOP;
     ELSE
@@ -312,7 +324,8 @@ BEGIN
       _out := _out || jsonb_build_array(jsonb_build_object('mail_key', _key, 'recipient', r.recipient, 'email', _email,
         'lang', COALESCE(_lang, 'en'), 'digest', true,
         'important', (SELECT bool_or(q.important) FROM public.admin_message_emails q WHERE q.id = ANY (_ids)),
-        'items', (SELECT jsonb_agg(jsonb_build_object('id', q.id, 'title', n.title, 'body', n.body, 'link', n.link, 'type', n.type, 'kind', q.kind) ORDER BY q.created_at)
+        'test', (SELECT bool_and(q.is_test) FROM public.admin_message_emails q WHERE q.id = ANY (_ids)),
+        'items', (SELECT jsonb_agg(jsonb_build_object('id', q.id, 'title', n.title, 'body', n.body, 'link', n.link, 'type', n.type, 'kind', q.kind, 'meta', n.meta, 'created_at', n.created_at) ORDER BY q.created_at)
                   FROM public.admin_message_emails q JOIN public.notifications n ON n.id = q.notification_id WHERE q.id = ANY (_ids))));
     END IF;
   END LOOP;
@@ -412,3 +425,177 @@ END
 $$;
 REVOKE ALL ON FUNCTION public.admin_set_message_email_settings(boolean, integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_set_message_email_settings(boolean, integer) TO authenticated;
+
+-- ------------------------------------------------------------------ organised admin messages (compose, card, history)
+
+-- Category of a notice (mirrors categoryForType in _shared/adminMessageEmail.ts).
+CREATE OR REPLACE FUNCTION public.ame_category(_type text, _meta jsonb)
+ RETURNS text LANGUAGE sql IMMUTABLE SET search_path TO 'public'
+AS $$
+  SELECT CASE
+    WHEN _meta ->> 'category' IN ('notice', 'decision', 'action', 'reminder', 'update', 'welcome') THEN _meta ->> 'category'
+    WHEN btrim(COALESCE(_type, '')) IN ('approval', 'success', 'payment', 'invoice', 'rate', 'responsiveness') THEN 'decision'
+    WHEN btrim(COALESCE(_type, '')) IN ('match_request', 'critical_request') THEN 'action'
+    WHEN btrim(COALESCE(_type, '')) = 'reminder' OR btrim(COALESCE(_type, '')) LIKE '%\_reminder' OR btrim(COALESCE(_type, '')) LIKE 'admin\_reminder\_%' THEN 'reminder'
+    WHEN btrim(COALESCE(_type, '')) IN ('welcome', 'account_welcome') THEN 'welcome'
+    WHEN btrim(COALESCE(_type, '')) IN ('ticket', 'brd', 'session', 'sla', 'agreement', 'ticket_tracking') THEN 'update'
+    ELSE 'notice'
+  END
+$$;
+
+-- The related item shown in the "context card". Ticket / agreement / invoice must belong to the recipient (as client
+-- or consultant), so a message can never show someone else's item; "other" is the admin's own short text.
+CREATE OR REPLACE FUNCTION public.ame_context(_kind text, _ref text, _to uuid, _label text DEFAULT NULL, _status text DEFAULT NULL)
+ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public'
+AS $$
+DECLARE _r record; _id uuid; _ref2 text := left(btrim(COALESCE(_ref, '')), 80);
+BEGIN
+  IF COALESCE(_kind, 'none') IN ('', 'none') THEN RETURN NULL; END IF;
+  BEGIN _id := _ref2::uuid; EXCEPTION WHEN OTHERS THEN _id := NULL; END;
+  IF _kind = 'ticket' THEN
+    SELECT t.id, t.title, t.status::text AS status, t.client_id, t.consultant_id INTO _r FROM public.tickets t WHERE t.id = _id;
+    IF NOT FOUND THEN RAISE EXCEPTION 'ame_context_not_found' USING ERRCODE = '22023'; END IF;
+    IF NOT (_r.client_id = _to OR EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = _r.consultant_id AND c.user_id = _to)) THEN
+      RAISE EXCEPTION 'ame_context_not_for_recipient' USING ERRCODE = '42501';
+    END IF;
+    RETURN jsonb_build_object('kind', 'ticket', 'label', left(_r.title, 120), 'ref', '#' || upper(left(_r.id::text, 8)), 'status', replace(_r.status, '_', ' '));
+  ELSIF _kind = 'agreement' THEN
+    SELECT a.id, a.name, a.reference, a.status::text AS status, a.client_id, a.consultant_id INTO _r FROM public.sa_agreements a
+    WHERE a.id = _id OR (_id IS NULL AND a.reference = _ref2) LIMIT 1;
+    IF NOT FOUND THEN RAISE EXCEPTION 'ame_context_not_found' USING ERRCODE = '22023'; END IF;
+    IF NOT (_r.client_id = _to OR EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = _r.consultant_id AND c.user_id = _to)) THEN
+      RAISE EXCEPTION 'ame_context_not_for_recipient' USING ERRCODE = '42501';
+    END IF;
+    RETURN jsonb_build_object('kind', 'agreement', 'label', left(_r.name, 120), 'ref', _r.reference, 'status', replace(_r.status, '_', ' '));
+  ELSIF _kind = 'invoice' THEN
+    SELECT p.id, p.invoice_number, p.status::text AS status, p.client_id, p.consultant_id INTO _r FROM public.payments p
+    WHERE p.id = _id OR (_id IS NULL AND p.invoice_number = _ref2) LIMIT 1;
+    IF NOT FOUND THEN RAISE EXCEPTION 'ame_context_not_found' USING ERRCODE = '22023'; END IF;
+    IF NOT (_r.client_id = _to OR EXISTS (SELECT 1 FROM public.consultants c WHERE c.id = _r.consultant_id AND c.user_id = _to)) THEN
+      RAISE EXCEPTION 'ame_context_not_for_recipient' USING ERRCODE = '42501';
+    END IF;
+    RETURN jsonb_build_object('kind', 'invoice', 'label', COALESCE(_r.invoice_number, '#' || upper(left(_r.id::text, 8))),
+      'ref', _r.invoice_number, 'status', replace(_r.status, '_', ' '));
+  ELSIF _kind = 'other' THEN
+    IF char_length(btrim(COALESCE(_label, ''))) NOT BETWEEN 1 AND 120 THEN RAISE EXCEPTION 'ame_context_label' USING ERRCODE = '22023'; END IF;
+    RETURN jsonb_build_object('kind', 'other', 'label', btrim(_label), 'ref', NULLIF(left(_ref2, 40), ''),
+      'status', NULLIF(left(btrim(COALESCE(_status, '')), 40), ''));
+  END IF;
+  RAISE EXCEPTION 'ame_context_kind' USING ERRCODE = '22023';
+END
+$$;
+REVOKE ALL ON FUNCTION public.ame_context(text, text, uuid, text, text) FROM PUBLIC, anon, authenticated;
+
+-- Compose preview: what the context card will show for this recipient.
+CREATE OR REPLACE FUNCTION public.admin_message_context(_to uuid, _kind text, _ref text)
+ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public'
+AS $$
+BEGIN
+  IF auth.uid() IS NULL OR NOT (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'super_admin')) THEN
+    RAISE EXCEPTION 'Administrators only' USING ERRCODE = '42501';
+  END IF;
+  RETURN public.ame_context(_kind, _ref, _to);
+END
+$$;
+REVOKE ALL ON FUNCTION public.admin_message_context(uuid, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_message_context(uuid, text, text) TO authenticated;
+
+-- One admin message to one person (the compose box). _p: category, subject, summary, body, link, action_label,
+-- deadline (YYYY-MM-DD), context {kind, ref, label, status}, email, important, tests, test (send only to me).
+CREATE OR REPLACE FUNCTION public.admin_message_send(_to uuid, _p jsonb)
+ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+AS $$
+DECLARE
+  _me uuid;
+  _test boolean := COALESCE((_p ->> 'test')::boolean, false);
+  _cat text := COALESCE(_p ->> 'category', 'notice');
+  _subject text := btrim(COALESCE(_p ->> 'subject', ''));
+  _summary text := NULLIF(btrim(COALESCE(_p ->> 'summary', '')), '');
+  _body text := btrim(COALESCE(_p ->> 'body', ''));
+  _link text := NULLIF(btrim(COALESCE(_p ->> 'link', '')), '');
+  _action text := NULLIF(btrim(COALESCE(_p ->> 'action_label', '')), '');
+  _deadline date;
+  _ctx jsonb;
+  _meta jsonb;
+  _id uuid;
+  _choice text[] := ARRAY[]::text[];
+BEGIN
+  _me := public.um_guard('users.message', CASE WHEN _test THEN 'message_test' ELSE 'message' END, CASE WHEN _test THEN 6 ELSE 60 END);
+  IF _test THEN _to := _me; END IF;
+  IF _to IS NULL OR NOT EXISTS (SELECT 1 FROM auth.users u WHERE u.id = _to) THEN RAISE EXCEPTION 'ame_unknown_recipient' USING ERRCODE = '22023'; END IF;
+  IF _cat NOT IN ('notice', 'decision', 'action', 'reminder', 'update', 'welcome') THEN RAISE EXCEPTION 'ame_category' USING ERRCODE = '22023'; END IF;
+  IF char_length(_subject) NOT BETWEEN 1 AND 120 OR char_length(_body) NOT BETWEEN 1 AND 4000
+     OR char_length(COALESCE(_summary, '')) > 200 OR char_length(COALESCE(_action, '')) > 120 THEN
+    RAISE EXCEPTION 'ame_lengths' USING ERRCODE = '22023';
+  END IF;
+  IF _link IS NOT NULL AND (_link !~ '^/[A-Za-z0-9/_?=&.#%-]*$' OR _link LIKE '//%' OR _link LIKE '%..%' OR char_length(_link) > 200) THEN
+    RAISE EXCEPTION 'ame_link' USING ERRCODE = '22023';
+  END IF;
+  IF NULLIF(_p ->> 'deadline', '') IS NOT NULL THEN
+    BEGIN _deadline := (_p ->> 'deadline')::date; EXCEPTION WHEN OTHERS THEN RAISE EXCEPTION 'ame_deadline' USING ERRCODE = '22023'; END;
+    IF _deadline < current_date OR _deadline > current_date + 365 THEN RAISE EXCEPTION 'ame_deadline' USING ERRCODE = '22023'; END IF;
+  END IF;
+  IF public.bm_has_secret(concat_ws(' ', _subject, _summary, _body, _action)) THEN RAISE EXCEPTION 'ame_secret' USING ERRCODE = '22023'; END IF;
+  _ctx := public.ame_context(_p #>> '{context,kind}', _p #>> '{context,ref}', _to, _p #>> '{context,label}', _p #>> '{context,status}');
+  _meta := jsonb_strip_nulls(jsonb_build_object('v', 1, 'category', _cat, 'summary', _summary, 'context', _ctx,
+    'action_label', _action, 'deadline', to_char(_deadline, 'YYYY-MM-DD'), 'test', CASE WHEN _test THEN true END));
+
+  IF COALESCE((_p ->> 'email')::boolean, true) = false THEN _choice := _choice || 'off'; END IF;
+  IF COALESCE((_p ->> 'important')::boolean, false) THEN _choice := _choice || 'important'; END IF;
+  IF COALESCE((_p ->> 'tests')::boolean, false) THEN _choice := _choice || 'tests'; END IF;
+  PERFORM set_config('app.ame_choice', array_to_string(_choice, ','), true);
+  _id := public.safe_insert_notification(_to, _subject, _body, 'admin_message', _link);
+  PERFORM set_config('app.ame_choice', '', true);
+  UPDATE public.notifications SET meta = _meta WHERE id = _id;
+
+  IF _test THEN
+    -- The admin's own copy (the trigger skips notes to oneself): one test e-mail, "[TEST]" subject.
+    INSERT INTO public.admin_message_emails (notification_id, recipient, actor, kind, is_test, important, include_tests)
+    VALUES (_id, _me, _me, 'comment', true, true, true) ON CONFLICT (notification_id) DO NOTHING;
+    PERFORM public.ame_wake();
+  END IF;
+  PERFORM public.um_audit(_me, CASE WHEN _test THEN 'notify_test' ELSE 'notify' END, _to, NULL,
+    jsonb_build_object('title', _subject, 'category', _cat), NULL, jsonb_build_object('notification_id', _id));
+  RETURN jsonb_build_object('ok', true, 'id', _id,
+    'email', (SELECT jsonb_build_object('status', e.status, 'reason', e.reason) FROM public.admin_message_emails e WHERE e.notification_id = _id));
+END
+$$;
+REVOKE ALL ON FUNCTION public.admin_message_send(uuid, jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_message_send(uuid, jsonb) TO authenticated;
+
+-- Admin message history: one row per admin-authored notice. _p: q (subject / recipient), category, status,
+-- from, to (dates), limit (<= 500).
+CREATE OR REPLACE FUNCTION public.admin_message_history(_p jsonb DEFAULT '{}'::jsonb)
+ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public'
+AS $$
+DECLARE
+  _q text := NULLIF(btrim(COALESCE(_p ->> 'q', '')), '');
+  _cat text := NULLIF(_p ->> 'category', '');
+  _st text := NULLIF(_p ->> 'status', '');
+  _from date; _to date;
+BEGIN
+  IF auth.uid() IS NULL OR NOT (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'super_admin')) THEN
+    RAISE EXCEPTION 'Administrators only' USING ERRCODE = '42501';
+  END IF;
+  BEGIN _from := NULLIF(_p ->> 'from', '')::date; _to := NULLIF(_p ->> 'to', '')::date; EXCEPTION WHEN OTHERS THEN _from := NULL; _to := NULL; END;
+  RETURN COALESCE((
+    SELECT jsonb_agg(x ORDER BY x.created_at DESC) FROM (
+      SELECT q.id, q.notification_id, q.created_at, q.recipient, q.kind, q.important, q.is_test, q.digest, q.status, q.reason,
+             q.send_after, left(n.title, 120) AS subject, public.ame_category(n.type, n.meta) AS category,
+             COALESCE(n.is_read, false) AS is_read, (n.id IS NOT NULL) AS in_app,
+             rp.display_name AS recipient_name, ap.display_name AS actor_name
+      FROM public.admin_message_emails q
+      LEFT JOIN public.notifications n ON n.id = q.notification_id
+      LEFT JOIN LATERAL (SELECT p.display_name FROM public.profiles p WHERE p.user_id = q.recipient LIMIT 1) rp ON true
+      LEFT JOIN LATERAL (SELECT p.display_name FROM public.profiles p WHERE p.user_id = q.actor LIMIT 1) ap ON true
+      WHERE (_q IS NULL OR n.title ILIKE '%' || _q || '%' OR rp.display_name ILIKE '%' || _q || '%')
+        AND (_cat IS NULL OR public.ame_category(n.type, n.meta) = _cat)
+        AND (_st IS NULL OR q.status = _st)
+        AND (_from IS NULL OR q.created_at >= _from)
+        AND (_to IS NULL OR q.created_at < _to + 1)
+      ORDER BY q.created_at DESC
+      LIMIT GREATEST(1, LEAST(COALESCE((_p ->> 'limit')::int, 200), 500))) x), '[]'::jsonb);
+END
+$$;
+REVOKE ALL ON FUNCTION public.admin_message_history(jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_message_history(jsonb) TO authenticated;
