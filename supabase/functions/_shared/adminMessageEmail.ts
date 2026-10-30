@@ -466,7 +466,8 @@ function decisionParts(h: H, v: MessageView, lang: Lang) {
   return [
     d.comment ? h('div', { style: st.quote },
       h('p', { style: st.quoteH }, c.quote),
-      ...renderBlocks(h, formatBody(d.comment, ''))) : null,
+      // Plain text only (no links), line breaks kept.
+      h('p', { style: { ...st.p, margin: 0, color: '#1e293b' } }, ...d.comment.split('\n').flatMap((l, i) => (i ? [h('br', { key: `q${i}` }), l] : [l])))) : null,
     d.steps.length ? h('div', { style: st.next },
       h('p', { style: { ...st.todoH, color: '#1B2559' } }, c.next),
       h('ol', { style: { ...st.list, margin: '0' } }, ...d.steps.map((x, i) => h('li', { key: i, style: { margin: '0 0 4px' } }, x)))) : null,
