@@ -16,6 +16,7 @@ vi.mock('@/components/admin/ProfileRemindersCard', () => ({ default: () => null 
 vi.mock('@/components/admin/MatchWeightsCard', () => ({ default: () => null }));
 vi.mock('@/components/admin/AssignmentRemindersCard', () => ({ default: () => null }));
 vi.mock('@/components/admin/NotificationPauseAdminCard', () => ({ default: () => null }));
+vi.mock('@/components/admin/AdminMessageEmailSettingsCard', () => ({ default: () => null }));
 vi.mock('@/components/admin/BrdSettingsCard', () => ({ default: () => null }));
 vi.mock('@/components/tracking/TrackingSettingsCard', () => ({ default: () => null }));
 import AdminSettingsPage from './AdminSettingsPage';
