@@ -146,4 +146,5 @@
 - [x] Partner portal MVP: partner flag on company, partner_resources invites, /partner page (Resources/Availability/Assignments + drawer), docs/sql/partner-portal-mvp.sql (unapplied) + tests
 - [ ] Partner portal: owner applies docs/sql/partner-portal-mvp.sql, then switches partner_portal on
 - [x] Admin messages by e-mail: one shared trigger + worker, e-mail choice on admin send boxes, delivery status on user card and settings, docs/sql/admin-message-email.sql + tests (unapplied)
+- [x] Admin messages organised: shared e-mail/in-app layout, compose box (templates, preview, test send), history table + CSV
 - [ ] Admin messages by e-mail: owner reviews and applies docs/sql/admin-message-email.sql

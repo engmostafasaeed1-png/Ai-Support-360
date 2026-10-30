@@ -29,7 +29,8 @@ Deno.serve(async (req) => {
   for (const mail of mails) {
     try {
       const res = await sendTemplateEmail('admin-message', mail.email, {
-        templateData: buildAdminMessageData(mail, SITE_URL),
+        templateData: buildAdminMessageData(mail, SITE_URL, sender.contactEmail),
+        subjectPrefix: mail.test ? '[TEST] ' : undefined,
         idempotencyKey: mail.mail_key,
         displayName: sender.displayName, fromLocal: sender.fromLocal, replyTo: sender.replyTo,
       });

@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import ComposeMessage from '@/components/admin/messages/ComposeMessage';
 import CampaignsPanel from '@/components/admin/messages/CampaignsPanel';
 import MessagingSettingsPanel from '@/components/admin/messages/MessagingSettingsPanel';
+import AdminMessageHistory from '@/components/admin/AdminMessageHistory';
 import { useBulkAccess, useBulkActions, useTemplates } from '@/hooks/useBulkMessaging';
 
 export default function MessagesPage() {
@@ -31,12 +32,14 @@ export default function MessagesPage() {
       {access.state === 'denied' && (
         <Card className="border-dashed"><CardContent className="p-6 text-sm text-muted-foreground">{t('bmsg.denied', 'You do not have the "Send bulk messages" permission. A super admin can give it to you through an admin group.')}</CardContent></Card>
       )}
+      {(access.state === 'not_installed' || access.state === 'denied') && <AdminMessageHistory />}
       {access.state === 'ready' && (
         <Tabs value={tab} onValueChange={(v) => setParam('tab', v)}>
           <TabsList>
             <TabsTrigger value="compose">{t('bmsg.tab_compose', 'New message')}</TabsTrigger>
             <TabsTrigger value="campaigns">{t('bmsg.tab_campaigns', 'Sent and scheduled')}</TabsTrigger>
             <TabsTrigger value="templates">{t('bmsg.tab_templates', 'Templates')}</TabsTrigger>
+            <TabsTrigger value="direct">{t('amh.tab', 'Messages to people')}</TabsTrigger>
             <TabsTrigger value="settings">{t('bmsg.tab_settings', 'Settings')}</TabsTrigger>
           </TabsList>
           <TabsContent value="compose" className="mt-4">
@@ -44,6 +47,7 @@ export default function MessagesPage() {
           </TabsContent>
           <TabsContent value="campaigns" className="mt-4"><CampaignsPanel openId={params.get('open')} onOpen={(id) => setParam('open', id)} /></TabsContent>
           <TabsContent value="templates" className="mt-4"><TemplatesPanel /></TabsContent>
+          <TabsContent value="direct" className="mt-4"><AdminMessageHistory /></TabsContent>
           <TabsContent value="settings" className="mt-4"><MessagingSettingsPanel settings={access.settings} /></TabsContent>
         </Tabs>
       )}

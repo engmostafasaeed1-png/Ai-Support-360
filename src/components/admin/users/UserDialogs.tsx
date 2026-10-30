@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { APP_ROLES, MIN_REASON, checkRoleChange, reasonOk, type UserRow } from '@/lib/userAdmin';
 import { callRpc } from '@/hooks/useUserAdmin';
 import { roleLabel } from './labels';
-import AdminEmailChoice, { DEFAULT_ADMIN_EMAIL, headerFor, type AdminEmailValue } from '@/components/admin/AdminEmailChoice';
+import AdminMessageComposer from '@/components/admin/AdminMessageComposer';
 import type { BlockedInput } from '@/lib/blockedReasons';
 
 /** Confirmation with an optional required reason. */
@@ -137,19 +137,33 @@ export function MessageDialog({ user, count, busy, onClose, onSend }: {
   user?: UserRow; count?: number; busy?: boolean; onClose: () => void; onSend: (v: { title: string; body: string; link: string }, emailHeader?: string) => void;
 }) {
   const { t } = useTranslation();
-  const [email, setEmail] = useState<AdminEmailValue>(DEFAULT_ADMIN_EMAIL);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [link, setLink] = useState('');
   const linkBad = !!link && !/^\/[A-Za-z0-9/_?=&.-]*$/.test(link);
+  if (user) {
+    // One person: the shared admin compose box (category, related item, preview, test send, e-mail copy).
+    return (
+      <Dialog open onOpenChange={(o) => !o && onClose()}>
+        <DialogContent className="max-h-[92vh] max-w-6xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t('amc.title', 'Write a message')}</DialogTitle>
+            <DialogDescription>{t('um.message_hint_one', 'Shown in their notifications and, unless you untick it, also sent to their e-mail.')}</DialogDescription>
+          </DialogHeader>
+          <AdminMessageComposer recipient={{ id: user.id, name: user.name, email: user.email }} onSent={onClose} onCancel={onClose}
+            fallbackSend={(v, h) => onSend(v, h)} />
+        </DialogContent>
+      </Dialog>
+    );
+  }
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{t('um.send_message', 'Send a notification')}</DialogTitle>
-          <DialogDescription>{user ? user.email : t('um.to_n_people', 'To {{n}} people', { n: count ?? 0 })} · {user ? t('um.message_hint_one', 'Shown in their notifications and, unless you untick it, also sent to their e-mail.') : t('um.message_hint_many', 'Shown in their notifications only: messages to a list are never e-mailed.')}</DialogDescription>
+          <DialogDescription>{t('um.to_n_people', 'To {{n}} people', { n: count ?? 0 })} · {t('um.message_hint_many', 'Shown in their notifications only: messages to a list are never e-mailed.')}</DialogDescription>
         </DialogHeader>
-        <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (title.trim() && body.trim() && !linkBad) onSend({ title: title.trim(), body: body.trim(), link: link.trim() }, user ? headerFor('admin_message', email) : undefined); }}>
+        <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (title.trim() && body.trim() && !linkBad) onSend({ title: title.trim(), body: body.trim(), link: link.trim() }); }}>
           <div className="space-y-1.5"><Label htmlFor="um-msg-title">{t('um.title', 'Title')}</Label><Input id="um-msg-title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} /></div>
           <div className="space-y-1.5"><Label htmlFor="um-msg-body">{t('um.message', 'Message')}</Label><Textarea id="um-msg-body" rows={4} value={body} maxLength={1000} onChange={(e) => setBody(e.target.value)} /></div>
           <div className="space-y-1.5">
@@ -157,7 +171,6 @@ export function MessageDialog({ user, count, busy, onClose, onSend }: {
             <Input id="um-msg-link" value={link} dir="ltr" placeholder="/consultant/profile" onChange={(e) => setLink(e.target.value)} aria-invalid={linkBad} />
             {linkBad && <p className="text-xs text-destructive">{t('um.link_invalid', 'Use a page on this site starting with /.')}</p>}
           </div>
-          {user && <AdminEmailChoice type="admin_message" value={email} onChange={setEmail} />}
           <DialogFooter><Button type="button" variant="outline" onClick={onClose}>{t('common.cancel', 'Cancel')}</Button><Button type="submit" busy={busy} reason={[(!title.trim() || !body.trim()) && 'type_message_first', linkBad && 'invalid_value']} hint="inline">{t('um.send', 'Send')}</Button></DialogFooter>
         </form>
       </DialogContent>
