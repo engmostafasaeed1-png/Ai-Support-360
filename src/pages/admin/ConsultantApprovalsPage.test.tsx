@@ -173,7 +173,7 @@ describe('ConsultantApprovalsPage', () => {
     fireEvent.click(await screen.findByText('Jane Doe'));
     fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
     const dialog = await screen.findByRole('dialog');
-    expect(await within(dialog).findByText(/also be e-mailed to jane@example\.com/)).toBeTruthy();
+    await waitFor(() => expect(within(dialog).getByTestId('decision-email-notice').textContent).toContain('This comment will also be e-mailed to jane@example.com.'));
     fireEvent.change(within(dialog).getByLabelText('Reason / notes (optional)'), { target: { value: 'Documents checked' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Approve' }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Consultant approved!'));
