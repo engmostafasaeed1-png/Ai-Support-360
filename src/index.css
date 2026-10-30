@@ -93,6 +93,8 @@
 
     --info: 226 68% 50%;
     --info-foreground: 0 0% 100%;
+    /* Message category "Reminder" (admin messages); the other categories reuse info/primary/warning/success/muted. */
+    --reminder: 174 72% 30%;
 
     --border: 220 20% 89%;
     --input: 220 20% 86%;
@@ -202,6 +204,7 @@
 
     --info: 226 80% 68%;
     --info-foreground: 218 50% 8%;
+    --reminder: 174 60% 52%;
 
     --border: 218 30% 19%;
     --input: 218 30% 22%;
