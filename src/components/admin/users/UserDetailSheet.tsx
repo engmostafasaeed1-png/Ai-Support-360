@@ -18,6 +18,7 @@ import { callRpc, useUserDetail } from '@/hooks/useUserAdmin';
 import { isUuid, restoreDaysLeft, type UserRow } from '@/lib/userAdmin';
 import { EditProfileDialog, MergeDialog, MessageDialog, ReasonDialog, RolesDialog } from './UserDialogs';
 import { useUserActions } from './useUserActions';
+import AdminMessageEmailLog from '@/components/admin/AdminMessageEmailLog';
 import { STATUS_VARIANT, fmtDate, roleLabel, statusLabel, verificationLabel } from './labels';
 
 type Dialog =
@@ -268,6 +269,10 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
             )}
 
             <TabsContent value="comms" className="mt-0 space-y-5">
+              <section className="space-y-1" aria-labelledby="um-ame-h">
+                <h3 id="um-ame-h" className="font-semibold">{t('ame.log_title', 'E-mail copies of admin messages')}</h3>
+                <AdminMessageEmailLog userId={u.id} />
+              </section>
               <section className="space-y-1" aria-labelledby="um-em-h">
                 <h3 id="um-em-h" className="font-semibold">{t('um.emails_sent', 'E-mails')}</h3>
                 {(data.emails ?? []).map((m: { template_name: string; status: string; created_at: string; error: string | null }, i: number) => (
@@ -303,7 +308,7 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
       {dialog === 'roles' && <RolesDialog user={u} actorId={me.id} actorRoles={me.roles} superAdminCount={superAdminCount} fourEyes={fourEyes} busy={busy} onClose={close}
         onSave={async (roles, reason) => after(await run('set_roles', u.id, { payload: { roles }, reason, ok: t('um.roles_saved', 'Roles updated') }))} />}
       {dialog === 'message' && <MessageDialog user={u} busy={busy} onClose={close}
-        onSend={async (v) => after(await run('notify', u.id, { payload: v, ok: t('um.message_sent', 'Notification sent') }))} />}
+        onSend={async (v, emailHeader) => after(await run('notify', u.id, { payload: v, emailHeader, ok: t('um.message_sent', 'Notification sent') }))} />}
       {dialog === 'merge' && <MergeDialog user={u} busy={busy} onClose={close}
         onMerge={async (keep, reason) => after(await run('merge', u.id, { payload: { into: keep }, reason, ok: t('um.merged_ok', 'Accounts merged') }))} />}
       <SuspendDialog open={dialog === 'suspend'} user={u} busy={busy} onClose={close}

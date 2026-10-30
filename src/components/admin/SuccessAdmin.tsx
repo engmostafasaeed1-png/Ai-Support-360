@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import AdminEmailChoice from '@/components/admin/AdminEmailChoice';
 import { supabase } from '@/integrations/supabase/client';
 import { useAdminSettings } from '@/hooks/useAdminSettings';
 import { useSuccessConfig } from '@/hooks/useSuccessStats';
@@ -207,6 +208,7 @@ export function SuccessAdminTab() {
                     <div className="mt-2 space-y-2">
                       <Label htmlFor={`snote-${d.id}`} className="text-xs">{ar ? 'ملاحظة للمستشار (اختيارية، مسجلة)' : 'Note to the consultant (optional, audited)'}</Label>
                       <Textarea id={`snote-${d.id}`} rows={2} maxLength={500} value={notes[d.id] ?? ''} onChange={(e) => setNotes((n) => ({ ...n, [d.id]: e.target.value }))} />
+                      <AdminEmailChoice type="success" />
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" busy={busy === d.id} onClick={() => decide(d.id, 'solved')}>{ar ? 'احتسابه محلولًا' : 'Count as solved'}</Button>
                         <Button size="sm" variant="outline" busy={busy === d.id} onClick={() => decide(d.id, 'void')}>{ar ? 'استبعاده من الإحصاءات' : 'Remove from statistics'}</Button>

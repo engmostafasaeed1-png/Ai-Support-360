@@ -10,8 +10,11 @@ export class NotInstalledError extends Error {
   constructor() { super('not_installed'); }
 }
 
-export async function callRpc<T = unknown>(fn: string, args?: Record<string, unknown>): Promise<T> {
-  const { data, error } = await rpc(fn, args);
+/** `headers` travel with this one request (e.g. the admin's "Also send by e-mail" choice, read by the database). */
+export async function callRpc<T = unknown>(fn: string, args?: Record<string, unknown>, headers?: Record<string, string>): Promise<T> {
+  let req = rpc(fn, args) as unknown as { setHeader?: (k: string, v: string) => unknown } & Promise<{ data: unknown; error: { message?: string; code?: string } | null }>;
+  for (const [k, v] of Object.entries(headers ?? {})) if (v && typeof req.setHeader === 'function') req = req.setHeader(k, v) as typeof req;
+  const { data, error } = await req;
   if (error) {
     if (isNotInstalled(error)) throw new NotInstalledError();
     throw new Error(error.message || 'Action failed');

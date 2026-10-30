@@ -43,9 +43,11 @@ import { template as brdApproval } from './brd-approval.tsx'
 import { template as slaNotice } from './sla-notice.tsx'
 import { template as agreementNotice } from './agreement-notice.tsx'
 import { template as ndaNotice } from './nda-notice.tsx'
+import { template as adminMessage } from './admin-message.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'admin-notification': adminNotification,
+  'admin-message': adminMessage,
   'payout-approved': payoutApproved,
   'demo-request-received': demoRequestReceived,
   'demo-request-alert': demoRequestAlert,

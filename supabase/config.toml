@@ -77,3 +77,5 @@ project_id = "ozzgsfsnlejfuexikwrm"
     verify_jwt = false
   [functions.nda-signature]
     verify_jwt = false
+  [functions.admin-message-email]
+    verify_jwt = false

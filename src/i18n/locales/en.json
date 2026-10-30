@@ -841,7 +841,8 @@
     "saving": "Saving...",
     "reset": "Reset",
     "update": "Update",
-    "create": "Create"
+    "create": "Create",
+    "saved": "Saved"
   },
   "settings_page": {
     "subtitle": "Manage your profile and preferences",
@@ -2428,7 +2429,9 @@
     "confirm_title": "Mark the e-mail of {{n}} as confirmed?",
     "confirm_desc": "Only do this after you made sure the address belongs to this person (for example they wrote to you from it). They can then sign in with their password. This is recorded with your reason.",
     "confirm_ok": "E-mail marked as confirmed",
-    "a_confirm_email": "E-mail marked as confirmed by a super admin"
+    "a_confirm_email": "E-mail marked as confirmed by a super admin",
+    "message_hint_one": "Shown in their notifications and, unless you untick it, also sent to their e-mail.",
+    "message_hint_many": "Shown in their notifications only: messages to a list are never e-mailed."
   },
   "npause": {
     "paused_toast": "Notifications paused until {{date}}",
@@ -5737,5 +5740,45 @@
     "d_modules": "Modules / versions",
     "admin_demo": "Demo",
     "admin_partner": "Partner"
+  },
+  "ame": {
+    "locked": "Also sent by e-mail to this person (always on for decisions and notices).",
+    "legend": "E-mail",
+    "also_email": "Also send by e-mail",
+    "unticked": "Only for a minor comment. This choice is recorded.",
+    "important": "Important: send even if they paused quiet notifications",
+    "include_tests": "Include test accounts",
+    "not_ready": "Delivery status appears once the prepared database update is applied.",
+    "log_title": "E-mail copies of admin messages",
+    "important_short": "important",
+    "digest": "digest",
+    "st_held": "Waiting (digest)",
+    "st_queued": "Queued",
+    "st_sending": "Sending",
+    "st_sent": "Sent",
+    "st_skipped": "Skipped",
+    "st_failed": "Failed",
+    "r_already_emailed": "Already e-mailed by its own notice",
+    "r_admin_alert": "Administrator alert (own e-mail)",
+    "r_list_send_in_app_only": "Sent to a list: in-app only",
+    "r_one_email_per_action": "One e-mail per person per action",
+    "r_admin_unticked_email": "Admin unticked e-mail (minor comment)",
+    "r_test_account": "Test account",
+    "r_in_app_not_delivered": "In-app notice not delivered",
+    "r_no_email": "No e-mail address",
+    "r_email_not_confirmed": "E-mail not confirmed",
+    "r_paused": "Person paused these notifications",
+    "r_notification_removed": "Notice was removed",
+    "r_daily_cap_reached": "Daily cap reached",
+    "r_switched_off": "Admin e-mails switched off",
+    "r_recipient_suppressed": "Address blocked (bounce, complaint or unsubscribe)",
+    "r_email_notifications_off": "All e-mail notifications switched off",
+    "r_too_many_attempts": "Failed after 5 attempts",
+    "settings_title": "Admin messages by e-mail",
+    "settings_hint": "Every message or decision an administrator sends to one person is also e-mailed to them, once, in their language. Lists stay in-app; flows with their own e-mail are not mailed twice; at most 5 per person per hour (the rest arrive as one digest).",
+    "enabled": "E-mail admin messages",
+    "daily_cap": "Daily cap (e-mails per day)",
+    "today": "Today: {{sent}} sent, {{waiting}} waiting, {{skipped}} skipped, {{failed}} failed",
+    "history": "Recent admin messages"
   }
 }
