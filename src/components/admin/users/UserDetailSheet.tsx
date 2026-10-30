@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DecisionEmailNotice from '@/components/admin/DecisionEmailNotice';
 import ClientViewHint from '@/components/admin/ClientViewHint';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -324,12 +325,14 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
 function SuspendDialog({ open, user, busy, onClose, onConfirm }: { open: boolean; user: UserRow; busy: boolean; onClose: () => void; onConfirm: (reason: string, until: string) => void }) {
   const { t } = useTranslation();
   const [until, setUntil] = useState('');
+  const [reason, setReason] = useState('');
   const minDate = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
   return (
     <ReasonDialog open={open} busy={busy} needsReason destructive onClose={onClose}
       title={t('um.suspend_title', 'Suspend {{name}}?', { name: user.name || user.email })}
       description={t('um.suspend_desc', 'They are signed out now, cannot sign in, and their consultant profile leaves the directory and matching. The reason is shown in this console.')}
-      confirmLabel={t('um.suspend', 'Suspend')} onConfirm={(r) => onConfirm(r, until ? `${until}T00:00:00Z` : '')}>
+      confirmLabel={t('um.suspend', 'Suspend')} onConfirm={(r) => onConfirm(r, until ? `${until}T00:00:00Z` : '')}
+      onReasonChange={setReason} footerNote={open && <DecisionEmailNotice userId={user.id} subject="account" outcomes={['suspended']} comment={reason} link="/" />}>
       <div className="space-y-1.5">
         <Label htmlFor="um-until">{t('um.until_optional', 'Automatically end on (optional)')}</Label>
         <Input id="um-until" type="date" min={minDate} value={until} onChange={(e) => setUntil(e.target.value)} className="max-w-48" />

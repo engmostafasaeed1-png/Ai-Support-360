@@ -11,8 +11,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { safeRpc } from '@/lib/safeRpc';
 import { achievementErrorKey, type AchievementStatus } from '@/lib/achievements';
 import AchievementStatusBadge from '@/components/consultant/AchievementStatusBadge';
+import DecisionEmailNotice from '@/components/admin/DecisionEmailNotice';
 
-type Row = { id: string; consultant_name: string; title: string; outcome: string; industry: string | null; sap_area: string | null; year: number | null;
+type Row = { id: string; consultant_id?: string | null; consultant_name: string; title: string; outcome: string; industry: string | null; sap_area: string | null; year: number | null;
   reference_url: string | null; evidence_path: string | null; is_public: boolean; status: AchievementStatus; review_reason: string | null };
 
 export default function AdminAchievementsPage() {
@@ -82,6 +83,8 @@ export default function AdminAchievementsPage() {
               <Button size="sm" variant="outline" className="text-destructive" onClick={() => act(r, 'reject')} busy={busy === r.id + 'reject'} reason={(r.status === 'rejected' && 'already_done') || (reasonShort(r.id) && 'fill_required_fields')}>{t('achievements.reject', 'Reject')}</Button>
               <Button size="sm" variant="ghost" onClick={() => act(r, 'restore')} busy={busy === r.id + 'restore'} reason={r.status === 'self_declared' && 'already_done'}>{t('achievements.restore', 'Restore')}</Button>
             </div>
+            <DecisionEmailNotice consultantId={r.consultant_id} subject="success_story" comment={reasons[r.id] ?? ''} label={r.title} link="/consultant/profile"
+              outcomes={['approved', 'changes', 'rejected']} />
           </CardContent>
         </Card>
       ))}
