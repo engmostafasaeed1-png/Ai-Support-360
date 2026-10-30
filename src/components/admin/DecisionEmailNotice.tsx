@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { safeRpc } from '@/lib/safeRpc';
 import { decisionNoticeState, type DecisionRecipient } from '@/lib/adminMessageEmail';
 import {
-  buildMessageView, DECISION_COPY, renderAdminMessage, type DecisionOutcome, type DecisionSubject, type Lang,
+  badgeFor, buildMessageView, DECISION_COPY, renderAdminMessage, type DecisionOutcome, type DecisionSubject, type Lang,
 } from '../../../supabase/functions/_shared/adminMessageEmail';
 
 const SITE = 'https://www.aisupport360.com';
@@ -104,7 +104,7 @@ function DecisionPreview({ subject, outcome, outcomes, setOutcome, lang, setLang
       <div className="flex flex-wrap items-center gap-1" role="group" aria-label={t('ame.decision_preview', 'Preview e-mail')}>
         {outcomes.length > 1 && outcomes.map((o) => (
           <Button key={o} type="button" size="sm" variant={o === outcome ? 'secondary' : 'ghost'} className="h-7 px-2 text-xs" aria-pressed={o === outcome} onClick={() => setOutcome(o)}>
-            {DECISION_COPY[lang].badges[view.decision?.badge ?? 'approved'] && DECISION_COPY[lang === 'ar' ? 'ar' : 'en'].badges[badgeOf(o)]}
+            {DECISION_COPY[lang].badges[badgeFor(o)]}
           </Button>
         ))}
         <span className="ms-auto inline-flex gap-1">
@@ -119,7 +119,3 @@ function DecisionPreview({ subject, outcome, outcomes, setOutcome, lang, setLang
     </div>
   );
 }
-
-const badgeOf = (o: DecisionOutcome) =>
-  o === 'approved' || o === 'reapproved' || o === 'reactivated' ? 'approved' as const
-    : o === 'rejected' ? 'rejected' as const : o === 'suspended' ? 'suspended' as const : o === 'review' ? 'review' as const : 'changes' as const;

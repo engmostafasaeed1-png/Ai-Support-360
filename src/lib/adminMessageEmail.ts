@@ -81,3 +81,37 @@ export function historyCsv(rows: HistoryRow[]): string {
   ].map(csvCell).join(','));
   return [head.map(csvCell).join(','), ...lines].join('\r\n');
 }
+
+// ------------------------------------------------------------------ review decisions (mirrors ame_decision_notice)
+
+export type { DecisionOutcome, DecisionSubject } from '../../supabase/functions/_shared/adminMessageEmail';
+import type { DecisionOutcome as Outcome } from '../../supabase/functions/_shared/adminMessageEmail';
+
+/** What admin_decision_recipient returns (null before docs/sql/admin-message-email.sql is applied). */
+export interface DecisionRecipient { found?: boolean; email?: string | null; confirmed?: boolean; test?: boolean; suppressed?: boolean; lang?: 'en' | 'ar' | null; enabled?: boolean }
+export type DecisionNoticeState =
+  | { kind: 'send'; email: string } | { kind: 'unknown'; email?: undefined }
+  | { kind: 'no_email' | 'not_confirmed' | 'test' | 'suppressed' | 'off'; email?: string };
+
+/** The line beside a decision comment box, in the same order as the database skips (ame_enqueue / ame_claim). */
+export function decisionNoticeState(r: DecisionRecipient | null | undefined): DecisionNoticeState {
+  if (!r || r.found === false) return { kind: 'unknown' };
+  const email = r.email?.trim() || '';
+  if (r.test) return { kind: 'test', email };
+  if (!email) return { kind: 'no_email' };
+  if (r.enabled === false) return { kind: 'off', email };
+  if (!r.confirmed) return { kind: 'not_confirmed', email };
+  if (r.suppressed) return { kind: 'suppressed', email };
+  return { kind: 'send', email };
+}
+
+/** Consultant status change → decision (mirrors notify_consultant_verification_change). null = no notice. */
+export function consultantOutcome(from: string | null | undefined, to: string): Outcome | null {
+  if (to === 'verified') return from === 'suspended' ? 'reactivated' : from === 'rejected' ? 'reapproved' : 'approved';
+  if (to === 'rejected') return 'rejected';
+  if (to === 'on_hold') return 'info';
+  if (to === 'suspended') return 'suspended';
+  if (from === 'verified' && (to === 'pending' || to === 'under_review')) return 'unverified';
+  if (to === 'under_review') return 'review';
+  return null;
+}
