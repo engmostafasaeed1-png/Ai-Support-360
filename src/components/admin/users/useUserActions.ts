@@ -13,10 +13,11 @@ export function useUserActions(installed: boolean) {
   const [busy, setBusy] = useState(false);
 
   /** `userId` must be the auth user id (see authUserIdOf); nothing is sent without one. */
-  async function exec(action: string, userId: string, payload: Record<string, unknown> = {}, reason?: string) {
+  async function exec(action: string, userId: string, payload: Record<string, unknown> = {}, reason?: string, emailHeader?: string) {
     if (!isUuid(userId)) throw new UnknownAccountError();
     if (DB_ACTIONS.has(action) && installed) {
-      return await callRpc<Record<string, unknown>>('admin_user_action', { _uid: userId, _action: action, _payload: payload, _reason: reason || null });
+      return await callRpc<Record<string, unknown>>('admin_user_action', { _uid: userId, _action: action, _payload: payload, _reason: reason || null },
+        emailHeader ? { [ADMIN_EMAIL_HEADER]: emailHeader } : undefined);
     }
     if (action === 'update_profile') {
       return await callEdge('admin-manage-user', userActionBody('update_name', userId, { name: payload.display_name }, reason));
