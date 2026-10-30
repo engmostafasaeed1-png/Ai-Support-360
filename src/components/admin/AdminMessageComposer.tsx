@@ -95,7 +95,7 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
   // E-mail preview: the real e-mail layout, rendered in the browser into a sandboxed frame.
   useEffect(() => {
     let live = true;
-    import('react-dom/server').then(({ renderToStaticMarkup }) => {
+    import('react-dom/server.browser').then(({ renderToStaticMarkup }) => {
       if (!live) return;
       const data = { lang, digest: false, items: [view], url: view.url, inboxUrl: `${SITE}/notifications`, prefsUrl: `${SITE}/notifications/pause`, helpHref: 'mailto:info@aisupport360.com' };
       setHtml('<!DOCTYPE html>' + renderToStaticMarkup(renderAdminMessage(createElement as never, data) as ReactElement));
