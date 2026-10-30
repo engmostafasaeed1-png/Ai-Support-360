@@ -1,64 +1,25 @@
 import * as React from 'npm:react@18.3.1'
-import { Body, Button, Container, Head, Heading, Html, Link, Preview, Section, Text } from 'npm:@react-email/components@0.0.22'
+import { renderToStaticMarkup } from 'npm:react-dom@18.3.1/server'
 import type { TemplateEntry } from './registry.ts'
-import { adminMessageSubject, type AdminMessageData } from '../adminMessageEmail.ts'
+import { adminMessageSubject, adminMessageText, renderAdminMessage, type AdminMessageData } from '../adminMessageEmail.ts'
 
 // A message or decision an administrator sent to this one person in the portal (also in their notifications).
-// All text arrives as React props (escaped); links are pages on our own site only (_shared/adminMessageEmail.ts).
+// Layout lives only in _shared/adminMessageEmail.ts (createElement, so every text is escaped by React; tested in vitest).
 
-const COPY = {
-  en: {
-    preview: 'A message from the AI Support 360 team',
-    heading: 'A message from the AI Support 360 team',
-    digest: (n: number) => `You have ${n} new messages from the team`,
-    open: 'Open',
-    cta: 'Reply in the portal',
-    prefs: 'Notification settings',
-    why: 'You receive this because an AI Support 360 administrator sent you this message in the portal. You can also read it in your notifications.',
-  },
-  ar: {
-    preview: 'رسالة من فريق AI Support 360',
-    heading: 'رسالة من فريق AI Support 360',
-    digest: (n: number) => `لديك ${n} رسائل جديدة من الفريق`,
-    open: 'فتح',
-    cta: 'الرد عبر البوابة',
-    prefs: 'إعدادات الإشعارات',
-    why: 'تصلك هذه الرسالة لأن أحد مسؤولي AI Support 360 أرسلها إليك في البوابة. يمكنك أيضًا قراءتها في إشعاراتك.',
-  },
+const DEFAULTS: AdminMessageData = {
+  lang: 'en', digest: false, items: [],
+  url: 'https://www.aisupport360.com/notifications', prefsUrl: 'https://www.aisupport360.com/notifications/pause',
 }
+const data = (d: Record<string, any>): AdminMessageData => ({ ...DEFAULTS, ...d, lang: d.lang === 'ar' ? 'ar' : 'en', items: Array.isArray(d.items) ? d.items : [] })
 
-const AdminMessageEmail = ({ lang = 'en', digest = false, items = [], url = 'https://www.aisupport360.com/notifications', prefsUrl = 'https://www.aisupport360.com/notifications/pause' }: Partial<AdminMessageData>) => {
-  const ar = lang === 'ar'
-  const c = COPY[ar ? 'ar' : 'en']
-  const dir = ar ? 'rtl' : 'ltr'
-  const align = ar ? 'right' : 'left'
-  return (
-    <Html lang={ar ? 'ar' : 'en'} dir={dir}>
-      <Head />
-      <Preview>{digest ? c.digest(items.length) : (items[0]?.title || c.preview)}</Preview>
-      <Body style={main}>
-        <Container style={{ ...container, direction: dir, textAlign: align }}>
-          <Text style={brand}>AI Support 360</Text>
-          <Heading style={heading}>{digest ? c.digest(items.length) : c.heading}</Heading>
-          {items.map((it, i) => (
-            <Section key={i} style={card}>
-              <Text style={itemTitle}>{it.title}</Text>
-              {it.body ? <Text style={{ ...text, whiteSpace: 'pre-wrap' }}>{it.body}</Text> : null}
-              {digest ? <Link href={it.url} style={smallLink}>{c.open}</Link> : null}
-            </Section>
-          ))}
-          <Button href={url} style={button}>{c.cta}</Button>
-          <Text style={small}>{c.why}</Text>
-          <Link href={prefsUrl} style={smallLink}>{c.prefs}</Link>
-        </Container>
-      </Body>
-    </Html>
-  )
-}
+const AdminMessageEmail = (props: Partial<AdminMessageData>) =>
+  renderAdminMessage(React.createElement as any, data(props as Record<string, any>)) as React.ReactElement
 
 export const template = {
   component: AdminMessageEmail,
-  subject: (data: Record<string, any>) => adminMessageSubject({ lang: data.lang === 'ar' ? 'ar' : 'en', digest: !!data.digest, items: data.items ?? [] }),
+  subject: (d: Record<string, any>) => adminMessageSubject(data(d)),
+  html: (d: Record<string, any>) => '<!DOCTYPE html>' + renderToStaticMarkup(renderAdminMessage(React.createElement as any, data(d)) as React.ReactElement),
+  text: (d: Record<string, any>) => adminMessageText(data(d)),
   displayName: 'Message from an administrator',
   previewData: {
     lang: 'en', digest: false,
@@ -66,14 +27,3 @@ export const template = {
     url: 'https://www.aisupport360.com/consultant/profile', prefsUrl: 'https://www.aisupport360.com/notifications/pause',
   },
 } satisfies TemplateEntry
-
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { maxWidth: '560px', margin: '0 auto', padding: '32px 28px' }
-const brand = { color: '#1B2559', fontSize: '14px', fontWeight: 'bold' }
-const heading = { color: '#1B2559', fontSize: '22px', margin: '20px 0 16px' }
-const card = { backgroundColor: '#f1f5f9', padding: '16px 20px', borderRadius: '16px', margin: '0 0 12px' }
-const itemTitle = { color: '#1B2559', fontSize: '16px', fontWeight: 'bold', margin: '0 0 6px' }
-const text = { color: '#334155', fontSize: '15px', lineHeight: '1.6', margin: '0' }
-const button = { backgroundColor: '#1B2559', color: '#ffffff', padding: '12px 20px', borderRadius: '10px', fontSize: '15px', marginTop: '12px' }
-const small = { color: '#94a3b8', fontSize: '12px', lineHeight: '1.5', marginTop: '24px' }
-const smallLink = { color: '#3B82F6', fontSize: '12px' }

@@ -1,25 +1,13 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
-  adminMessageSubject, buildAdminMessageData, clip, finishFor, safePortalPath,
+  adminMessageSubject, adminMessageText, buildAdminMessageData, clip, finishFor, renderAdminMessage, safePortalPath,
 } from '../../supabase/functions/_shared/adminMessageEmail';
 import {
   adminEmailHeader, canUntickEmail, emailKindOf, typeAlreadyEmailed, MAX_RECIPIENTS_PER_ACTION, PER_RECIPIENT_PER_HOUR,
   planRecipientMail,
 } from '@/lib/adminMessageEmail';
-
-// The e-mail template imports Deno-style "npm:" modules; map them to plain React elements for rendering.
-vi.mock('npm:react@18.3.1', async () => await import('react'));
-vi.mock('npm:@react-email/components@0.0.22', async () => {
-  const R = await import('react');
-  const tag = (t: string) => ({ children, href, style: _s, ...rest }: Record<string, unknown>) =>
-    R.createElement(t, { ...(href ? { href } : {}), ...(rest as object) }, children as React.ReactNode);
-  return {
-    Html: tag('html'), Head: tag('head'), Body: tag('body'), Container: tag('div'), Heading: tag('h1'), Text: tag('p'),
-    Section: tag('section'), Button: tag('a'), Link: tag('a'), Preview: tag('span'),
-  };
-});
 
 const mail = (n: number, extra: Partial<{ lang: string; digest: boolean; link: string; title: string; body: string }> = {}) => ({
   mail_key: 'k', recipient: 'u', email: 'a@example.com', lang: extra.lang ?? 'en', digest: extra.digest ?? n > 1,
@@ -85,10 +73,10 @@ describe('admin messages by e-mail — rules', () => {
 });
 
 describe('admin messages by e-mail — layout', () => {
-  it('escapes all admin text (no HTML or script reaches the e-mail)', async () => {
-    const { template } = await import('../../supabase/functions/_shared/transactional-email-templates/admin-message');
+  it('escapes all admin text (no HTML or script reaches the e-mail)', () => {
     const data = buildAdminMessageData(mail(1, { title: '<img src=x onerror=alert(1)>', body: '<script>alert(1)</script> & "quotes"' }), 'https://www.aisupport360.com');
-    const html = renderToStaticMarkup(React.createElement(template.component, data));
+    const html = renderToStaticMarkup(renderAdminMessage(React.createElement as never, data) as React.ReactElement);
+    expect(adminMessageText(data)).toContain('<script>alert(1)</script>'); // plain-text part is not HTML
     expect(html).not.toContain('<script>');
     expect(html).not.toContain('<img');
     expect(html).toContain('&lt;script&gt;');
@@ -96,9 +84,8 @@ describe('admin messages by e-mail — layout', () => {
     expect(html).toContain('href="https://www.aisupport360.com/notifications/pause"');
   });
 
-  it('uses the recipient language with right-to-left layout in Arabic', async () => {
-    const { template } = await import('../../supabase/functions/_shared/transactional-email-templates/admin-message');
-    const html = renderToStaticMarkup(React.createElement(template.component, buildAdminMessageData(mail(2, { lang: 'ar' }), 'https://www.aisupport360.com')));
+  it('uses the recipient language with right-to-left layout in Arabic', () => {
+    const html = renderToStaticMarkup(renderAdminMessage(React.createElement as never, buildAdminMessageData(mail(2, { lang: 'ar' }), 'https://www.aisupport360.com')) as React.ReactElement);
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('الرد عبر البوابة');
     expect(html).toContain('لديك 2 رسائل جديدة من الفريق');

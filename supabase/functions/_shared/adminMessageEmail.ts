@@ -55,3 +55,74 @@ export function finishFor(result: { sent: boolean; reason?: string }): { status:
   if (result.sent) return { status: 'sent' };
   return { status: 'skipped', reason: result.reason === 'notifications_disabled' ? 'email_notifications_off' : result.reason ?? 'skipped' };
 }
+
+// ------------------------------------------------------------------ layout (React createElement is injected so the
+// template and the vitest tests share one layout; every text is a React child, so it is escaped).
+
+// deno-lint-ignore no-explicit-any
+type H = (type: string, props: Record<string, unknown> | null, ...children: any[]) => unknown;
+
+export const ADMIN_MESSAGE_COPY = {
+  en: {
+    preview: 'A message from the AI Support 360 team',
+    heading: 'A message from the AI Support 360 team',
+    digest: (n: number) => `You have ${n} new messages from the team`,
+    open: 'Open',
+    cta: 'Reply in the portal',
+    prefs: 'Notification settings',
+    why: 'You receive this because an AI Support 360 administrator sent you this message in the portal. You can also read it in your notifications.',
+  },
+  ar: {
+    preview: 'رسالة من فريق AI Support 360',
+    heading: 'رسالة من فريق AI Support 360',
+    digest: (n: number) => `لديك ${n} رسائل جديدة من الفريق`,
+    open: 'فتح',
+    cta: 'الرد عبر البوابة',
+    prefs: 'إعدادات الإشعارات',
+    why: 'تصلك هذه الرسالة لأن أحد مسؤولي AI Support 360 أرسلها إليك في البوابة. يمكنك أيضًا قراءتها في إشعاراتك.',
+  },
+} as const;
+
+const S = {
+  body: 'margin:0;background-color:#ffffff;font-family:Arial,sans-serif',
+  box: 'max-width:560px;margin:0 auto;padding:32px 28px',
+  brand: 'color:#1B2559;font-size:14px;font-weight:bold;margin:0',
+  heading: 'color:#1B2559;font-size:22px;margin:20px 0 16px',
+  card: 'background-color:#f1f5f9;padding:16px 20px;border-radius:16px;margin:0 0 12px',
+  title: 'color:#1B2559;font-size:16px;font-weight:bold;margin:0 0 6px',
+  text: 'color:#334155;font-size:15px;line-height:1.6;margin:0;white-space:pre-wrap',
+  button: 'display:inline-block;background-color:#1B2559;color:#ffffff;padding:12px 20px;border-radius:10px;font-size:15px;text-decoration:none;margin-top:12px',
+  small: 'color:#94a3b8;font-size:12px;line-height:1.5;margin:24px 0 8px',
+  link: 'color:#3B82F6;font-size:12px',
+};
+const css = (s: string) => Object.fromEntries(s.split(';').filter(Boolean).map((p) => {
+  const [k, v] = p.split(/:(.+)/);
+  return [k.trim().replace(/-([a-z])/g, (_, c) => c.toUpperCase()), v.trim()];
+}));
+
+export function renderAdminMessage(h: H, d: AdminMessageData) {
+  const ar = d.lang === 'ar';
+  const c = ADMIN_MESSAGE_COPY[ar ? 'ar' : 'en'];
+  const dir = ar ? 'rtl' : 'ltr';
+  const items = d.items ?? [];
+  return h('html', { lang: ar ? 'ar' : 'en', dir },
+    h('head', null, h('meta', { charSet: 'utf-8' })),
+    h('body', { style: css(S.body) },
+      h('div', { style: { display: 'none', maxHeight: 0, overflow: 'hidden' } }, d.digest ? c.digest(items.length) : (items[0]?.title || c.preview)),
+      h('div', { style: { ...css(S.box), direction: dir, textAlign: ar ? 'right' : 'left' } },
+        h('p', { style: css(S.brand) }, 'AI Support 360'),
+        h('h1', { style: css(S.heading) }, d.digest ? c.digest(items.length) : c.heading),
+        ...items.map((it, i) => h('div', { key: i, style: css(S.card) },
+          h('p', { style: css(S.title) }, it.title),
+          it.body ? h('p', { style: css(S.text) }, it.body) : null,
+          d.digest ? h('a', { href: it.url, style: css(S.link) }, c.open) : null)),
+        h('a', { href: d.url, style: css(S.button) }, c.cta),
+        h('p', { style: css(S.small) }, c.why),
+        h('a', { href: d.prefsUrl, style: css(S.link) }, c.prefs))));
+}
+
+export function adminMessageText(d: AdminMessageData): string {
+  const c = ADMIN_MESSAGE_COPY[d.lang === 'ar' ? 'ar' : 'en'];
+  const items = (d.items ?? []).map((it) => `${it.title}\n${it.body}${d.digest ? `\n${it.url}` : ''}`).join('\n\n');
+  return `${d.digest ? c.digest(d.items.length) : c.heading}\n\n${items}\n\n${c.cta}: ${d.url}\n\n${c.why}\n${c.prefs}: ${d.prefsUrl}\n`;
+}
