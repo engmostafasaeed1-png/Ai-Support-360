@@ -50,6 +50,95 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_direct_email_recipients: {
+        Row: {
+          created_at: string
+          id: string
+          lang: string
+          mail_id: string | null
+          notification_id: string | null
+          reason: string | null
+          recipient: string
+          send_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lang?: string
+          mail_id?: string | null
+          notification_id?: string | null
+          reason?: string | null
+          recipient: string
+          send_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lang?: string
+          mail_id?: string | null
+          notification_id?: string | null
+          reason?: string | null
+          recipient?: string
+          send_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_direct_email_recipients_send_id_fkey"
+            columns: ["send_id"]
+            isOneToOne: false
+            referencedRelation: "admin_direct_email_sends"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_direct_email_sends: {
+        Row: {
+          actor: string
+          category: string
+          channel: string
+          content: Json
+          created_at: string
+          excluded: number
+          id: string
+          important: boolean
+          include_tests: boolean
+          recipients: number
+          request_key: string
+          requested: number
+          subject: string
+        }
+        Insert: {
+          actor: string
+          category: string
+          channel: string
+          content: Json
+          created_at?: string
+          excluded: number
+          id?: string
+          important?: boolean
+          include_tests?: boolean
+          recipients: number
+          request_key: string
+          requested: number
+          subject: string
+        }
+        Update: {
+          actor?: string
+          category?: string
+          channel?: string
+          content?: Json
+          created_at?: string
+          excluded?: number
+          id?: string
+          important?: boolean
+          include_tests?: boolean
+          recipients?: number
+          request_key?: string
+          requested?: number
+          subject?: string
+        }
+        Relationships: []
+      }
       admin_group_members: {
         Row: {
           added_at: string
@@ -84,8 +173,10 @@ export type Database = {
           actor: string
           attempts: number
           claimed_at: string | null
+          content: Json | null
           created_at: string
           digest: boolean
+          direct_send: string | null
           finished_at: string | null
           id: string
           important: boolean
@@ -105,8 +196,10 @@ export type Database = {
           actor: string
           attempts?: number
           claimed_at?: string | null
+          content?: Json | null
           created_at?: string
           digest?: boolean
+          direct_send?: string | null
           finished_at?: string | null
           id?: string
           important?: boolean
@@ -126,8 +219,10 @@ export type Database = {
           actor?: string
           attempts?: number
           claimed_at?: string | null
+          content?: Json | null
           created_at?: string
           digest?: boolean
+          direct_send?: string | null
           finished_at?: string | null
           id?: string
           important?: boolean
@@ -16106,6 +16201,33 @@ export type Database = {
         Args: { _body: string; _submission_id: string }
         Returns: string
       }
+      ade_channel: { Args: { _p: Json }; Returns: string }
+      ade_fill: {
+        Args: { _first: string; _link: string; _text: string }
+        Returns: string
+      }
+      ade_first_name: { Args: { _uid: string }; Returns: string }
+      ade_ids: { Args: { _p: Json }; Returns: string[] }
+      ade_pause_category: { Args: { _category: string }; Returns: string }
+      ade_targets: {
+        Args: {
+          _category: string
+          _channel: string
+          _ids: string[]
+          _important: boolean
+          _me: string
+          _tests: boolean
+        }
+        Returns: {
+          email: string
+          lang: string
+          name: string
+          reason: string
+          scope: string
+          user_id: string
+        }[]
+      }
+      ade_usage: { Args: { _me: string }; Returns: Json }
       admin_access_review: { Args: never; Returns: Json }
       admin_achievement_review: {
         Args: { _action: string; _id: string; _reason: string }
@@ -16217,6 +16339,11 @@ export type Database = {
         Args: { _id: string }
         Returns: undefined
       }
+      admin_direct_email_preview: { Args: { _p: Json }; Returns: Json }
+      admin_direct_email_report: { Args: { _send: string }; Returns: Json }
+      admin_direct_email_send: { Args: { _p: Json }; Returns: Json }
+      admin_direct_email_sends: { Args: { _p?: Json }; Returns: Json }
+      admin_direct_email_settings: { Args: never; Returns: Json }
       admin_email_sender_settings: { Args: never; Returns: Json }
       admin_founding_settings: {
         Args: { _boost?: number; _enabled?: boolean; _limit?: number }
@@ -16655,6 +16782,10 @@ export type Database = {
           _minutes: number
           _percent: number
         }
+        Returns: Json
+      }
+      admin_set_direct_email_settings: {
+        Args: { _enabled: boolean; _per_send_cap: number }
         Returns: Json
       }
       admin_set_email_sender_settings: {
