@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Ban, Bell, CheckCircle2, Download, Gift, Megaphone, Tag, X } from 'lucide-react';
+import { AtSign, Ban, Bell, CheckCircle2, Download, Gift, Megaphone, Tag, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBulkAccess } from '@/hooks/useBulkMessaging';
 import { SELECTED_KEY } from '@/lib/bulkMessaging';
@@ -17,10 +17,12 @@ import { ReasonDialog } from './UserDialogs';
 type Kind = 'tag_add' | 'tag_remove' | 'remind' | 'bulk_suspend' | 'bulk_reactivate';
 interface Preview { eligible: string[]; skipped: Array<{ id: string; reason: string }> }
 
-export default function BulkBar({ ids, total, installed, perms, onClear, onSelectMatching, onExport, onReferralInvite }: {
+export default function BulkBar({ ids, total, installed, perms, onClear, onSelectMatching, onExport, onReferralInvite, onDirectEmail }: {
   ids: string[]; total: number; installed: boolean; perms: string[]; onClear: () => void; onSelectMatching: () => void; onExport: () => void;
   /** Opens the Refer & earn invitation confirmation for the selection (the database re-checks every person). */
   onReferralInvite?: () => void;
+  /** "Send e-mail" to the selection: one message per person (docs/sql/admin-direct-email.sql), with its own confirmation. */
+  onDirectEmail?: () => void;
 }) {
   const { t } = useTranslation();
   const invalidate = useInvalidateUsers();
@@ -91,6 +93,7 @@ export default function BulkBar({ ids, total, installed, perms, onClear, onSelec
         {installed && can('users.message') && <Button size="sm" variant="outline" reason={over && { key: 'too_many_recipients', params: { max: BULK_LIMIT } }} onClick={() => open('remind')}><Bell className="me-1 h-4 w-4" />{t('um.remind', 'Remind')}</Button>}
         {installed && can('users.suspend') && <Button size="sm" variant="outline" reason={over && { key: 'too_many_recipients', params: { max: BULK_LIMIT } }} onClick={() => open('bulk_suspend')}><Ban className="me-1 h-4 w-4" />{t('um.suspend', 'Suspend')}</Button>}
         {installed && can('users.suspend') && <Button size="sm" variant="outline" reason={over && { key: 'too_many_recipients', params: { max: BULK_LIMIT } }} onClick={() => open('bulk_reactivate')}><CheckCircle2 className="me-1 h-4 w-4" />{t('um.reactivate', 'Reactivate')}</Button>}
+        {installed && can('users.message') && onDirectEmail && <Button size="sm" variant="outline" onClick={onDirectEmail}><AtSign className="me-1 h-4 w-4" />{t('ade.title', 'Send e-mail')}</Button>}
         {messaging.state === 'ready' && <Button size="sm" variant="outline" onClick={messageSelected}><Megaphone className="me-1 h-4 w-4" />{t('bmsg.message_users', 'Message users')}</Button>}
         {onReferralInvite && <Button size="sm" variant="outline" onClick={onReferralInvite}><Gift className="me-1 h-4 w-4" />{t('rinv.bulk_button', 'Send Refer & earn invitation')}</Button>}
         {can('users.export') && <Button size="sm" variant="outline" onClick={onExport}><Download className="me-1 h-4 w-4" />{t('um.export', 'Export')}</Button>}

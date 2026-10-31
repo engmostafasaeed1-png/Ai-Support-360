@@ -66,6 +66,8 @@ export interface HistoryRow {
   id: string; notification_id: string; created_at: string; recipient: string; recipient_name: string | null; actor_name: string | null;
   category: MessageCategory; subject: string | null; status: DeliveryStatus; reason: string | null; is_read: boolean; in_app: boolean;
   important: boolean; is_test: boolean; digest: boolean; send_after: string; decision?: string | null;
+  /** From docs/sql/admin-direct-email.sql: 'both' | 'in_app' (e-mail skipped) | 'email' (e-mail only) | 'none'; direct sends. */
+  channel?: 'both' | 'in_app' | 'email' | 'none'; direct_send?: string | null;
 }
 
 /** Spreadsheet-safe cell (= + - @ would run as formulas). */
@@ -77,7 +79,7 @@ export function historyCsv(rows: HistoryRow[]): string {
   const head = ['Date (UTC)', 'Recipient', 'Category', 'Subject', 'Channels', 'E-mail status', 'Reason', 'Read in app', 'Sent by'];
   const lines = rows.map((r) => [
     r.created_at.replace('T', ' ').slice(0, 16), r.recipient_name ?? r.recipient, r.category, r.subject ?? '',
-    r.status === 'skipped' ? 'in-app' : 'in-app + e-mail', r.status, r.reason ?? '', r.is_read ? 'yes' : 'no', r.actor_name ?? '',
+    ({ both: 'in-app + e-mail', in_app: 'in-app', email: 'e-mail only', none: 'not delivered' } as const)[r.channel ?? (r.status === 'skipped' ? 'in_app' : 'both')], r.status, r.reason ?? '', r.is_read ? 'yes' : 'no', r.actor_name ?? '',
   ].map(csvCell).join(','));
   return [head.map(csvCell).join(','), ...lines].join('\r\n');
 }

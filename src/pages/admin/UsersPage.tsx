@@ -3,7 +3,7 @@ import PartnerCompaniesCard from '@/components/admin/users/PartnerCompaniesCard'
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Download, Gift, Mail, RefreshCw, UserPlus } from 'lucide-react';
+import { AtSign, Download, Gift, Mail, RefreshCw, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,6 +18,8 @@ import UserDetailSheet from '@/components/admin/users/UserDetailSheet';
 import BulkBar from '@/components/admin/users/BulkBar';
 import BulkInviteDialog from '@/components/admin/users/BulkInviteDialog';
 import ReferralInviteDialog from '@/components/admin/users/ReferralInviteDialog';
+import DirectEmailDialog from '@/components/admin/users/DirectEmailDialog';
+import DirectEmailHistory from '@/components/admin/DirectEmailHistory';
 import { useInviteStatus } from '@/hooks/useReferralInvitations';
 import { filterSummary, inviteStatusMap } from '@/lib/referralInvitations';
 import { AccessReviewPanel, AdminAuditPanel, PermissionsPanel } from '@/components/admin/users/AccessPanels';
@@ -26,7 +28,7 @@ import { callRpc, searchAll, searchIds, useMyAdminPermissions, useUsersSearch, u
 import { BULK_LIMIT, DEFAULT_FILTERS, filtersToParams, nextIndex, parseFilters, usersCsv, type UserFilters } from '@/lib/userAdmin';
 
 const COLS_KEY = 'um.columns.v1';
-const TABS = ['users', 'access', 'permissions', 'history'] as const;
+const TABS = ['users', 'access', 'permissions', 'history', 'partners', 'emails'] as const;
 
 /** Admin › Users: accounts, roles and access (also shown at Super admin › User management). */
 export default function UsersPage() {
@@ -48,6 +50,8 @@ export default function UsersPage() {
   const [bulkInvite, setBulkInvite] = useState(false);
   const [refInvite, setRefInvite] = useState<'selected' | 'all_eligible' | null>(null);
   const [consultant, setConsultant] = useState<string | null>(null);
+  // "Send e-mail": one person (row / profile), the selection, or everyone in the current filter.
+  const [direct, setDirect] = useState<{ ids: string[]; label: string; sample?: string; note?: string } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [columns, setColumns] = useState<Column[]>(() => {
     try { const v = JSON.parse(localStorage.getItem(COLS_KEY) ?? 'null'); return Array.isArray(v) ? ALL_COLUMNS.filter((c) => v.includes(c)) : DEFAULT_COLUMNS; } catch { return DEFAULT_COLUMNS; }
@@ -93,6 +97,22 @@ export default function UsersPage() {
     catch (e) { toast.error((e as Error).message); }
   };
 
+  const emailOne = (u: { id: string; name: string; email: string }) => setDirect({ ids: [u.id], label: u.name || u.email, sample: u.name });
+  const emailSelected = () => {
+    const ids = [...selected];
+    const first = rows.find((r) => r.id === ids[0]);
+    setDirect({ ids, label: ids.length === 1 && first ? first.name || first.email : t('ade.n_people', '{{n}} people', { n: ids.length }), sample: first?.name });
+  };
+  const emailFilter = async () => {
+    try {
+      const r = await searchIds(filters, !!installed);
+      if (!r.ids.length) { toast.message(t('um.empty_title', 'No one matches these filters')); return; }
+      const first = rows.find((x) => x.id === r.ids[0]) ?? rows[0];
+      setDirect({ ids: r.ids, label: t('ade.n_in_filter', '{{n}} people in this filter', { n: r.ids.length }), sample: first?.name,
+        note: r.total > r.ids.length ? t('ade.first_n', 'The first {{n}} of {{total}} matching people are included.', { n: r.ids.length, total: r.total }) : undefined });
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
   const exportCsv = async (onlySelected: boolean) => {
     try {
       let list = await searchAll(filters, !!installed);
@@ -130,6 +150,7 @@ export default function UsersPage() {
       <BulkInviteDialog open={bulkInvite} onOpenChange={setBulkInvite} />
       <ReferralInviteDialog open={!!refInvite} onOpenChange={(o) => { if (!o) setRefInvite(null); }} mode={refInvite ?? 'selected'}
         ids={[...selected]} filters={refInvite === 'all_eligible' ? { source: 'all_eligible' } : filterSummary(filtersToParams(filters))} />
+      <DirectEmailDialog open={!!direct} onOpenChange={(o) => { if (!o) setDirect(null); }} ids={direct?.ids ?? []} label={direct?.label ?? ''} sampleName={direct?.sample} note={direct?.note} />
 
       <header className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
@@ -139,6 +160,7 @@ export default function UsersPage() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => invalidate()} busy={search.isFetching}><RefreshCw className={`me-1 h-4 w-4 ${search.isFetching ? 'animate-spin' : ''}`} />{t('um.refresh', 'Refresh')}</Button>
           {(perms.includes('users.export') || me.isLoading) && <Button variant="outline" size="sm" className={me.isLoading ? 'invisible' : undefined} onClick={() => exportCsv(false)} reason={!total && 'nothing_to_export'}><Download className="me-1 h-4 w-4" />{t('um.export_csv', 'Export CSV')}</Button>}
+          {perms.includes('users.message') && installed && <Button variant="outline" size="sm" onClick={() => void emailFilter()} reason={!total && 'no_recipients'}><AtSign className="me-1 h-4 w-4" />{t('ade.all_in_filter', 'E-mail everyone in this filter')}</Button>}
           <Button variant="outline" size="sm" onClick={() => setRefInvite('all_eligible')}><Gift className="me-1 h-4 w-4" />{t('rinv.all_button', 'Refer & earn: all eligible consultants')}</Button>
           {(perms.includes('users.invite') || me.isLoading) && <Button variant="outline" size="sm" className={me.isLoading ? 'invisible' : undefined} onClick={() => setBulkInvite(true)}><Mail className="me-1 h-4 w-4" />{t('um.invite_many', 'Invite people')}</Button>}
           {(perms.includes('users.invite') || me.isLoading) && <Button className={`gradient-primary border-0 ${me.isLoading ? 'invisible' : ''}`} size="sm" onClick={() => setInviteOpen(true)}><UserPlus className="me-1 h-4 w-4" />{t('um.invite_one', 'Invite user')}</Button>}
@@ -153,9 +175,11 @@ export default function UsersPage() {
           {perms.includes('users.roles') && <TabsTrigger value="partners">{t('partner.admin_tab', 'Partner companies')}</TabsTrigger>}
           <TabsTrigger value="permissions">{t('um.tab_permissions', 'Roles & permissions')}</TabsTrigger>
           {perms.includes('audit.read') && <TabsTrigger value="history">{t('um.tab_history', 'Admin history')}</TabsTrigger>}
+          {perms.includes('users.message') && <TabsTrigger value="emails">{t('ade.history', 'Direct e-mails')}</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="partners"><PartnerCompaniesCard /></TabsContent>
+        <TabsContent value="emails">{perms.includes('users.message') && <DirectEmailHistory />}</TabsContent>
         <TabsContent value="users" className="space-y-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
             {statCards.map(([label, n, preset]) => (
@@ -182,7 +206,8 @@ export default function UsersPage() {
                 <UsersList rows={rows} loading={search.isLoading || me.isLoading} columns={columns} selected={selected} focus={focus}
                   sort={filters.sort} dir={filters.dir} onFocus={setFocus}
                   onSort={(key) => setFilters({ ...filters, sort: key, dir: filters.sort === key && filters.dir === 'desc' ? 'asc' : filters.sort === key ? 'desc' : key === 'name' ? 'asc' : 'desc', page: 1 })}
-                  onToggle={toggle} onTogglePage={togglePage} onOpen={(u) => setParam('user', u.id)} invited={invited} />
+                  onToggle={toggle} onTogglePage={togglePage} onOpen={(u) => setParam('user', u.id)} invited={invited}
+                  onEmail={perms.includes('users.message') && installed ? emailOne : undefined} />
               )}
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/50 px-4 py-2 text-xs text-muted-foreground">
               <span aria-live="polite">{t('um.showing', 'Showing {{a}}–{{b}} of {{n}}', { a: total ? (filters.page - 1) * filters.page_size + 1 : 0, b: Math.min(filters.page * filters.page_size, total), n: total })}</span>
@@ -201,7 +226,7 @@ export default function UsersPage() {
 
           {selected.size > 0 && (
             <BulkBar ids={[...selected]} total={total} installed={!!installed} perms={perms} onClear={() => setSelected(new Set())}
-              onSelectMatching={selectMatching} onExport={() => exportCsv(true)} onReferralInvite={() => setRefInvite('selected')} />
+              onSelectMatching={selectMatching} onExport={() => exportCsv(true)} onReferralInvite={() => setRefInvite('selected')} onDirectEmail={emailSelected} />
           )}
         </TabsContent>
 
@@ -218,7 +243,7 @@ export default function UsersPage() {
       )}
 
       <UserDetailSheet userId={openUser} installed={!!installed} perms={perms} me={meProps} superAdminCount={superCount.data ?? 1}
-        fourEyes={!!me.data?.four_eyes} onClose={() => setParam('user', null)} onOpenConsultant={setConsultant} />
+        fourEyes={!!me.data?.four_eyes} onClose={() => setParam('user', null)} onOpenConsultant={setConsultant} onDirectEmail={emailOne} />
     </div>
   );
 }

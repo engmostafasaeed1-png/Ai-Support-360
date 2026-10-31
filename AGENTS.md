@@ -7,12 +7,12 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - Shared Button drops its variant gradient when callers pass a base background colour (custom gradients kept), preserving emergency/status colours.
 - Consultant landing/pricing pages own head tags via useHeadTags (dedupe, restore on unmount), never also via RouteSeo, to avoid competing updates.
 - Admin full consultant profiles load only via the audited admin-only RPC in the shared sheet (ephemeral queries, short-lived links, timed in-memory bank reveals), so private payout data is never persisted.
-- Invoice details use shared billing controls + admin confirmation hook.
+- Invoice details use shared billing controls + admin confirm hook.
 - Timesheet PDF/CSV rows come only from the shared timesheet document helpers (screen amounts, approval metadata), so exports never diverge.
 - Credibility scores/star fills come only from the shared credibility library; photo performance rings only from lib/ringAvatar via ConsultantRing (map popups via its DOM twin), outer arc pure client rating, inner arc only public responsiveness, so all surfaces agree.
 - Consultant request/success counts and Success levels come only from the database success RPCs (aggregates only, no per-ticket data) and lib/successLevel, shown through the shared ring summary as SuccessStars level stars (never a ring arc), so every surface agrees and the AI-interview tier never shares its wording.
 - Weekly availability, grace exclusion, reminders and holds are decided only in docs/sql/availability-hold.sql (hold_* functions, time-based consultant_on_hold), mirrored by _shared/availabilityRules.ts; 'on_hold' is set only by holds, so status, directory, matching and reminders agree.
-- Brand artwork uses shared CDN logo pointers; portal-menu public links are `external: true` (new tab).
+- Brand art uses shared CDN logo pointers; portal-menu public links are `external: true` (new tab).
 - The consultant Profile page is the single editor (no duplicate setup tab); legacy onboarding links land there.
 - Rank consultants only with the shared deterministic matcher (`supabase/functions/_shared/ticketMatch.ts`: hard filters, admin-tunable weights, why-chips) everywhere, incl. directory sort; client blocks are exclusions, favourites an optional capped criterion; displays derive from its weights; AI writes text only, so rankings stay reproducible.
 - Ticket payment terms and consultant invoices are written only via SECURITY DEFINER RPCs; a client-approved invoice becomes a pending payments row so existing billing handles collection.
@@ -52,4 +52,4 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - NDA signing is decided only by docs/sql/nda-signature-identity.sql (append-only nda_signatures, ID numbers encrypted by the nda-signature function in nda_signatory_identity, logged admin reads) and mirrored by `_shared/ndaSignature.ts`; screens show the NDA only via NdaStatusCard/NdaSignDialog and legacy signatures stay valid, so gates never change.
 - Partner portal: tenants.is_partner + partner_* RPCs only (docs/sql/partner-portal-mvp.sql) via src/lib/partnerPortal.ts, so no second org system.
 - Consultant roles come only from the role catalogue (consultant_role_catalog via useRoleCatalog; built-in copy and rules in `_shared/consultantRoles.ts`); stored roles are compared only after normalizeRoles/roleKeyFor and role-dependent required fields go through fieldAppliesToRoles + consultant_missing_fields, so legacy labels keep working and non-technical roles are never forced into technical fields.
-- Admin messages and review decisions are e-mailed only via docs/sql/admin-message-email.sql (ame_enqueue, ame_decision_notice) and rendered only by _shared/adminMessageEmail.ts, so each mails once in one layout.
+- Admin messages and review decisions are e-mailed only via docs/sql/admin-message-email.sql (ame_enqueue, ame_decision_notice), direct ones via admin-direct-email.sql (newest ame_capture/ame_claim), rendered only by _shared/adminMessageEmail.ts, so each mails once in one layout.

@@ -36,6 +36,10 @@ export default function AdminMessageHistory() {
     },
   });
   const rows = query.data ?? [];
+  const channelLabel = (r: HistoryRow) => {
+    const c = r.channel ?? (r.status === 'skipped' ? 'in_app' : 'both');
+    return c === 'email' ? t('ade.ch_email', 'E-mail only') : c === 'none' ? t('ade.ch_none', 'Not delivered') : c === 'in_app' ? t('amh.in_app', 'In-app') : t('amh.in_app_email', 'In-app + e-mail');
+  };
   const fmt = (d: string) => new Date(d).toLocaleString(lang === 'ar' ? 'ar' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' });
 
   function exportCsv() {
@@ -98,7 +102,7 @@ export default function AdminMessageHistory() {
                       <TableCell className="text-sm">{r.recipient_name || '—'}{r.is_test && <Badge variant="outline" className="ms-1 text-[10px]">TEST</Badge>}</TableCell>
                       <TableCell><Badge variant="outline" className={cn('rounded-full text-[11px]', CATEGORY_UI[r.category]?.chip)}>{MESSAGE_COPY[lang].categories[r.category] ?? r.category}</Badge></TableCell>
                       <TableCell className="max-w-[18rem] truncate text-sm" title={r.subject ?? ''}>{isOutcome(r.decision) && <Badge variant="outline" className="me-1 rounded-full px-1.5 py-0 text-[10px]">{DECISION_COPY[lang].badges[badgeFor(r.decision)]}</Badge>}{r.subject || '—'}{r.important && <span className="ms-1 text-[11px] text-warning">· {t('ame.important_short', 'important')}</span>}</TableCell>
-                      <TableCell className="whitespace-nowrap text-xs">{r.status === 'skipped' ? t('amh.in_app', 'In-app') : t('amh.in_app_email', 'In-app + e-mail')}</TableCell>
+                      <TableCell className="whitespace-nowrap text-xs">{channelLabel(r)}{r.direct_send && <Badge variant="outline" className="ms-1 px-1.5 py-0 text-[10px]">{t('ade.direct_short', 'direct')}</Badge>}</TableCell>
                       <TableCell>
                         <Badge variant={TONE[r.status] ?? 'outline'} className="font-normal">{held ? t('ame.st_held', 'Waiting (digest)') : t(`ame.st_${r.status}`, r.status)}</Badge>
                         {r.reason && r.status !== 'sent' && <p className={cn('mt-0.5 text-[11px]', r.reason === 'no_email' ? 'font-medium text-warning' : 'text-muted-foreground')}>{t(`ame.r_${r.reason}`, r.reason)}</p>}
