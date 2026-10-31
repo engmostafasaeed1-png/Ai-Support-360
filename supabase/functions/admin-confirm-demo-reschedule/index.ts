@@ -1,22 +1,21 @@
-// Admin endpoint: confirms a proposed reschedule slot and sends the requester a
-// confirmation email with a tokenized link to their request page.
+// Admin endpoint for demo bookings (Demo requests page). Caller must be an admin / super admin.
 //
-// Security: the link is always built from the server-side SITE_URL (never from the request
-// body), and the caller must be an admin / super admin.
-import {
-  ADMIN_ROLES,
-  adminClient,
-  authenticateUser,
-  getUserRoles,
-  hasAnyRole,
-  jsonResponse,
-  preflight,
-  SITE_URL,
-} from '../_shared/security.ts';
+//   { request_id, slot_index, note }                   confirm a time the requester proposed (legacy RPC)
+//   { action: 'schedule', request_id, date, time, tz, duration_min, meeting_link, note }   confirm / move the demo
+//   { action: 'cancel', request_id, reason }           cancel the demo
+//
+// The database functions (docs/sql/demo-schedule-alerts.sql) re-check the role, validate and record the change; this
+// function then e-mails the requester once per change (demo-meeting-update: confirmed / new time / cancelled) in their
+// language and time zone. Links are built only from the server-side SITE_URL; the meeting link is shown on their
+// request page, never in the e-mail.
+import { ADMIN_ROLES, adminClient, authenticateUser, getUserRoles, hasAnyRole, jsonResponse, preflight, SITE_URL } from '../_shared/security.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
+import { TEAM_EMAIL } from '../_shared/contact.ts';
+import { buildDemoUpdateView, readDemoSettings, type DemoRequestRow, type DemoUpdateKind } from '../_shared/demoSchedule.ts';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
 Deno.serve(async (req) => {
   const pre = preflight(req);
@@ -25,71 +24,66 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-  if (!supabaseUrl || !anonKey || !Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
-    return jsonResponse(req, { error: 'Server misconfigured' }, 500);
-  }
+  if (!supabaseUrl || !anonKey || !Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) return jsonResponse(req, { error: 'Server misconfigured' }, 500);
 
-  // AuthN + AuthZ: a real user JWT whose account holds an admin role.
   const user = await authenticateUser(req);
   if (!user) return jsonResponse(req, { error: 'Unauthorized' }, 401);
   const admin = adminClient();
-  if (!hasAnyRole(await getUserRoles(admin, user.id), ADMIN_ROLES)) {
-    return jsonResponse(req, { error: 'Forbidden' }, 403);
-  }
+  if (!hasAnyRole(await getUserRoles(admin, user.id), ADMIN_ROLES)) return jsonResponse(req, { error: 'Forbidden' }, 403);
 
-  let body: { request_id?: string; slot_index?: number; note?: string };
+  let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
     return jsonResponse(req, { error: 'Invalid JSON' }, 400);
   }
-  const requestId = body.request_id;
-  const slotIndex = Number.isInteger(body.slot_index) ? (body.slot_index as number) : 0;
-  const note = typeof body.note === 'string' ? body.note.slice(0, 1000) : undefined;
-  if (!requestId || !UUID_RE.test(requestId)) return jsonResponse(req, { error: 'request_id is required' }, 400);
+  const requestId = str(body.request_id, 40);
+  if (!UUID_RE.test(requestId)) return jsonResponse(req, { error: 'request_id is required' }, 400);
+  const action = body.action === 'schedule' || body.action === 'cancel' ? body.action : 'legacy';
+  const note = str(body.note, 500) || null;
 
-  // Call the RPC as the user (the RPC re-checks the admin role).
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
-  });
-  const { data: row, error: rpcErr } = await userClient.rpc('admin_confirm_reschedule_slot', {
-    _request_id: requestId,
-    _slot_index: slotIndex,
-    _note: note,
-  });
-  if (rpcErr) return jsonResponse(req, { error: rpcErr.message }, 400);
-
-  const { data: request, error: reqErr } = await admin
-    .from('demo_requests')
-    .select('email, full_name, request_token, scheduled_date, scheduled_slot, timezone')
-    .eq('id', requestId)
-    .maybeSingle();
-  if (reqErr || !request) return jsonResponse(req, { ok: true, warning: 'request not found for email' });
-
-  const templateName = 'demo-reschedule-confirmed';
-  const logRow = async (status: string, error_message?: string) => {
-    const { error: logErr } = await admin.from('email_send_log').insert({
-      message_id: null, template_name: templateName, recipient_email: request.email, status, error_message: error_message ?? null,
+  // The RPCs run as the admin (they re-check the role and write the audit row).
+  const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } });
+  let kind: DemoUpdateKind = 'confirmed';
+  let version = '';
+  if (action === 'schedule') {
+    const duration = Number(body.duration_min);
+    const { data, error } = await userClient.rpc('admin_demo_schedule', {
+      _id: requestId, _date: str(body.date, 10), _time: str(body.time, 5), _tz: str(body.tz, 64),
+      _duration_min: Number.isFinite(duration) ? Math.round(duration) : 30, _meeting_link: str(body.meeting_link, 500) || null, _note: note,
     });
-    if (logErr) console.error('send log failed', { code: logErr.code, message: logErr.message });
-  };
-  try {
-    const result = await sendTemplateEmail(templateName, request.email, {
-      idempotencyKey: `demo-reschedule-confirmed-${requestId}-${request.scheduled_date}-${request.scheduled_slot}`,
-      templateData: {
-        name: request.full_name,
-        confirmationUrl: `${SITE_URL}/demo/confirmation/${request.request_token}`,
-        scheduledDate: request.scheduled_date,
-        scheduledSlot: request.scheduled_slot,
-        timezone: request.timezone,
-      },
-    });
-    await logRow(result.sent ? 'sent' : 'suppressed');
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.warn('Failed to send confirmation email', msg);
-    await logRow('failed', msg.slice(0, 1000));
+    if (error) return jsonResponse(req, { error: error.code === 'PGRST202' ? 'not_installed' : error.message }, 400);
+    kind = (data as { kind?: string })?.kind === 'rescheduled' ? 'rescheduled' : 'confirmed';
+    version = String((data as { version?: number })?.version ?? '');
+  } else if (action === 'cancel') {
+    const { data, error } = await userClient.rpc('admin_demo_cancel', { _id: requestId, _reason: str(body.reason, 500) || null });
+    if (error) return jsonResponse(req, { error: error.code === 'PGRST202' ? 'not_installed' : error.message }, 400);
+    kind = 'cancelled';
+    version = String((data as { version?: number })?.version ?? '');
+  } else {
+    const slotIndex = Number.isInteger(body.slot_index) ? (body.slot_index as number) : 0;
+    const { error } = await userClient.rpc('admin_confirm_reschedule_slot', { _request_id: requestId, _slot_index: slotIndex, _note: note ?? undefined });
+    if (error) return jsonResponse(req, { error: error.message }, 400);
   }
 
-  return jsonResponse(req, { ok: true, request: row });
+  const { data: row } = await admin.from('demo_requests').select('*').eq('id', requestId).maybeSingle();
+  if (!row) return jsonResponse(req, { ok: true, kind, email: 'skipped' });
+  const { data: s } = await admin.from('platform_settings').select('value').eq('key', 'demo_schedule_alerts').maybeSingle();
+  const view = buildDemoUpdateView(row as DemoRequestRow, kind, { site: SITE_URL, now: new Date(), settings: readDemoSettings(s?.value), note });
+  const key = version ? `demo-meeting-${requestId}-${version}` : `demo-meeting-${requestId}-${row.scheduled_date}-${row.scheduled_slot}`;
+
+  const template = 'demo-meeting-update';
+  let email: 'sent' | 'skipped' | 'failed' = 'skipped';
+  try {
+    const result = await sendTemplateEmail(template, row.email, { idempotencyKey: key, replyTo: TEAM_EMAIL, templateData: view as unknown as Record<string, unknown> });
+    email = result.sent ? 'sent' : 'skipped';
+  } catch (e) {
+    email = 'failed';
+    console.warn('admin-confirm-demo-reschedule: e-mail failed', e instanceof Error ? e.message.slice(0, 200) : '');
+  }
+  const { error: logErr } = await admin.from('email_send_log').insert({
+    message_id: null, template_name: template, recipient_email: row.email, status: email === 'sent' ? 'sent' : email === 'failed' ? 'failed' : 'suppressed', error_message: null,
+  });
+  if (logErr) console.error('send log failed', { code: logErr.code });
+  return jsonResponse(req, { ok: true, kind, email });
 });
