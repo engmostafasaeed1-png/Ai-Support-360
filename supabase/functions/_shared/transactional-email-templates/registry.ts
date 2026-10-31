@@ -18,6 +18,7 @@ import { template as demoRequestAlert } from './demo-request-alert.tsx'
 import { template as contactMessageReceived } from './contact-message-received.tsx'
 import { template as demoRescheduleReceived } from './demo-reschedule-received.tsx'
 import { template as demoRescheduleConfirmed } from './demo-reschedule-confirmed.tsx'
+import { template as demoMeetingUpdate } from './demo-meeting-update.tsx'
 import { template as interviewInvitation } from './interview-invitation.tsx'
 import { template as interviewInvitationCopy } from './interview-invitation-copy.tsx'
 import { template as interviewResponse } from './interview-response.tsx'
@@ -54,6 +55,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'contact-message-received': contactMessageReceived,
   'demo-reschedule-received': demoRescheduleReceived,
   'demo-reschedule-confirmed': demoRescheduleConfirmed,
+  'demo-meeting-update': demoMeetingUpdate,
   'interview-invitation': interviewInvitation,
   'interview-invitation-copy': interviewInvitationCopy,
   'interview-response': interviewResponse,
