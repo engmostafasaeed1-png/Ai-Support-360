@@ -65,6 +65,7 @@ export default function AdminMessageEmailSettingsCard() {
             <p className="text-xs text-muted-foreground" role="status">
               {t('ame.today', 'Today: {{sent}} sent, {{waiting}} waiting, {{skipped}} skipped, {{failed}} failed', { sent: q.data.sent_today, waiting: q.data.waiting, skipped: q.data.skipped_today, failed: q.data.failed_today })}
             </p>
+            <DirectEmailSettings />
             <section className="space-y-2" aria-labelledby="ame-hist">
               <h3 id="ame-hist" className="text-sm font-semibold">{t('ame.history', 'Recent admin messages')}</h3>
               <AdminMessageEmailLog limit={15} />
@@ -73,5 +74,61 @@ export default function AdminMessageEmailSettingsCard() {
         ) : null}
       </CardContent>
     </Card>
+  );
+}
+
+interface DirectSettings { enabled: boolean; per_send_cap: number }
+const DKEY = ['admin-direct-email-settings'];
+
+/** "Allow direct admin e-mail" (default on) + people per send (default 200), docs/sql/admin-direct-email.sql. */
+function DirectEmailSettings() {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: DKEY, retry: false,
+    queryFn: async (): Promise<DirectSettings | null> => {
+      const { data, error } = await safeRpc<DirectSettings>('admin_direct_email_settings');
+      return error ? null : data;
+    },
+  });
+  const [cap, setCap] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (q.data) setCap(String(q.data.per_send_cap)); }, [q.data]);
+  const capNum = Number(cap);
+  const capBad = !Number.isInteger(capNum) || capNum < 1 || capNum > 1000;
+
+  async function save(enabled: boolean, perSend: number) {
+    setBusy(true);
+    const { error } = await safeRpc('admin_set_direct_email_settings', { _enabled: enabled, _per_send_cap: perSend });
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(t('common.saved', 'Saved'));
+    qc.invalidateQueries({ queryKey: DKEY });
+  }
+
+  return (
+    <section className="space-y-3 rounded-xl border border-border/60 p-3" aria-labelledby="ade-set">
+      <h3 id="ade-set" className="text-sm font-semibold">{t('ade.settings_title', 'Direct e-mail from Admin › Users')}</h3>
+      {q.data === null ? (
+        <p className="text-xs text-muted-foreground">{t('ade.not_ready', 'Direct e-mail starts once the prepared database update (admin direct e-mail) is applied.')}</p>
+      ) : q.data ? (
+        <>
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor="ade-enabled">{t('ade.allow', 'Allow direct admin e-mail')}</Label>
+            <Switch id="ade-enabled" checked={q.data.enabled} disabled={busy} /* disabled-ok: saving */ onCheckedChange={(v) => save(v, q.data!.per_send_cap)} />
+          </div>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="ade-cap">{t('ade.per_send_cap', 'People per send (at most)')}</Label>
+              <Input id="ade-cap" type="number" min={1} max={1000} className="w-32" value={cap} onChange={(e) => setCap(e.target.value)} aria-invalid={capBad} />
+            </div>
+            <Button size="sm" variant="outline" busy={busy}
+              reason={[capBad && 'invalid_value', !capBad && capNum === q.data.per_send_cap && 'nothing_changed']}
+              onClick={() => save(q.data!.enabled, capNum)}>{t('common.save', 'Save')}</Button>
+          </div>
+          <p className="text-xs text-muted-foreground">{t('ade.settings_hint', 'Only admins with the "Message users" permission. One e-mail per person, the daily cap and hourly limits above still apply (the rest waits and goes out later).')}</p>
+        </>
+      ) : null}
+    </section>
   );
 }

@@ -10,6 +10,7 @@ import ComposeMessage from '@/components/admin/messages/ComposeMessage';
 import CampaignsPanel from '@/components/admin/messages/CampaignsPanel';
 import MessagingSettingsPanel from '@/components/admin/messages/MessagingSettingsPanel';
 import AdminMessageHistory from '@/components/admin/AdminMessageHistory';
+import DirectEmailHistory from '@/components/admin/DirectEmailHistory';
 import { useBulkAccess, useBulkActions, useTemplates } from '@/hooks/useBulkMessaging';
 
 export default function MessagesPage() {
@@ -47,7 +48,7 @@ export default function MessagesPage() {
           </TabsContent>
           <TabsContent value="campaigns" className="mt-4"><CampaignsPanel openId={params.get('open')} onOpen={(id) => setParam('open', id)} /></TabsContent>
           <TabsContent value="templates" className="mt-4"><TemplatesPanel /></TabsContent>
-          <TabsContent value="direct" className="mt-4"><AdminMessageHistory /></TabsContent>
+          <TabsContent value="direct" className="mt-4 space-y-4"><DirectEmailHistory /><AdminMessageHistory /></TabsContent>
           <TabsContent value="settings" className="mt-4"><MessagingSettingsPanel settings={access.settings} /></TabsContent>
         </Tabs>
       )}
