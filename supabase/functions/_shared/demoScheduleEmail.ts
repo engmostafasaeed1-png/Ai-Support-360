@@ -5,7 +5,7 @@
  * no tracking pixels. Tested in src/test/demoSchedule.test.tsx.
  */
 import {
-  DECISION_BADGE_COLOURS, EMAIL_STYLES as S, MESSAGE_COPY, emailButton, emailRow, emailTable, renderEmailShell, type EmailH,
+  EMAIL_STYLES as S, MESSAGE_COPY, emailButton, emailRow, emailTable, renderEmailShell, type EmailH,
 } from './adminMessageEmail.ts';
 import type { DemoEmailView } from './demoSchedule.ts';
 
@@ -22,7 +22,6 @@ export function renderDemoEmail(h: EmailH, v: DemoEmailView) {
   const lang = v.lang === 'ar' ? 'ar' : 'en';
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
   const c = MESSAGE_COPY[lang];
-  const side = dir === 'rtl' ? 'Right' : 'Left';
   const content = [
     h('p', { key: 'chip', style: { margin: 0 } },
       h('span', { style: S.chip(v.category) }, c.categories[v.category]),
@@ -51,7 +50,6 @@ export function renderDemoEmail(h: EmailH, v: DemoEmailView) {
     emailButton(h, v.primary.href, v.primary.label),
     ...v.secondary.map((s, i) => outlineButton(h, s.href, s.label, i)),
   ];
-  void side; void DECISION_BADGE_COLOURS;
   return renderEmailShell(h, {
     lang, title: v.title, preheader: v.preheader, test: v.test, content, site: 'https://www.aisupport360.com', sentLine: v.sentLine,
     footer: { ...v.footer, helpHref: `mailto:${v.footer.help}` },
