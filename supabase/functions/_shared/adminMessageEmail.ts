@@ -506,8 +506,9 @@ function decisionParts(h: H, v: MessageView, lang: Lang, dir: 'ltr' | 'rtl') {
 }
 
 /** One prominent rounded button; the coloured cell keeps it visible in Outlook, which ignores padding on links. */
-function button(h: H, href: string, label: string, align: string) {
-  return table(h, { width: 'auto', align, style: { margin: '26px 0 0' } },
+function button(h: H, href: string, label: string) {
+  // No align attribute: a floated table would let the next line wrap beside it.
+  return table(h, { width: 'auto', style: { margin: '26px 0 0', width: 'auto' } },
     row(h, { bgcolor: INK, style: st.btnTd }, h('a', { href, style: st.btn }, label)));
 }
 
@@ -533,7 +534,7 @@ export function renderAdminMessage(h: H, d: AdminMessageData) {
         ...decisionParts(h, one, lang, dir),
         contextCard(h, one, c),
         todoBox(h, one, c, lang),
-        button(h, one.url, one.decision?.cta ?? c.cta, align),
+        button(h, one.url, one.decision?.cta ?? c.cta),
         h('p', { style: st.second }, h('a', { href: d.inboxUrl, style: st.a }, c.allMessages)),
       ]
     : [
@@ -546,7 +547,7 @@ export function renderAdminMessage(h: H, d: AdminMessageData) {
           h('p', { style: { ...st.p, margin: '0 0 8px' } }, it.summary || oneLine(plainText(it.blocks), 220)),
           it.action?.deadline ? h('p', { style: { ...st.ctxMeta, margin: '0 0 8px', fontWeight: 'bold' } }, `${c.deadline}: ${formatDeadline(it.action.deadline, lang)}`) : null,
           h('a', { href: it.url, style: st.a }, c.open))),
-        button(h, d.url, c.cta, align),
+        button(h, d.url, c.cta),
       ];
   const sentAt = formatSentAt((one ?? items[items.length - 1])?.createdAt, lang);
 
