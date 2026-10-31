@@ -13,6 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 import { demoFunnel } from '@/lib/analytics';
 import { isSlotPast, nowInZone } from '@/lib/demoSlots';
+import { DemoMeetingCard } from '@/components/demo/DemoMeetingCard';
 
 /**
  * Public confirmation page reached after submitting the demo wizard.
@@ -230,6 +231,8 @@ function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token
         />
       )}
 
+      <div className="pt-6"><DemoMeetingCard token={token} requestId={data.id} /></div>
+
       {/* Details */}
       <dl className="px-7 md:px-10 py-7 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
         <DetailRow icon={Sparkles} label="Demo type" value={demoTypeLabel[data.demo_type]} />
@@ -271,7 +274,7 @@ function ConfirmationCard({ data, token, onChanged }: { data: DemoRequest; token
 
       {/* Reschedule panel */}
       {canReschedule && (
-        <div className="px-7 md:px-10 pb-7">
+        <div id="reschedule" className="px-7 md:px-10 pb-7 scroll-mt-24">
           {!showReschedule ? (
             <Button
               variant="outline"
