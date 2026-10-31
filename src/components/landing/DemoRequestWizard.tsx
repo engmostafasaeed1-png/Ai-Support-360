@@ -170,6 +170,10 @@ export default function DemoRequestWizard({
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
   const [notes, setNotes] = useState('');
+  // optional, shown to the team in the "Demo booked" alert
+  const [role, setRole] = useState('');
+  const [phone, setPhone] = useState('');
+  const [sapArea, setSapArea] = useState('');
 
   // Reset every time it reopens.
   const reset = () => {
@@ -186,6 +190,9 @@ export default function DemoRequestWizard({
     setEmail('');
     setCompany('');
     setNotes('');
+    setRole('');
+    setPhone('');
+    setSapArea('');
   };
 
   // Track step views — fires once per open + step change. We also use
@@ -218,7 +225,7 @@ export default function DemoRequestWizard({
     // picks a date they must also pick a slot (and vice versa) so we
     // never persist a half-chosen time.
     (step === 1 && !!time && (!date || !!slot) && (!slot || !!date)) ||
-    (step === 2 && name.trim().length > 1 && /\S+@\S+\.\S+/.test(email));
+    (step === 2 && name.trim().length > 1 && /\S+@\S+\.\S+/.test(email) && (!phone.trim() || PHONE_RE.test(phone.trim())));
 
   const next = () => {
     setStep((s) => {
@@ -293,8 +300,17 @@ export default function DemoRequestWizard({
 
     setSubmitted(true);
     demoFunnel.submitSuccess({ ...submitProps });
-    // the confirmation e-mail to the requester (best effort: the server reads the recipient from the request itself)
-    void supabase.functions.invoke('demo-request-notify', { body: { token: requestToken } }).catch(() => undefined);
+    // The optional details and the site language go in first (best effort: works once the database update is applied),
+    // then the e-mails: confirmation to the requester + one alert to the team. The server reads everything from the request.
+    const language = (document.documentElement.lang || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en';
+    void (async () => {
+      try {
+        await supabase.rpc('submit_demo_request_details' as never, {
+          _token: requestToken, _role: role.trim() || null, _phone: phone.trim() || null, _sap_area: sapArea.trim() || null, _language: language,
+        } as never);
+      } catch { /* optional details */ }
+      try { await supabase.functions.invoke('demo-request-notify', { body: { token: requestToken } }); } catch { /* best effort */ }
+    })();
     toast({
       title: 'Demo request received',
       description: 'We\u2019ll be in touch within one business hour.',
@@ -369,6 +385,7 @@ export default function DemoRequestWizard({
               email={email} setEmail={setEmail}
               company={company} setCompany={setCompany}
               notes={notes} setNotes={setNotes}
+              role={role} setRole={setRole} phone={phone} setPhone={setPhone} sapArea={sapArea} setSapArea={setSapArea}
             />
           )}
         </div>
@@ -725,14 +742,22 @@ function ScheduleStep({
   );
 }
 
+/** Same rule as the database (submit_demo_request_details). */
+const PHONE_RE = /^\+?[0-9][0-9 ()./-]{5,28}$/;
+
 function DetailsStep({
   name, setName, email, setEmail, company, setCompany, notes, setNotes,
+  role, setRole, phone, setPhone, sapArea, setSapArea,
 }: {
   name: string; setName: (v: string) => void;
   email: string; setEmail: (v: string) => void;
   company: string; setCompany: (v: string) => void;
   notes: string; setNotes: (v: string) => void;
+  role: string; setRole: (v: string) => void;
+  phone: string; setPhone: (v: string) => void;
+  sapArea: string; setSapArea: (v: string) => void;
 }) {
+  const phoneBad = !!phone.trim() && !PHONE_RE.test(phone.trim());
   // a field is marked after the visitor has left it
   const [touched, setTouched] = useState({ name: false, email: false });
   const nameBad = touched.name && name.trim().length < 2;
@@ -790,6 +815,27 @@ function DetailsStep({
           className="rounded-xl h-11 bg-background/60"
           autoComplete="organization"
         />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="dw-role" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Your role <span className="text-muted-foreground/60 normal-case">(optional)</span>
+          </Label>
+          <Input id="dw-role" value={role} maxLength={80} onChange={(e) => setRole(e.target.value)} placeholder="SAP FI lead" className="rounded-xl h-11 bg-background/60" autoComplete="organization-title" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="dw-phone" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Phone / WhatsApp <span className="text-muted-foreground/60 normal-case">(optional)</span>
+          </Label>
+          <Input id="dw-phone" type="tel" value={phone} maxLength={30} aria-invalid={phoneBad} onChange={(e) => setPhone(e.target.value)} placeholder="+966 5x xxx xxxx" className="rounded-xl h-11 bg-background/60" autoComplete="tel" style={phoneBad ? { borderColor: 'hsl(var(--destructive))' } : undefined} />
+          {phoneBad && <p className="text-[11px] text-destructive">Use digits, spaces and an optional + only.</p>}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="dw-sap" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            SAP area / module <span className="text-muted-foreground/60 normal-case">(optional)</span>
+          </Label>
+          <Input id="dw-sap" value={sapArea} maxLength={120} onChange={(e) => setSapArea(e.target.value)} placeholder="FI-AA, MM, BTP…" className="rounded-xl h-11 bg-background/60" />
+        </div>
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="dw-notes" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
