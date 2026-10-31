@@ -405,7 +405,8 @@ BEGIN
     RAISE EXCEPTION 'ame_link' USING ERRCODE = '22023';
   END IF;
   _all := concat_ws(' ', _subject, _summary, _body, _action, _subject_ar, _summary_ar, _body_ar, _action_ar);
-  IF _all ~* '(https?:|www\.|mailto:|javascript:|data:)' AND regexp_replace(_all, 'https://(www\.)?aisupport360\.com(/[^\s)\]]*)?', '', 'gi') ~* '(https?:|www\.|mailto:|javascript:|data:)' THEN
+  -- Web addresses in the text must be our own site (mirrors hasOutsideLink in src/lib/adminDirectEmail.ts).
+  IF regexp_replace(_all, '(https?://)?(www\.)?aisupport360\.com(?![A-Za-z0-9-]|\.[A-Za-z0-9])', '', 'gi') ~* '(https?://|www\.)' THEN
     RAISE EXCEPTION 'ade_outside_link' USING ERRCODE = '22023';
   END IF;
   IF public.bm_has_secret(_all) THEN RAISE EXCEPTION 'ame_secret' USING ERRCODE = '22023'; END IF;
