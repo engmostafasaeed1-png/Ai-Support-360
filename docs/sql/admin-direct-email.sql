@@ -1,7 +1,7 @@
 -- Direct admin e-mail: an administrator e-mails one person, the selected people, or everyone in the current Users
 -- filter, from Admin › Users ("Send e-mail"). Extends docs/sql/admin-message-email.sql (applied as migration 0112):
 -- the SAME queue (admin_message_emails), the SAME worker (admin-message-email function), the SAME modern layout
--- (_shared/adminMessageEmail.ts) and the same sender / Reply-To settings. Prepared for the owner's review. NOT APPLIED.
+-- (_shared/adminMessageEmail.ts) and the same sender / Reply-To settings. Applied as migration 0113 (2026-10-31).
 --
 -- How it works
 --   * admin_direct_email_preview (confirmation step) and admin_direct_email_send take the person ids (at most 1000),
