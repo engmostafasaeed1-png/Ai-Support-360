@@ -399,3 +399,201 @@ export function finishFor(result: { sent: boolean; reason?: string }): { status:
   return { status: 'skipped', reason: result.reason === 'notifications_disabled' ? 'email_notifications_off' : result.reason ?? 'skipped' };
 }
 
+// ------------------------------------------------------------------ e-mail layout (createElement injected)
+// Gmail / Outlook-safe: tables for structure, inline styles only, no <style>, no web fonts, no scripts, no tracking
+// pixels; the one image (logo) has alt text and fixed size. Single fluid column (max 600px) so phones stack naturally.
+// Colours are mid-tone on light surfaces, so clients that darken e-mails still keep contrast.
+
+// deno-lint-ignore no-explicit-any
+type H = (type: string, props: Record<string, unknown> | null, ...children: any[]) => unknown;
+
+/**
+ * The only footer lines an admin e-mail may carry (service information, never promotion: app e-mails must stay about
+ * this one message). Tested in src/test/adminMessageEmail.test.tsx.
+ */
+export const FOOTER_PARTS = ['helpLine', 'replyNote', 'why', 'prefs', 'company', 'site'] as const;
+
+const F = 'Arial,Helvetica,sans-serif';
+const NAVY = '#072B5A';
+const INK = '#1B2559';
+const LINE = '#E6EAF2';
+const st = {
+  body: { margin: 0, padding: 0, backgroundColor: '#ffffff', fontFamily: F, color: '#0f172a', WebkitTextSizeAdjust: '100%' },
+  outer: { backgroundColor: '#F1F4F9' },
+  outerTd: { padding: '28px 12px' },
+  card: { width: '100%', maxWidth: '600px', backgroundColor: '#ffffff', border: `1px solid ${LINE}`, borderRadius: '18px', overflow: 'hidden' },
+  head: { backgroundColor: NAVY, padding: '22px 28px', borderRadius: '18px 18px 0 0' },
+  bar: { height: '4px', fontSize: '0', lineHeight: '0', backgroundColor: '#3B82F6' },
+  main: { padding: '30px 28px 6px' },
+  chip: (c: MessageCategory) => ({ display: 'inline-block', padding: '5px 12px', borderRadius: '999px', fontSize: '12px', lineHeight: '16px', fontWeight: 'bold', letterSpacing: '0.03em', color: CATEGORY_EMAIL_COLOURS[c].fg, backgroundColor: CATEGORY_EMAIL_COLOURS[c].bg }),
+  h1: { fontSize: '24px', lineHeight: '32px', fontWeight: 'bold', color: INK, margin: '16px 0 8px' },
+  summary: { fontSize: '16px', lineHeight: '25px', color: '#475569', margin: '0 0 4px' },
+  divider: { height: '1px', lineHeight: '1px', fontSize: '1px', backgroundColor: LINE, margin: '20px 0' },
+  p: { fontSize: '15px', lineHeight: '25px', color: '#334155', margin: '0 0 14px' },
+  list: (dir: string) => ({ fontSize: '15px', lineHeight: '24px', color: '#334155', margin: '0 0 14px', padding: '0', [dir === 'rtl' ? 'paddingRight' : 'paddingLeft']: '22px' }),
+  li: { margin: '0 0 6px' },
+  a: { color: '#2563EB', textDecoration: 'underline' },
+  ctx: { margin: '20px 0', padding: '16px 18px', borderRadius: '14px', backgroundColor: '#F8FAFC', border: `1px solid ${LINE}` },
+  ctxKind: { fontSize: '11px', lineHeight: '16px', color: '#64748b', margin: '0 0 4px', textTransform: 'uppercase' as const, letterSpacing: '0.06em', fontWeight: 'bold' },
+  ctxLabel: { fontSize: '15px', lineHeight: '22px', fontWeight: 'bold', color: INK, margin: '0' },
+  ctxMeta: { fontSize: '13px', lineHeight: '20px', color: '#475569', margin: '6px 0 0' },
+  todo: { margin: '20px 0', padding: '16px 18px', borderRadius: '14px', backgroundColor: '#FFFBEB', border: '1px solid #FDE68A' },
+  todoH: { fontSize: '12px', lineHeight: '18px', fontWeight: 'bold', color: '#92400E', margin: '0 0 6px', textTransform: 'uppercase' as const, letterSpacing: '0.05em' },
+  todoP: { fontSize: '15px', lineHeight: '23px', color: '#451A03', margin: '0' },
+  btnTd: { backgroundColor: INK, borderRadius: '12px' },
+  btn: { display: 'inline-block', padding: '15px 30px', fontSize: '16px', lineHeight: '20px', fontWeight: 'bold', color: '#ffffff', textDecoration: 'none', borderRadius: '12px', fontFamily: F },
+  second: { fontSize: '14px', lineHeight: '20px', margin: '14px 0 0' },
+  sentTd: { padding: '22px 28px 26px' },
+  sent: { fontSize: '12px', lineHeight: '18px', color: '#64748b', margin: '0', borderTop: `1px solid ${LINE}`, paddingTop: '16px' },
+  foot: { backgroundColor: '#F7F9FC', padding: '22px 28px 24px', borderTop: `1px solid ${LINE}`, borderRadius: '0 0 18px 18px' },
+  footH: { fontSize: '13px', lineHeight: '20px', color: '#334155', margin: '0 0 8px', fontWeight: 'bold' },
+  small: { fontSize: '12px', lineHeight: '19px', color: '#64748b', margin: '0 0 6px' },
+  brand: { fontSize: '12px', lineHeight: '18px', color: '#94a3b8', margin: '12px 0 0' },
+  test: { fontSize: '12px', fontWeight: 'bold', color: '#92400E', backgroundColor: '#FEF3C7', padding: '6px 10px', borderRadius: '8px', margin: '0 0 14px', display: 'inline-block' },
+  card2: { margin: '0 0 12px', padding: '16px 18px', borderRadius: '14px', border: `1px solid ${LINE}`, backgroundColor: '#ffffff' },
+  badge: (b: DecisionBadge, dir: string) => ({ display: 'inline-block', [dir === 'rtl' ? 'marginRight' : 'marginLeft']: '6px', padding: '4px 11px', borderRadius: '999px', fontSize: '12px', lineHeight: '16px', fontWeight: 'bold', color: DECISION_BADGE_COLOURS[b].fg, backgroundColor: DECISION_BADGE_COLOURS[b].bg, border: `1px solid ${DECISION_BADGE_COLOURS[b].fg}33` }),
+  quote: (dir: string) => ({ margin: '18px 0', padding: '16px 18px', borderRadius: '14px', backgroundColor: '#EFF6FF', [dir === 'rtl' ? 'borderRight' : 'borderLeft']: '4px solid #3B82F6' }),
+  quoteH: { fontSize: '11px', lineHeight: '16px', fontWeight: 'bold', color: '#1D4ED8', margin: '0 0 6px', textTransform: 'uppercase' as const, letterSpacing: '0.06em' },
+  next: { margin: '18px 0', padding: '16px 18px', borderRadius: '14px', backgroundColor: '#F8FAFC', border: '1px solid #CBD5E1' },
+};
+
+/** Layout table (role="presentation" so screen readers skip the structure). */
+const table = (h: H, props: Record<string, unknown>, ...rows: unknown[]) =>
+  h('table', { role: 'presentation', cellPadding: 0, cellSpacing: 0, border: 0, width: '100%', ...props }, h('tbody', null, ...rows));
+const row = (h: H, td: Record<string, unknown>, ...children: unknown[]) => h('tr', null, h('td', td, ...children));
+
+function inlines(h: H, parts: Inline[]) {
+  return parts.map((p, i) => p.href
+    ? h('a', { key: i, href: p.href, style: st.a }, p.bold ? h('strong', null, p.text) : p.text)
+    : p.bold ? h('strong', { key: i }, p.text) : p.text);
+}
+export function renderBlocks(h: H, blocks: Block[], dir: 'ltr' | 'rtl' = 'ltr') {
+  return blocks.map((b, i) => b.t === 'p'
+    ? h('p', { key: i, style: st.p }, ...b.lines.flatMap((l, j) => (j ? [h('br', { key: `b${j}` }), ...inlines(h, l)] : inlines(h, l))))
+    : h(b.t, { key: i, style: st.list(dir) }, ...b.items.map((it, j) => h('li', { key: j, style: st.li }, ...inlines(h, it)))));
+}
+
+function contextCard(h: H, v: MessageView, c: (typeof MESSAGE_COPY)['en']) {
+  if (!v.context) return null;
+  const k = c.contextKinds[v.context.kind] ?? c.contextKinds.other;
+  const meta = [v.context.ref, v.context.status ? `${c.status}: ${v.context.status}` : ''].filter(Boolean).join(' · ');
+  return h('div', { style: st.ctx },
+    h('p', { style: st.ctxKind }, k),
+    h('p', { style: st.ctxLabel }, v.context.label),
+    meta ? h('p', { style: st.ctxMeta }, meta) : null);
+}
+function todoBox(h: H, v: MessageView, c: (typeof MESSAGE_COPY)['en'], lang: Lang) {
+  if (!v.action) return null;
+  return h('div', { style: st.todo },
+    h('p', { style: st.todoH }, c.todo),
+    v.action.label ? h('p', { style: st.todoP }, v.action.label) : null,
+    v.action.deadline ? h('p', { style: { ...st.todoP, marginTop: '6px', fontWeight: 'bold' } }, `${c.deadline}: ${formatDeadline(v.action.deadline, lang)}`) : null);
+}
+
+function decisionParts(h: H, v: MessageView, lang: Lang, dir: 'ltr' | 'rtl') {
+  if (!v.decision) return [];
+  const c = DECISION_COPY[lang];
+  const d = v.decision;
+  return [
+    d.comment ? h('div', { style: st.quote(dir) },
+      h('p', { style: st.quoteH }, c.quote),
+      // Plain text only (no links), line breaks kept.
+      h('p', { style: { ...st.p, margin: 0, color: '#1e293b' } }, ...d.comment.split('\n').flatMap((l, i) => (i ? [h('br', { key: `q${i}` }), l] : [l])))) : null,
+    d.steps.length ? h('div', { style: st.next },
+      h('p', { style: { ...st.todoH, color: INK } }, c.next),
+      h('ol', { style: { ...st.list(dir), margin: '0' } }, ...d.steps.map((x, i) => h('li', { key: i, style: st.li }, x)))) : null,
+  ];
+}
+
+/** One prominent rounded button; the coloured cell keeps it visible in Outlook, which ignores padding on links. */
+function button(h: H, href: string, label: string, align: string) {
+  return table(h, { width: 'auto', align, style: { margin: '26px 0 0' } },
+    row(h, { bgcolor: INK, style: st.btnTd }, h('a', { href, style: st.btn }, label)));
+}
+
+export function renderAdminMessage(h: H, d: AdminMessageData) {
+  const lang: Lang = d.lang === 'ar' ? 'ar' : 'en';
+  const c = MESSAGE_COPY[lang];
+  const dir = lang === 'ar' ? 'rtl' : 'ltr';
+  const align = lang === 'ar' ? 'right' : 'left';
+  const items = d.items ?? [];
+  const one = !d.digest ? items[0] : undefined;
+  const preheader = d.digest ? c.digest(items.length) : (one?.summary || one?.title || c.heading);
+  const site = /^(https:\/\/[^/]+)/.exec(d.inboxUrl)?.[1] ?? 'https://www.aisupport360.com';
+  const help = d.helpHref.replace(/^mailto:/, '');
+  const content = one
+    ? [
+        h('p', { style: { margin: 0 } },
+          h('span', { style: st.chip(one.category) }, c.categories[one.category]),
+          one.decision ? h('span', { style: st.badge(one.decision.badge, dir) }, DECISION_COPY[lang].badges[one.decision.badge]) : null),
+        h('h1', { style: st.h1 }, one.title),
+        one.summary ? h('p', { style: st.summary }, one.summary) : null,
+        h('div', { style: st.divider }, '\u00a0'),
+        ...renderBlocks(h, one.blocks, dir),
+        ...decisionParts(h, one, lang, dir),
+        contextCard(h, one, c),
+        todoBox(h, one, c, lang),
+        button(h, one.url, one.decision?.cta ?? c.cta, align),
+        h('p', { style: st.second }, h('a', { href: d.inboxUrl, style: st.a }, c.allMessages)),
+      ]
+    : [
+        h('h1', { style: { ...st.h1, marginTop: 0 } }, c.digest(items.length)),
+        h('div', { style: st.divider }, '\u00a0'),
+        ...items.map((it, i) => h('div', { key: i, style: st.card2 },
+          h('span', { style: st.chip(it.category) }, c.categories[it.category]),
+          it.decision ? h('span', { style: st.badge(it.decision.badge, dir) }, DECISION_COPY[lang].badges[it.decision.badge]) : null,
+          h('p', { style: { ...st.ctxLabel, margin: '10px 0 4px' } }, it.title),
+          h('p', { style: { ...st.p, margin: '0 0 8px' } }, it.summary || oneLine(plainText(it.blocks), 220)),
+          it.action?.deadline ? h('p', { style: { ...st.ctxMeta, margin: '0 0 8px', fontWeight: 'bold' } }, `${c.deadline}: ${formatDeadline(it.action.deadline, lang)}`) : null,
+          h('a', { href: it.url, style: st.a }, c.open))),
+        button(h, d.url, c.cta, align),
+      ];
+  const sentAt = formatSentAt((one ?? items[items.length - 1])?.createdAt, lang);
+
+  return h('html', { lang, dir },
+    h('head', null,
+      h('meta', { charSet: 'utf-8' }),
+      h('meta', { name: 'viewport', content: 'width=device-width, initial-scale=1' }),
+      h('meta', { name: 'color-scheme', content: 'light dark' }),
+      h('meta', { name: 'supported-color-schemes', content: 'light dark' }),
+      h('title', null, one?.title || c.heading)),
+    h('body', { style: st.body },
+      h('div', { style: { display: 'none', maxHeight: 0, overflow: 'hidden', opacity: 0, fontSize: '1px', lineHeight: '1px' } }, preheader),
+      table(h, { bgcolor: '#F1F4F9', style: st.outer },
+        row(h, { align: 'center', style: st.outerTd },
+          table(h, { width: '600', align: 'center', bgcolor: '#ffffff', style: { ...st.card, direction: dir, textAlign: align } },
+            // Brand header: logo on the brand navy, then a navy-to-blue gradient bar (plain blue where gradients are unsupported).
+            row(h, { bgcolor: NAVY, style: { ...st.head, textAlign: align } },
+              h('img', { src: MESSAGE_LOGO, width: 160, height: 36, alt: 'AI Support 360', style: { display: 'inline-block', border: '0', outline: 'none', width: '160px', height: '36px', maxWidth: '100%' } })),
+            row(h, { bgcolor: '#3B82F6', height: 4, style: { ...st.bar, backgroundImage: `linear-gradient(${dir === 'rtl' ? '270deg' : '90deg'},${NAVY},#3B82F6)` } }, '\u00a0'),
+            row(h, { style: { ...st.main, fontFamily: F } },
+              d.test ? h('p', { style: st.test }, c.test) : null,
+              ...content),
+            row(h, { style: st.sentTd }, h('p', { style: st.sent }, [c.sentBy, sentAt].filter(Boolean).join(' · '))),
+            // Service footer only (help, why you got this, settings, who we are): no promotion in app e-mails.
+            row(h, { bgcolor: '#F7F9FC', style: st.foot, 'data-part': 'footer' },
+              h('p', { style: st.footH }, `${c.helpLine} `, h('a', { href: d.helpHref, style: st.a }, help)),
+              h('p', { style: st.small }, c.replyNote),
+              h('p', { style: st.small }, c.why, ' ', h('a', { href: d.prefsUrl, style: st.a }, c.prefs)),
+              h('p', { style: st.brand }, `${c.company} · `, h('a', { href: site, style: { ...st.a, color: '#94a3b8' } }, c.site))))))));
+}
+
+/** Plain-text alternative (same content, same order; the footer stays short). */
+export function adminMessageText(d: AdminMessageData): string {
+  const lang: Lang = d.lang === 'ar' ? 'ar' : 'en';
+  const c = MESSAGE_COPY[lang];
+  const part = (v: MessageView) => [
+    `[${c.categories[v.category]}] ${v.title}`,
+    v.summary,
+    plainText(v.blocks),
+    v.decision ? [`${DECISION_COPY[lang].badges[v.decision.badge]}`, v.decision.comment ? `${DECISION_COPY[lang].quote}:\n"${v.decision.comment}"` : '',
+      `${DECISION_COPY[lang].next}:\n${v.decision.steps.map((x, i) => `${i + 1}. ${x}`).join('\n')}`].filter(Boolean).join('\n\n') : '',
+    v.context ? `${c.contextKinds[v.context.kind] ?? c.contextKinds.other}: ${v.context.label}${v.context.ref ? ` (${v.context.ref})` : ''}${v.context.status ? ` — ${c.status}: ${v.context.status}` : ''}` : '',
+    v.action ? `${c.todo}: ${v.action.label}${v.action.deadline ? ` — ${c.deadline}: ${formatDeadline(v.action.deadline, lang)}` : ''}` : '',
+    d.digest ? v.url : '',
+  ].filter(Boolean).join('\n\n');
+  const head = d.test ? `${c.test}\n\n` : '';
+  const body = d.digest ? `${c.digest(d.items.length)}\n\n${d.items.map(part).join('\n\n---\n\n')}` : (d.items[0] ? part(d.items[0]) : c.heading);
+  const help = d.helpHref.replace(/^mailto:/, '');
+  return `${head}${body}\n\n${c.cta}: ${d.url}\n\n${c.sentBy}\n\n---\n${c.helpLine} ${help}\n${c.replyNote}\n${c.prefs}: ${d.prefsUrl}\n${c.company} · ${c.site}\n`;
+}
