@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
@@ -19,6 +21,9 @@ import AdminEmailChoice, { DEFAULT_ADMIN_EMAIL, type AdminEmailValue } from './A
 import MessageCard from '@/components/messages/MessageCard';
 import { canUntickCategory, fillTemplateVars, firstNameOf, LIMITS, TEMPLATE_VARS } from '@/lib/adminMessageEmail';
 import {
+  arabicIncomplete, DEFAULT_DIRECT_CHANNEL, DIRECT_CHANNELS, hasOutsideLink, personalise, type DirectChannel, type DirectContent, type DirectOptions,
+} from '@/lib/adminDirectEmail';
+import {
   buildMessageView, MESSAGE_CATEGORIES, MESSAGE_COPY, renderAdminMessage, safeHref, type Lang, type MessageCategory, type MessageContext,
 } from '../../../supabase/functions/_shared/adminMessageEmail';
 
@@ -28,6 +33,15 @@ type CtxKind = 'none' | 'ticket' | 'agreement' | 'invoice' | 'other';
 
 export interface ComposeRecipient { id: string; name: string; email?: string }
 export interface ComposeFallback { (v: { title: string; body: string; link: string }, emailHeader?: string): Promise<unknown> | void }
+/** Direct e-mail to one or many people (Admin › Users › "Send e-mail"): channel choice, optional Arabic version, and the
+ *  parent shows the confirmation step (admin_direct_email_preview) instead of this box's own confirm. */
+export interface ComposeDirect {
+  count: number;
+  /** Name used for {first_name} in the preview (the database fills each person's own name). */
+  sampleName?: string;
+  onReview: (content: DirectContent, opts: DirectOptions) => void;
+  onTest: (content: DirectContent, opts: DirectOptions) => Promise<void>;
+}
 
 /**
  * The one admin compose box for writing to one person: category, subject, summary, rich-text-lite body (bold, bullets,
@@ -35,8 +49,8 @@ export interface ComposeFallback { (v: { title: string; body: string; link: stri
  * "Also send by e-mail", live preview (in-app card / e-mail, EN/AR, light/dark), send confirmation and "Send test to me".
  * Sends through admin_message_send (docs/sql/admin-message-email.sql); before that update it falls back to the plain notice.
  */
-export default function AdminMessageComposer({ recipient, onSent, onCancel, fallbackSend }: {
-  recipient: ComposeRecipient; onSent: () => void; onCancel: () => void; fallbackSend?: ComposeFallback;
+export default function AdminMessageComposer({ recipient, onSent, onCancel, fallbackSend, direct }: {
+  recipient: ComposeRecipient; onSent: () => void; onCancel: () => void; fallbackSend?: ComposeFallback; direct?: ComposeDirect;
 }) {
   const { t } = useTranslation();
   const [category, setCategory] = useState<MessageCategory>('notice');
@@ -57,12 +71,23 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState<'send' | 'test' | 'tpl' | null>(null);
   const [html, setHtml] = useState('');
+  const [subjectAr, setSubjectAr] = useState('');
+  const [summaryAr, setSummaryAr] = useState('');
+  const [bodyAr, setBodyAr] = useState('');
+  const [actionAr, setActionAr] = useState('');
+  const [opts, setOpts] = useState<DirectOptions>({ channel: DEFAULT_DIRECT_CHANNEL, important: false, includeTests: false });
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const templates = useTemplates(true);
   const { saveTemplate } = useBulkActions();
 
-  const vars = { first_name: firstNameOf(recipient.name), ticket: ctx.value?.ref || ctx.value?.label || '', link: link ? `${SITE}${link}` : '' };
-  const fill = (s: string) => fillTemplateVars(s, vars);
+  const vars = { first_name: firstNameOf(direct ? direct.sampleName : recipient.name), ticket: ctx.value?.ref || ctx.value?.label || '', link: link ? `${SITE}${link}` : '' };
+  // Direct sends keep {first_name} in the request (the database fills each person's name); the preview shows a sample.
+  const fill = (s: string) => (direct ? personalise(s, vars.first_name, link && PATH_RE.test(link) ? link : null) : fillTemplateVars(s, vars));
+  // Arabic preview / e-mail for Arabic readers uses the Arabic version when the admin wrote one (direct sends).
+  const useAr = !!direct && lang === 'ar' && !!subjectAr.trim() && !!bodyAr.trim();
+  const shown = useAr ? { subject: subjectAr, summary: summaryAr || summary, body: bodyAr, action: actionAr || action } : { subject, summary, body, action };
+  const outsideLink = !!direct && hasOutsideLink([subject, summary, body, action, subjectAr, summaryAr, bodyAr, actionAr].join(' '));
+  const arBad = !!direct && arabicIncomplete(subjectAr, bodyAr);
   const linkBad = !!link && !PATH_RE.test(link);
   const today = new Date().toISOString().slice(0, 10);
   const deadlineBad = !!deadline && deadline < today;
@@ -87,10 +112,10 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
   }, [ctxKind, ctxRef, ctxLabel, ctxStatus, recipient.id]);
 
   const view = useMemo(() => buildMessageView({
-    title: fill(subject) || t('amc.subject_placeholder', 'Subject'), body: fill(body) || '…', link: link && !linkBad ? link : '/notifications', type: 'admin_message',
+    title: fill(shown.subject) || t('amc.subject_placeholder', 'Subject'), body: fill(shown.body) || '…', link: link && !linkBad ? link : '/notifications', type: 'admin_message',
     created_at: new Date().toISOString(),
-    meta: { v: 1, category, summary: fill(summary), context: ctx.value, action_label: fill(action), deadline: deadline || undefined },
-  }, SITE), [subject, body, link, linkBad, category, summary, ctx.value, action, deadline, recipient.name]); // eslint-disable-line react-hooks/exhaustive-deps
+    meta: { v: 1, category, summary: fill(shown.summary), context: ctx.value, action_label: fill(shown.action), deadline: deadline || undefined },
+  }, SITE), [shown.subject, shown.body, link, linkBad, category, shown.summary, ctx.value, shown.action, deadline, recipient.name, direct?.sampleName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // E-mail preview: the real e-mail layout, rendered in the browser into a sandboxed frame.
   useEffect(() => {
@@ -124,6 +149,13 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
   function applyTemplate(id: string) {
     const tpl = templates.data?.find((x) => x.id === id);
     if (!tpl) return;
+    if (direct) {
+      // Both languages: each person gets their own.
+      setSubject(tpl.subject_en ?? ''); setBody(tpl.body_en ?? '');
+      setSubjectAr(tpl.subject_ar ?? ''); setBodyAr(tpl.body_ar ?? '');
+      if (tpl.link_url?.startsWith('/')) setLink(tpl.link_url);
+      return;
+    }
     const ar = lang === 'ar' && tpl.body_ar;
     setSubject((ar ? tpl.subject_ar : tpl.subject_en) ?? '');
     setBody((ar ? tpl.body_ar : tpl.body_en) ?? '');
@@ -135,6 +167,17 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
     deadline: deadline || null, email: sendEmail, important: email.important, tests: email.includeTests, test,
     context: ctxKind === 'none' ? null : { kind: ctxKind, ref: ctxRef.trim(), label: ctxLabel.trim(), status: ctxStatus.trim() },
   });
+
+  const directContent = (): DirectContent => ({
+    category, subject: subject.trim(), summary: summary.trim(), body: body.trim(), link: link.trim(), action_label: action.trim(), deadline: deadline || null,
+    subject_ar: subjectAr.trim(), summary_ar: summaryAr.trim(), body_ar: bodyAr.trim(), action_label_ar: actionAr.trim(),
+    context: ctxKind === 'other' ? { kind: 'other', label: ctxLabel.trim(), ref: ctxRef.trim(), status: ctxStatus.trim() } : null,
+  });
+  async function testDirect() {
+    if (!direct) return;
+    setBusy('test');
+    try { await direct.onTest(directContent(), opts); } finally { setBusy(null); }
+  }
 
   async function send(test: boolean) {
     setBusy(test ? 'test' : 'send');
@@ -168,6 +211,7 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
     !subject.trim() && 'type_message_first', !body.trim() && 'type_message_first',
     (subject.length > LIMITS.subject || summary.length > LIMITS.summary || body.length > LIMITS.body || action.length > LIMITS.action) && 'invalid_value',
     linkBad && 'invalid_value', deadlineBad && 'invalid_value', !!ctx.error && ctxKind !== 'other' && 'invalid_value',
+    outsideLink && 'invalid_value', arBad && 'invalid_value', subjectAr.length > LIMITS.subject || bodyAr.length > LIMITS.body ? 'invalid_value' : false,
   ] as const;
   const c = MESSAGE_COPY.en;
 
@@ -177,6 +221,7 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="text-muted-foreground">{t('amc.to', 'To')}</span>
           <Badge variant="secondary" className="gap-1 rounded-full py-1 font-normal">{recipient.name || recipient.email}{recipient.email && recipient.name ? <span className="text-muted-foreground">· {recipient.email}</span> : null}</Badge>
+          {direct && direct.count > 1 && <span className="text-xs text-muted-foreground">{t('ade.one_each', 'Each person gets their own message')}</span>}
           {!!templates.data?.length && (
             <Select onValueChange={applyTemplate}>
               <SelectTrigger className="ms-auto h-8 w-48 text-xs" aria-label={t('amc.template', 'Use a template')}><SelectValue placeholder={t('amc.template', 'Use a template')} /></SelectTrigger>
@@ -212,8 +257,26 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
             </div>
           </div>
           <Textarea id="amc-body" ref={bodyRef} rows={8} value={body} maxLength={LIMITS.body} onChange={(e) => setBody(e.target.value)} />
-          <p className="text-[11px] text-muted-foreground">{t('amc.body_tip', 'Short paragraphs; start lines with "- " for bullets. Variables: {{vars}}.', { vars: TEMPLATE_VARS.map((v) => `{${v}}`).join(' ') })}</p>
+          <p className="text-[11px] text-muted-foreground">{t('amc.body_tip', 'Short paragraphs; start lines with "- " for bullets. Variables: {{vars}}.', { vars: (direct ? ['first_name', 'link'] : TEMPLATE_VARS).map((v) => `{${v}}`).join(' ') })}</p>
+          {outsideLink && <p className="text-[11px] text-destructive" role="alert">{t('ade.outside_link', 'Web addresses in the message must be pages on aisupport360.com.')}</p>}
         </div>
+        {direct && (
+          <details className="rounded-xl border border-border/60 p-3" open={!!subjectAr || !!bodyAr}>
+            <summary className="cursor-pointer text-sm font-medium">{t('ade.arabic', 'Arabic version (optional)')}</summary>
+            <p className="mt-1 text-[11px] text-muted-foreground">{t('ade.arabic_hint', 'People who use the portal in Arabic get this text; everyone else gets the English text.')}</p>
+            <div className="mt-2 space-y-2" dir="rtl" lang="ar">
+              <div className="space-y-1"><div className="flex justify-between"><Label htmlFor="ade-subj-ar">{t('amc.subject', 'Subject')}</Label>{count(subjectAr.length, LIMITS.subject, LIMITS.subjectTip)}</div>
+                <Input id="ade-subj-ar" value={subjectAr} maxLength={LIMITS.subject} onChange={(e) => setSubjectAr(e.target.value)} aria-invalid={arBad} /></div>
+              <div className="space-y-1"><Label htmlFor="ade-sum-ar">{t('amc.summary', 'One-line summary (optional)')}</Label>
+                <Input id="ade-sum-ar" value={summaryAr} maxLength={LIMITS.summary} onChange={(e) => setSummaryAr(e.target.value)} /></div>
+              <div className="space-y-1"><div className="flex justify-between"><Label htmlFor="ade-body-ar">{t('amc.body', 'Message')}</Label>{count(bodyAr.length, LIMITS.body, LIMITS.bodyTip)}</div>
+                <Textarea id="ade-body-ar" rows={6} value={bodyAr} maxLength={LIMITS.body} onChange={(e) => setBodyAr(e.target.value)} aria-invalid={arBad} /></div>
+              <div className="space-y-1"><Label htmlFor="ade-act-ar">{t('amc.todo', 'What they need to do (optional)')}</Label>
+                <Input id="ade-act-ar" value={actionAr} maxLength={LIMITS.action} onChange={(e) => setActionAr(e.target.value)} /></div>
+            </div>
+            {arBad && <p className="mt-1 text-[11px] text-destructive" role="alert">{t('ade.arabic_incomplete', 'Write both the Arabic subject and message, or leave both empty.')}</p>}
+          </details>
+        )}
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
             <Label htmlFor="amc-link">{t('amc.page', 'Button opens this page')}</Label>
@@ -235,7 +298,7 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
             <Select value={ctxKind} onValueChange={(v) => setCtxKind(v as CtxKind)}>
               <SelectTrigger id="amc-ctx"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(['none', 'ticket', 'agreement', 'invoice', 'other'] as const).map((k) => <SelectItem key={k} value={k}>{t(`amc.ctx_${k}`, k === 'none' ? 'None' : c.contextKinds[k])}</SelectItem>)}
+                {(direct ? (['none', 'other'] as const) : (['none', 'ticket', 'agreement', 'invoice', 'other'] as const)).map((k) => <SelectItem key={k} value={k}>{t(`amc.ctx_${k}`, k === 'none' ? 'None' : c.contextKinds[k])}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -250,12 +313,12 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
             </div>
           )}
         </div>
-        <AdminEmailChoice type="admin_message" locked={emailLocked} value={email} onChange={setEmail} />
+        {direct ? <DirectChannelChoice value={opts} onChange={setOpts} /> : <AdminEmailChoice type="admin_message" locked={emailLocked} value={email} onChange={setEmail} />}
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border pt-3">
           <Button type="button" variant="ghost" size="sm" onClick={onCancel}><X className="me-1 h-4 w-4" />{t('common.cancel', 'Cancel')}</Button>
           <Button type="button" variant="outline" size="sm" busy={busy === 'tpl'} reason={[!subject.trim() && 'type_message_first', !body.trim() && 'type_message_first']} onClick={saveAsTemplate}><Save className="me-1 h-4 w-4" />{t('amc.save_tpl', 'Save as template')}</Button>
-          <Button type="button" variant="outline" size="sm" busy={busy === 'test'} reason={[...blockers]} onClick={() => send(true)}><FlaskConical className="me-1 h-4 w-4" />{t('amc.test', 'Send test to me')}</Button>
-          <Button type="button" size="sm" busy={busy === 'send'} reason={[...blockers]} hint="inline" onClick={() => setConfirm(true)}><Send className="me-1 h-4 w-4" />{t('um.send', 'Send')}</Button>
+          <Button type="button" variant="outline" size="sm" busy={busy === 'test'} reason={[...blockers]} onClick={() => (direct ? void testDirect() : send(true))}><FlaskConical className="me-1 h-4 w-4" />{t('amc.test', 'Send test to me')}</Button>
+          <Button type="button" size="sm" busy={busy === 'send'} reason={[...blockers]} hint="inline" onClick={() => (direct ? direct.onReview(directContent(), opts) : setConfirm(true))}><Send className="me-1 h-4 w-4" />{direct ? t('ade.review', 'Review recipients') : t('um.send', 'Send')}</Button>
         </div>
       </div>
 
@@ -280,7 +343,7 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
           </TabsContent>
           <TabsContent value="email" className="mt-3">
             <iframe title={t('amc.preview_email', 'E-mail')} sandbox="" srcDoc={html} className={cn('h-[640px] w-full rounded-2xl border border-border bg-card', dark && '[filter:invert(0.9)_hue-rotate(180deg)]')} />
-            {!sendEmail && <p className="mt-1 text-[11px] text-muted-foreground">{t('amc.no_email_note', 'E-mail is unticked: this message is shown in-app only.')}</p>}
+            {(direct ? opts.channel === 'in_app' : !sendEmail) && <p className="mt-1 text-[11px] text-muted-foreground">{t('amc.no_email_note', 'E-mail is unticked: this message is shown in-app only.')}</p>}
           </TabsContent>
         </Tabs>
       </section>
@@ -302,5 +365,37 @@ export default function AdminMessageComposer({ recipient, onSent, onCancel, fall
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+/** Channel for a direct send: E-mail only / In-app + e-mail (default) / In-app only, plus "Important" and "Include tests". */
+function DirectChannelChoice({ value, onChange }: { value: DirectOptions; onChange: (v: DirectOptions) => void }) {
+  const { t } = useTranslation();
+  const label: Record<DirectChannel, string> = {
+    both: t('ade.ch_both', 'In-app + e-mail'), email: t('ade.ch_email', 'E-mail only'), in_app: t('ade.ch_in_app', 'In-app only'),
+  };
+  return (
+    <fieldset className="space-y-2 rounded-xl border border-border/60 bg-muted/30 p-3 text-xs">
+      <legend className="px-1 text-xs font-medium">{t('ade.channel', 'Send as')}</legend>
+      <RadioGroup value={value.channel} onValueChange={(c) => onChange({ ...value, channel: c as DirectChannel })} className="flex flex-wrap gap-3">
+        {DIRECT_CHANNELS.map((c) => (
+          <div key={c} className="flex items-center gap-1.5">
+            <RadioGroupItem id={`ade-ch-${c}`} value={c} />
+            <Label htmlFor={`ade-ch-${c}`} className="text-xs font-normal">{label[c]}{c === DEFAULT_DIRECT_CHANNEL && <span className="text-muted-foreground"> · {t('ade.default', 'default')}</span>}</Label>
+          </div>
+        ))}
+      </RadioGroup>
+      {value.channel !== 'in_app' && (
+        <div className="flex items-center gap-2">
+          <Checkbox id="ade-important" checked={value.important} onCheckedChange={(c) => onChange({ ...value, important: c === true })} />
+          <Label htmlFor="ade-important" className="text-xs">{t('ame.important', 'Important: send even if they paused quiet notifications')}</Label>
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <Checkbox id="ade-tests" checked={value.includeTests} onCheckedChange={(c) => onChange({ ...value, includeTests: c === true })} />
+        <Label htmlFor="ade-tests" className="text-xs">{t('ame.include_tests', 'Include test accounts')}</Label>
+      </div>
+      <p className="text-muted-foreground">{t('ade.one_by_one', 'E-mails go one by one, one per person (never a shared list), from the AI Support 360 sender with replies to info@aisupport360.com.')}</p>
+    </fieldset>
   );
 }
