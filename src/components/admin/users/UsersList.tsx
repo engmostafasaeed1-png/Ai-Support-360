@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import ClientViewHint from '@/components/admin/ClientViewHint';
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowDown, ArrowUp, AtSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,11 +13,13 @@ import { STATUS_VARIANT, fmtDate, roleLabel, statusLabel, verificationLabel } fr
 
 const SORTABLE: Partial<Record<Column, string>> = { created_at: 'created_at', last_active_at: 'last_active_at', completion: 'completion', open_tickets: 'open_tickets', status: 'status' };
 
-export default function UsersList({ rows, loading, columns, selected, focus, sort, dir, onSort, onToggle, onTogglePage, onOpen, onFocus, invited }: {
+export default function UsersList({ rows, loading, columns, selected, focus, sort, dir, onSort, onToggle, onTogglePage, onOpen, onFocus, invited, onEmail }: {
   rows: UserRow[]; loading: boolean; columns: Column[]; selected: Set<string>; focus: number; sort: string; dir: 'asc' | 'desc';
   onSort: (key: string) => void; onToggle: (id: string) => void; onTogglePage: (on: boolean) => void; onOpen: (u: UserRow) => void; onFocus: (i: number) => void;
   /** Refer & earn invitation per user (latest), shown as "Invited on <date> (v1)". No opened/clicked: nothing is tracked. */
   invited?: Map<string, InviteStatus>;
+  /** Row action "Send e-mail" (only with the users.message permission). */
+  onEmail?: (u: UserRow) => void;
 }) {
   const { t } = useTranslation();
   const invitedBadge = (u: UserRow) => {
@@ -83,6 +86,7 @@ export default function UsersList({ rows, loading, columns, selected, focus, sor
                   </th>
                 );
               })}
+              {onEmail && <th scope="col" className="w-12 px-3 py-3"><span className="sr-only">{t('um.actions', 'Actions')}</span></th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
@@ -93,6 +97,7 @@ export default function UsersList({ rows, loading, columns, selected, focus, sor
                 <td className="px-3 py-3"><Checkbox checked={selected.has(u.id)} onCheckedChange={() => onToggle(u.id)} aria-label={t('um.select_person', 'Select {{name}}', { name: u.name || u.email })} /></td>
                 <td className="max-w-64 px-3 py-3">{person(u)}</td>
                 {columns.map((c) => <td key={c} className="px-3 py-3 text-muted-foreground">{cell(u, c)}</td>)}
+                {onEmail && <td className="px-3 py-3"><EmailButton u={u} onEmail={onEmail} /></td>}
               </tr>
             ))}
           </tbody>
@@ -104,7 +109,7 @@ export default function UsersList({ rows, loading, columns, selected, focus, sor
           <li key={u.id} data-row={i} tabIndex={-1} className={cn('flex gap-3 p-3', focus === i && 'bg-primary/5')}>
             <Checkbox className="mt-2" checked={selected.has(u.id)} onCheckedChange={() => onToggle(u.id)} aria-label={t('um.select_person', 'Select {{name}}', { name: u.name || u.email })} />
             <div className="min-w-0 flex-1 space-y-1.5">
-              {person(u)}
+              <div className="flex items-start justify-between gap-2">{person(u)}{onEmail && <EmailButton u={u} onEmail={onEmail} />}</div>
               <div className="flex flex-wrap gap-1">
                 <Badge variant={STATUS_VARIANT[u.status]} className="text-[10px]">{statusLabel(t, u.status)}</Badge>
                 {u.roles.map((r) => <Badge key={r} variant="outline" className="text-[10px]">{roleLabel(t, r)}</Badge>)}
@@ -115,5 +120,15 @@ export default function UsersList({ rows, loading, columns, selected, focus, sor
         ))}
       </ul>
     </>
+  );
+}
+
+function EmailButton({ u, onEmail }: { u: UserRow; onEmail: (u: UserRow) => void }) {
+  const { t } = useTranslation();
+  return (
+    <Button type="button" size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={() => onEmail(u)}
+      aria-label={t('ade.email_person', 'Send e-mail to {{name}}', { name: u.name || u.email })} title={t('ade.title', 'Send e-mail')}>
+      <AtSign className="h-4 w-4" />
+    </Button>
   );
 }

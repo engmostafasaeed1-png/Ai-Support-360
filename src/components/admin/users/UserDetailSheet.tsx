@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { AlertTriangle, Ban, CheckCircle2, Copy, MailCheck, Download, KeyRound, LogOut, Mail, MoreHorizontal, Pencil, RotateCcw, Send, Shield, ShieldOff, Trash2, UserX, Users } from 'lucide-react';
+import { AtSign, AlertTriangle, Ban, CheckCircle2, Copy, MailCheck, Download, KeyRound, LogOut, Mail, MoreHorizontal, Pencil, RotateCcw, Send, Shield, ShieldOff, Trash2, UserX, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { callRpc, useUserDetail } from '@/hooks/useUserAdmin';
 import { isUuid, restoreDaysLeft, type UserRow } from '@/lib/userAdmin';
@@ -35,6 +35,8 @@ export interface DetailProps {
   fourEyes: boolean;
   onClose: () => void;
   onOpenConsultant: (consultantId: string) => void;
+  /** "Send e-mail" to this person (direct admin e-mail). */
+  onDirectEmail?: (u: { id: string; name: string; email: string }) => void;
 }
 
 export default function UserDetailSheet(props: DetailProps) {
@@ -50,7 +52,7 @@ export default function UserDetailSheet(props: DetailProps) {
   );
 }
 
-function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpenConsultant }: DetailProps & { userId: string }) {
+function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpenConsultant, onDirectEmail }: DetailProps & { userId: string }) {
   const { t } = useTranslation();
   const { data, isLoading, error, refetch } = useUserDetail(userId, installed);
   const { busy, run } = useUserActions(installed);
@@ -145,6 +147,7 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
             ? <Button size="sm" variant="outline" onClick={() => setDialog('reactivate')}><CheckCircle2 className="me-1 h-4 w-4" />{t('um.reactivate', 'Reactivate')}</Button>
             : <Button size="sm" variant="outline" onClick={() => setDialog('suspend')}><Ban className="me-1 h-4 w-4" />{t('um.suspend', 'Suspend')}</Button>)}
           {can('users.message') && installed && <Button size="sm" variant="outline" onClick={() => setDialog('message')}><Send className="me-1 h-4 w-4" />{t('um.message', 'Message')}</Button>}
+          {can('users.message') && installed && onDirectEmail && !self && <Button size="sm" variant="outline" onClick={() => onDirectEmail({ id: u.id, name: u.name, email: u.email })}><AtSign className="me-1 h-4 w-4" />{t('ade.title', 'Send e-mail')}</Button>}
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button size="sm" variant="ghost" aria-label={t('um.more_actions', 'More actions')}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end">

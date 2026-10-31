@@ -170,7 +170,7 @@ export default function DirectEmailDialog({ open, onOpenChange, ids, label, samp
               </>
             )}
             <DialogFooter className="gap-2 sm:gap-2">
-              <Button variant="outline" onClick={() => setStep('compose')} reason={busy && 'action_in_progress'}><ArrowLeft className="me-1 h-4 w-4 rtl:rotate-180" />{t('ade.back', 'Back to the message')}</Button>
+              <Button variant="outline" onClick={() => { if (!busy) setStep('compose'); }}><ArrowLeft className="me-1 h-4 w-4 rtl:rotate-180" />{t('ade.back', 'Back to the message')}</Button>
               <Button onClick={() => void send()} busy={busy} hint="inline"
                 reason={blocker && { key: blocker === 'not_installed' ? 'feature_not_ready' : blocker === 'switched_off' || blocker === 'email_off' ? 'feature_disabled_by_admin' : blocker === 'nobody' ? 'no_recipients' : blocker === 'over_cap' ? 'too_many_recipients' : 'tick_confirmation_first', params: { max: p?.cap ?? 200 }, message: blockerText[blocker] }}>
                 <Send className="me-1 h-4 w-4 rtl:rotate-180" />{t('ade.send_n', 'Send to {{n}}', { n: nf.format(p?.recipients ?? 0) })}
