@@ -353,7 +353,18 @@ END $$;
 REVOKE ALL ON FUNCTION public.admin_demo_alert_set_settings(boolean, numeric, text, integer, integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_demo_alert_set_settings(boolean, numeric, text, integer, integer) TO authenticated;
 
--- 11. Reminder sweep every 15 minutes (job token checked by the function; responses are counts only) ----------------
+-- 11. Reminder sweep every 15 minutes, calling the function only while a reminder is due (job token checked by the
+--     function; responses are counts only).
+CREATE OR REPLACE FUNCTION public.dsa_reminders_due()
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM public.demo_requests d
+    WHERE d.status IN ('received', 'rescheduling') AND d.meeting_at IS NULL AND COALESCE(d.source, '') <> 'contact-form'
+      AND d.respond_by IS NOT NULL AND d.respond_by <= now() AND d.respond_by > now() - interval '14 days'
+      AND d.reminders_sent < 1 + (public.dsa_settings() ->> 'daily_reminders_max')::int
+      AND (d.reminders_sent = 0 OR d.last_reminder_at <= now() - interval '1 day'))
+$$;
+REVOKE ALL ON FUNCTION public.dsa_reminders_due() FROM PUBLIC, anon, authenticated;
+
 DO $$
 BEGIN
   IF to_regnamespace('cron') IS NOT NULL AND to_regnamespace('net') IS NOT NULL AND to_regprocedure('public.job_invoke_headers()') IS NOT NULL THEN
@@ -363,7 +374,8 @@ BEGIN
         url := 'https://ozzgsfsnlejfuexikwrm.supabase.co/functions/v1/demo-request-notify',
         headers := public.job_invoke_headers(),
         body := '{"sweep":true}'::jsonb,
-        timeout_milliseconds := 10000);
+        timeout_milliseconds := 10000)
+      WHERE public.dsa_reminders_due();
     $job$);
   END IF;
 END $$;
