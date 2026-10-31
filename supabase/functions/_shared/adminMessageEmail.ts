@@ -551,15 +551,33 @@ export function renderAdminMessage(h: H, d: AdminMessageData) {
       ];
   const sentAt = formatSentAt((one ?? items[items.length - 1])?.createdAt, lang);
 
+  return renderEmailShell(h, {
+    lang, title: one?.title || c.heading, preheader, test: d.test, content, site,
+    sentLine: [c.sentBy, sentAt].filter(Boolean).join(' · '),
+    footer: { helpLine: c.helpLine, help, helpHref: d.helpHref, replyNote: c.replyNote, why: c.why, prefs: c.prefs, prefsUrl: d.prefsUrl },
+  });
+}
+
+/** Footer lines of the shared frame (service information only; see FOOTER_PARTS). */
+export interface EmailShellFooter { helpLine: string; help: string; helpHref: string; replyNote?: string; why: string; prefs?: string; prefsUrl?: string }
+export interface EmailShell { lang: Lang; title: string; preheader: string; test?: boolean; content: unknown[]; site: string; sentLine: string; footer: EmailShellFooter }
+
+/** The ONE frame of every admin / demo e-mail: soft background, card, logo header + gradient bar, sent line, footer. */
+export function renderEmailShell(h: H, s: EmailShell) {
+  const lang: Lang = s.lang === 'ar' ? 'ar' : 'en';
+  const c = MESSAGE_COPY[lang];
+  const dir = lang === 'ar' ? 'rtl' : 'ltr';
+  const align = lang === 'ar' ? 'right' : 'left';
+  const f = s.footer;
   return h('html', { lang, dir },
     h('head', null,
       h('meta', { charSet: 'utf-8' }),
       h('meta', { name: 'viewport', content: 'width=device-width, initial-scale=1' }),
       h('meta', { name: 'color-scheme', content: 'light dark' }),
       h('meta', { name: 'supported-color-schemes', content: 'light dark' }),
-      h('title', null, one?.title || c.heading)),
+      h('title', null, s.title)),
     h('body', { style: st.body },
-      h('div', { style: { display: 'none', maxHeight: 0, overflow: 'hidden', opacity: 0, fontSize: '1px', lineHeight: '1px' } }, preheader),
+      h('div', { style: { display: 'none', maxHeight: 0, overflow: 'hidden', opacity: 0, fontSize: '1px', lineHeight: '1px' } }, s.preheader),
       table(h, { bgcolor: '#F1F4F9', style: st.outer },
         row(h, { align: 'center', style: st.outerTd },
           table(h, { width: '600', align: 'center', bgcolor: '#ffffff', style: { ...st.card, direction: dir, textAlign: align } },
@@ -568,16 +586,23 @@ export function renderAdminMessage(h: H, d: AdminMessageData) {
               h('img', { src: MESSAGE_LOGO, width: 160, height: 36, alt: 'AI Support 360', style: { display: 'inline-block', border: '0', outline: 'none', width: '160px', height: '36px', maxWidth: '100%' } })),
             row(h, { bgcolor: '#3B82F6', height: 4, style: { ...st.bar, backgroundImage: `linear-gradient(${dir === 'rtl' ? '270deg' : '90deg'},${NAVY},#3B82F6)` } }, '\u00a0'),
             row(h, { style: { ...st.main, fontFamily: F } },
-              d.test ? h('p', { style: st.test }, c.test) : null,
-              ...content),
-            row(h, { style: st.sentTd }, h('p', { style: st.sent }, [c.sentBy, sentAt].filter(Boolean).join(' · '))),
+              s.test ? h('p', { style: st.test }, c.test) : null,
+              ...s.content),
+            row(h, { style: st.sentTd }, h('p', { style: st.sent }, s.sentLine)),
             // Service footer only (help, why you got this, settings, who we are): no promotion in app e-mails.
             row(h, { bgcolor: '#F7F9FC', style: st.foot, 'data-part': 'footer' },
-              h('p', { style: st.footH }, `${c.helpLine} `, h('a', { href: d.helpHref, style: st.a }, help)),
-              h('p', { style: st.small }, c.replyNote),
-              h('p', { style: st.small }, c.why, ' ', h('a', { href: d.prefsUrl, style: st.a }, c.prefs)),
-              h('p', { style: st.brand }, `${c.company} · `, h('a', { href: site, style: { ...st.a, color: '#94a3b8' } }, c.site))))))));
+              h('p', { style: st.footH }, `${f.helpLine} `, h('a', { href: f.helpHref, style: st.a }, f.help)),
+              f.replyNote ? h('p', { style: st.small }, f.replyNote) : null,
+              h('p', { style: st.small }, f.why, ...(f.prefsUrl ? [' ', h('a', { href: f.prefsUrl, style: st.a }, f.prefs ?? c.prefs)] : [])),
+              h('p', { style: st.brand }, `${c.company} · `, h('a', { href: s.site, style: { ...st.a, color: '#94a3b8' } }, c.site))))))));
 }
+
+/** Building blocks of the shared layout for other e-mails that use the same frame (demo bookings). */
+export const EMAIL_STYLES = st;
+export const emailButton = button;
+export const emailTable = table;
+export const emailRow = row;
+export type EmailH = H;
 
 /** Plain-text alternative (same content, same order; the footer stays short). */
 export function adminMessageText(d: AdminMessageData): string {
