@@ -409,7 +409,7 @@ export default function DemoRequestWizard({
             {step < STEPS.length - 1 ? (
               <Button
                 onClick={next}
-                reason={!canNext && (step === 0 ? 'choose_option_first' : step === 1 ? (!time ? 'choose_option_first' : 'choose_time_first') : name.trim().length <= 1 ? { key: 'text_too_short', params: { min: 2 } } : 'invalid_email')}
+                reason={!canNext && (step === 0 ? 'choose_option_first' : step === 1 ? (!time ? 'choose_option_first' : 'choose_time_first') : name.trim().length <= 1 ? { key: 'text_too_short', params: { min: 2 } } : !/\S+@\S+\.\S+/.test(email) ? 'invalid_email' : { key: 'fix_errors_first', message: 'Check the phone number: use digits, spaces and an optional + only.' })}
                 className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-95 border-0 shadow-lg"
               >
                 Continue <ArrowRight className="w-4 h-4 ms-1.5" />
@@ -418,7 +418,7 @@ export default function DemoRequestWizard({
               <Button
                 onClick={submit}
                 hint="inline"
-                busy={submitting} reason={!canNext && (step === 0 ? 'choose_option_first' : step === 1 ? (!time ? 'choose_option_first' : 'choose_time_first') : name.trim().length <= 1 ? { key: 'text_too_short', params: { min: 2 } } : 'invalid_email')}
+                busy={submitting} reason={!canNext && (step === 0 ? 'choose_option_first' : step === 1 ? (!time ? 'choose_option_first' : 'choose_time_first') : name.trim().length <= 1 ? { key: 'text_too_short', params: { min: 2 } } : !/\S+@\S+\.\S+/.test(email) ? 'invalid_email' : { key: 'fix_errors_first', message: 'Check the phone number: use digits, spaces and an optional + only.' })}
                 className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-95 border-0 shadow-lg"
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Send request <Send className="w-4 h-4 ms-1.5" /></>}
