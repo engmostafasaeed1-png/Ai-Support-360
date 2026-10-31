@@ -107,9 +107,18 @@ AS $$
     '( ?)\{\{?\s*ticket\s*\}?\}', '', 'g'))
 $$;
 
+-- Quiet-pause group of a direct message: Reminder -> reminders, every other category -> activity. (Plain admin
+-- messages count as essential and are never paused; a direct send to many people is not, so pauses apply unless
+-- the admin ticks "important".)
+CREATE OR REPLACE FUNCTION public.ade_pause_category(_category text)
+ RETURNS text LANGUAGE sql IMMUTABLE SET search_path TO 'public'
+AS $$
+  SELECT CASE WHEN _category = 'reminder' THEN 'reminders' ELSE 'activity' END
+$$;
+
 -- Who receives what. reason NULL = receives everything on the channel; scope 'all' = receives nothing,
 -- scope 'email' = no e-mail but still the in-app notice (channel 'both').
-CREATE OR REPLACE FUNCTION public.ade_targets(_ids uuid[], _channel text, _important boolean, _tests boolean, _subject text, _me uuid)
+CREATE OR REPLACE FUNCTION public.ade_targets(_ids uuid[], _channel text, _important boolean, _tests boolean, _category text, _me uuid)
  RETURNS TABLE (user_id uuid, name text, email text, lang text, reason text, scope text)
  LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
 AS $$
@@ -136,7 +145,7 @@ AS $$
       WHEN EXISTS (SELECT 1 FROM public.suppressed_emails se WHERE lower(se.email) = lower(b.email) AND se.reason ILIKE '%unsub%') THEN 'recipient_unsubscribed'
       WHEN EXISTS (SELECT 1 FROM public.suppressed_emails se WHERE lower(se.email) = lower(b.email)) THEN 'recipient_suppressed'
       WHEN NOT COALESCE(_important, false)
-           AND public.notifications_paused(b.id, public.notification_category('admin_message', _subject), 'email') THEN 'paused'
+           AND public.notifications_paused(b.id, public.ade_pause_category(_category), 'email') THEN 'paused'
     END AS why
     FROM base b
   )
@@ -232,7 +241,7 @@ GRANT EXECUTE ON FUNCTION public.admin_set_direct_email_settings(boolean, intege
 
 -- ------------------------------------------------------------------ confirmation step
 
--- _p: ids (uuid array), channel, important, tests, subject (for the pause category).
+-- _p: ids (uuid array), channel, important, tests, category (for the quiet-pause group).
 CREATE OR REPLACE FUNCTION public.admin_direct_email_preview(_p jsonb)
  RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
 AS $$
@@ -249,7 +258,7 @@ BEGIN
   CREATE TEMP TABLE IF NOT EXISTS _ade_t (user_id uuid, name text, email text, lang text, reason text, scope text) ON COMMIT DROP;
   TRUNCATE _ade_t;
   INSERT INTO _ade_t SELECT * FROM public.ade_targets(_ids, _channel, COALESCE((_p ->> 'important')::boolean, false),
-    COALESCE((_p ->> 'tests')::boolean, false), left(COALESCE(_p ->> 'subject', ''), 120), _me);
+    COALESCE((_p ->> 'tests')::boolean, false), COALESCE(NULLIF(_p ->> 'category', ''), 'notice'), _me);
   SELECT count(*) FILTER (WHERE reason IS NULL AND _channel <> 'in_app') INTO _email_reach FROM _ade_t;
   _now := GREATEST(0, LEAST((_usage ->> 'per_admin_hour')::int - (_usage ->> 'admin_sent_hour')::int,
                             (_usage ->> 'daily_cap')::int - (_usage ->> 'sent_today')::int));
@@ -456,7 +465,7 @@ BEGIN
   _ids := public.ade_ids(_p);
   CREATE TEMP TABLE IF NOT EXISTS _ade_s (user_id uuid, name text, email text, lang text, reason text, scope text) ON COMMIT DROP;
   TRUNCATE _ade_s;
-  INSERT INTO _ade_s SELECT * FROM public.ade_targets(_ids, _channel, _important, _tests, _subject, _me);
+  INSERT INTO _ade_s SELECT * FROM public.ade_targets(_ids, _channel, _important, _tests, _cat, _me);
   SELECT count(*) FILTER (WHERE scope IS DISTINCT FROM 'all'), count(*) FILTER (WHERE reason IS NOT NULL)
     INTO _n_recipients, _n_excluded FROM _ade_s;
   IF _n_recipients = 0 THEN RAISE EXCEPTION 'ade_nobody' USING ERRCODE = '22023'; END IF;
@@ -507,7 +516,8 @@ BEGIN
         finished_at, direct_send, content)
       VALUES (COALESCE(_nid, _rid), r.user_id, _me, 'comment', _important, _tests,
               CASE WHEN r.reason IS NULL THEN 'queued' ELSE 'skipped' END, r.reason, CASE WHEN r.reason IS NOT NULL THEN now() END, _send,
-              jsonb_build_object('title', _t, 'body', _b, 'link', _link, 'type', 'admin_message', 'meta', _meta))
+              jsonb_build_object('title', _t, 'body', _b, 'link', _link, 'type', 'admin_message', 'meta', _meta,
+                'pause_category', CASE WHEN _important THEN 'essential' ELSE public.ade_pause_category(_cat) END))
       RETURNING id INTO _mid;
       IF r.reason IS NULL THEN _queued := _queued + 1; END IF;
     END IF;
@@ -559,7 +569,8 @@ $$;
 REVOKE ALL ON FUNCTION public.ame_capture() FROM PUBLIC, anon, authenticated;
 
 -- ame_claim: newest body. Changes against docs/sql/admin-message-email.sql: rows with their own content (direct sends,
--- e-mail only) are mailed from that content and are not "notification removed"; direct rows over the daily cap wait
+-- e-mail only) are mailed from that content (and its quiet-pause group) and are not "notification removed"; direct
+-- rows over the daily cap wait
 -- for the next day instead of being skipped.
 CREATE OR REPLACE FUNCTION public.ame_claim(_limit integer DEFAULT 50)
  RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
@@ -623,7 +634,7 @@ BEGIN
     -- Quiet pauses are respected unless the admin ticked "important" (essential notices are never paused).
     UPDATE public.admin_message_emails q SET status = 'skipped', reason = 'paused', finished_at = now()
     WHERE q.recipient = r.recipient AND q.status = 'queued' AND q.send_after <= now() AND NOT q.important
-      AND public.notifications_paused(q.recipient, COALESCE(
+      AND public.notifications_paused(q.recipient, COALESCE(q.content ->> 'pause_category',
             (SELECT COALESCE(n.pause_category, public.notification_category(n.type, n.title)) FROM public.notifications n WHERE n.id = q.notification_id),
             public.notification_category(COALESCE(q.content ->> 'type', 'admin_message'), q.content ->> 'title')), 'email');
     -- Deleted notifications are not mailed (rows with their own content do not depend on a notification).
