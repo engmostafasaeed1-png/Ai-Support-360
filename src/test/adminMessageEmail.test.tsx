@@ -259,7 +259,7 @@ function plainBody(v: { blocks: ReturnType<typeof formatBody> }) {
 describe('modern e-mail layout — safe HTML and service-only footer', () => {
   const full = { v: 1, category: 'action', summary: 'Two quick changes', action_label: 'Update', deadline: '2026-11-06', context: { kind: 'other', label: 'Profile' } };
   const textOf = (markup: string) => markup.replace(/<[^>]+>/g, ' ').replace(/&#x27;|&#39;/g, "'").replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
-  const footerOf = (markup: string) => textOf(markup.split('data-part="footer"')[1] ?? '');
+  const footerOf = (markup: string) => textOf((markup.split('data-part="footer"')[1] ?? '').replace(/^[^>]*>/, ''));
   // Words that would turn an app e-mail into promotion, or make claims we cannot back (owner rule: current facts only).
   const BANNED = [/why ai support 360/i, /24\s*\/\s*7/, /\d+\s*\+/, /\d+\s*%/, /guarantee/i, /best|leading|#1|top-rated/i, /testimonial|trusted by|customers love/i,
     /verified (sap )?consultants/i, /vetted experts/i, /steady (sap )?requests/i, /fair rate/i, /sign up|join now|upgrade|offer|discount/i, /لماذا/, /مضمون/];
