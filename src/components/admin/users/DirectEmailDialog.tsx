@@ -151,6 +151,7 @@ export default function DirectEmailDialog({ open, onOpenChange, ids, label, samp
                       <ul className="mt-1 max-h-40 space-y-0.5 overflow-y-auto">
                         {p.excluded.map((e) => <li key={e.id}>{e.name || e.email || e.id.slice(0, 8)} · <span className="text-muted-foreground">{reason(e.reason)}</span></li>)}
                       </ul>
+                      {p.excluded.length < p.requested - p.recipients && <p className="mt-1 text-muted-foreground">{t('ade.first_300', 'Showing the first {{n}} names; the counts above include everyone.', { n: p.excluded.length })}</p>}
                     </details>
                   </section>
                 )}
