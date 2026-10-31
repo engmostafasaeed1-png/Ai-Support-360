@@ -3464,18 +3464,33 @@ export type Database = {
       }
       demo_requests: {
         Row: {
+          alert_sent_at: string | null
+          alert_skip_reason: string | null
+          cancel_reason: string | null
           company: string | null
           created_at: string
           demo_type: string
           email: string
           full_name: string
           id: string
+          language: string | null
+          last_reminder_at: string | null
+          meeting_at: string | null
+          meeting_duration_min: number | null
           meeting_format: string | null
+          meeting_link: string | null
+          meeting_version: number
           notes: string | null
+          phone: string | null
           proposed_slots: Json | null
+          reminders_sent: number
           request_token: string
+          requester_role: string | null
           reschedule_reason: string | null
           reschedule_requested_at: string | null
+          respond_by: string | null
+          sap_area: string | null
+          scheduled_by: string | null
           scheduled_date: string | null
           scheduled_slot: string | null
           scheduling_preference: string
@@ -3487,18 +3502,33 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          alert_sent_at?: string | null
+          alert_skip_reason?: string | null
+          cancel_reason?: string | null
           company?: string | null
           created_at?: string
           demo_type: string
           email: string
           full_name: string
           id?: string
+          language?: string | null
+          last_reminder_at?: string | null
+          meeting_at?: string | null
+          meeting_duration_min?: number | null
           meeting_format?: string | null
+          meeting_link?: string | null
+          meeting_version?: number
           notes?: string | null
+          phone?: string | null
           proposed_slots?: Json | null
+          reminders_sent?: number
           request_token?: string
+          requester_role?: string | null
           reschedule_reason?: string | null
           reschedule_requested_at?: string | null
+          respond_by?: string | null
+          sap_area?: string | null
+          scheduled_by?: string | null
           scheduled_date?: string | null
           scheduled_slot?: string | null
           scheduling_preference: string
@@ -3510,18 +3540,33 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          alert_sent_at?: string | null
+          alert_skip_reason?: string | null
+          cancel_reason?: string | null
           company?: string | null
           created_at?: string
           demo_type?: string
           email?: string
           full_name?: string
           id?: string
+          language?: string | null
+          last_reminder_at?: string | null
+          meeting_at?: string | null
+          meeting_duration_min?: number | null
           meeting_format?: string | null
+          meeting_link?: string | null
+          meeting_version?: number
           notes?: string | null
+          phone?: string | null
           proposed_slots?: Json | null
+          reminders_sent?: number
           request_token?: string
+          requester_role?: string | null
           reschedule_reason?: string | null
           reschedule_requested_at?: string | null
+          respond_by?: string | null
+          sap_area?: string | null
+          scheduled_by?: string | null
           scheduled_date?: string | null
           scheduled_slot?: string | null
           scheduling_preference?: string
@@ -16261,18 +16306,33 @@ export type Database = {
       admin_confirm_reschedule_slot: {
         Args: { _note?: string; _request_id: string; _slot_index?: number }
         Returns: {
+          alert_sent_at: string | null
+          alert_skip_reason: string | null
+          cancel_reason: string | null
           company: string | null
           created_at: string
           demo_type: string
           email: string
           full_name: string
           id: string
+          language: string | null
+          last_reminder_at: string | null
+          meeting_at: string | null
+          meeting_duration_min: number | null
           meeting_format: string | null
+          meeting_link: string | null
+          meeting_version: number
           notes: string | null
+          phone: string | null
           proposed_slots: Json | null
+          reminders_sent: number
           request_token: string
+          requester_role: string | null
           reschedule_reason: string | null
           reschedule_requested_at: string | null
+          respond_by: string | null
+          sap_area: string | null
+          scheduled_by: string | null
           scheduled_date: string | null
           scheduled_slot: string | null
           scheduling_preference: string
@@ -16338,6 +16398,33 @@ export type Database = {
       admin_delete_permission_group: {
         Args: { _id: string }
         Returns: undefined
+      }
+      admin_demo_alert_set_settings: {
+        Args: {
+          _admin_timezone: string
+          _daily_reminders_max: number
+          _default_duration_min: number
+          _enabled: boolean
+          _respond_business_hours: number
+        }
+        Returns: Json
+      }
+      admin_demo_alert_settings: { Args: never; Returns: Json }
+      admin_demo_cancel: {
+        Args: { _id: string; _reason?: string }
+        Returns: Json
+      }
+      admin_demo_schedule: {
+        Args: {
+          _date: string
+          _duration_min: number
+          _id: string
+          _meeting_link?: string
+          _note?: string
+          _time: string
+          _tz: string
+        }
+        Returns: Json
       }
       admin_direct_email_preview: { Args: { _p: Json }; Returns: Json }
       admin_direct_email_report: { Args: { _send: string }; Returns: Json }
@@ -17722,6 +17809,17 @@ export type Database = {
         Returns: number
       }
       critical_ticket_view: { Args: { _ticket_id: string }; Returns: Json }
+      dsa_alert_claim: { Args: { _id: string }; Returns: Json }
+      dsa_bell_text: {
+        Args: { _r: Database["public"]["Tables"]["demo_requests"]["Row"] }
+        Returns: string
+      }
+      dsa_is_admin: { Args: never; Returns: boolean }
+      dsa_reminder_claim: { Args: { _limit?: number }; Returns: Json }
+      dsa_reminders_due: { Args: never; Returns: boolean }
+      dsa_respond_by: { Args: { _from: string }; Returns: string }
+      dsa_settings: { Args: never; Returns: Json }
+      dsa_valid_tz: { Args: { _tz: string }; Returns: boolean }
       email_sender_problems: {
         Args: { _contact: string; _from: string; _name: string; _reply: string }
         Returns: string[]
@@ -17770,6 +17868,18 @@ export type Database = {
       founding_boost_duration: { Args: never; Returns: number }
       founding_settings: { Args: never; Returns: Json }
       founding_spots_remaining: { Args: never; Returns: number }
+      get_demo_meeting_by_token: {
+        Args: { _token: string }
+        Returns: {
+          cancel_reason: string
+          meeting_at: string
+          meeting_duration_min: number
+          meeting_link: string
+          meeting_version: number
+          status: string
+          timezone: string
+        }[]
+      }
       get_demo_request_by_token: {
         Args: { _token: string }
         Returns: {
@@ -18671,18 +18781,33 @@ export type Database = {
       request_demo_reschedule: {
         Args: { _proposed_slots: Json; _reason?: string; _token: string }
         Returns: {
+          alert_sent_at: string | null
+          alert_skip_reason: string | null
+          cancel_reason: string | null
           company: string | null
           created_at: string
           demo_type: string
           email: string
           full_name: string
           id: string
+          language: string | null
+          last_reminder_at: string | null
+          meeting_at: string | null
+          meeting_duration_min: number | null
           meeting_format: string | null
+          meeting_link: string | null
+          meeting_version: number
           notes: string | null
+          phone: string | null
           proposed_slots: Json | null
+          reminders_sent: number
           request_token: string
+          requester_role: string | null
           reschedule_reason: string | null
           reschedule_requested_at: string | null
+          respond_by: string | null
+          sap_area: string | null
+          scheduled_by: string | null
           scheduled_date: string | null
           scheduled_slot: string | null
           scheduling_preference: string
@@ -19723,6 +19848,16 @@ export type Database = {
           _timezone: string
         }
         Returns: string
+      }
+      submit_demo_request_details: {
+        Args: {
+          _language: string
+          _phone: string
+          _role: string
+          _sap_area: string
+          _token: string
+        }
+        Returns: boolean
       }
       submit_feedback: {
         Args: { _ip_hash: string; _payload: Json; _user_id: string }
