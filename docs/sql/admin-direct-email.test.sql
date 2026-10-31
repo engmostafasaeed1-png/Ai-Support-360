@@ -20,7 +20,7 @@ INSERT INTO user_roles (user_id, role) SELECT adm, 'admin' FROM _ids ON CONFLICT
 INSERT INTO profiles (user_id, display_name, preferred_language)
 SELECT c1, 'Sara Hassan', 'en' FROM _ids UNION ALL SELECT c2, 'مريم علي', 'ar' FROM _ids UNION ALL SELECT adm, 'Ezz Admin', 'en' FROM _ids;
 INSERT INTO user_admin_state (user_id, tags) SELECT c3, ARRAY['test'] FROM _ids ON CONFLICT (user_id) DO UPDATE SET tags = EXCLUDED.tags;
-INSERT INTO suppressed_emails (email, reason) SELECT 'ade-ade06@example.com', 'bounce' UNION ALL SELECT 'ade-ade07@example.com', 'unsubscribe';
+INSERT INTO suppressed_emails (email, reason) SELECT 'ade-' || right(c5::text, 4) || '@example.com', 'bounce' FROM _ids UNION ALL SELECT 'ade-' || right(c6::text, 4) || '@example.com', 'unsubscribe' FROM _ids;
 INSERT INTO user_notification_pauses (user_id, paused_until, categories, email, in_app)
 SELECT c7, now() + interval '3 days', ARRAY['reminders', 'digests', 'activity'], true, false FROM _ids;
 DELETE FROM platform_settings WHERE key IN ('admin_direct_email_enabled', 'admin_direct_email_per_send_cap', 'admin_messages_email_enabled', 'admin_messages_email_daily_cap');
