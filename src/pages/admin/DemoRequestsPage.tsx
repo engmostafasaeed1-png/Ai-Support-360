@@ -108,15 +108,13 @@ function DemoRequestDialog({ row, settings, focus, onClose, onSaved }: {
   const formRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (focus) setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); }, [focus]);
 
-  const planned = useMemo(() => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) return null;
-    const [y, m, d] = date.split('-').map(Number);
-    const guess = Date.UTC(y, m - 1, d, Number(time.slice(0, 2)), Number(time.slice(3, 5)));
-    // same conversion as the database: wall time in the chosen zone
-    const off = (dt: Date) => { const p = formatInZone(dt, tz, 'en', false); void p; return 0; };
-    void off;
-    return demoSlots({ ...row, scheduled_date: date, scheduled_slot: time, timezone: tz, proposed_slots: null }, HERE, 'en', now)[0] ?? (guess ? null : null);
-  }, [date, time, tz]); // eslint-disable-line react-hooks/exhaustive-deps
+  // the chosen wall time in both zones (same conversion as the database)
+  const planned = useMemo(
+    () => (/^\d{4}-\d{2}-\d{2}$/.test(date) && /^\d{2}:\d{2}$/.test(time)
+      ? demoSlots({ ...row, scheduled_date: date, scheduled_slot: time, timezone: tz, proposed_slots: null }, HERE, 'en', new Date())[0] ?? null
+      : null),
+    [date, time, tz, row],
+  );
 
   const durationN = Number(duration);
   const scheduleBlock = closed ? 'This demo is closed.'
