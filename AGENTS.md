@@ -7,7 +7,7 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - Shared Button drops its variant gradient when callers pass a base background colour (custom gradients kept), preserving emergency/status colours.
 - Consultant landing/pricing pages own head tags via useHeadTags (dedupe, restore on unmount), never also via RouteSeo, to avoid competing updates.
 - Admin full consultant profiles load only via the audited admin-only RPC in the shared sheet (ephemeral queries, short-lived links, timed in-memory bank reveals), so private payout data is never persisted.
-- Invoice details use shared billing controls + admin confirmation hook.
+- Invoice details use shared billing controls + admin confirm hook.
 - Timesheet PDF/CSV rows come only from the shared timesheet document helpers (screen amounts, approval metadata), so exports never diverge.
 - Credibility scores/star fills come only from the shared credibility library; photo performance rings only from lib/ringAvatar via ConsultantRing (map popups via its DOM twin), outer arc pure client rating, inner arc only public responsiveness, so all surfaces agree.
 - Consultant request/success counts and Success levels come only from the database success RPCs (aggregates only, no per-ticket data) and lib/successLevel, shown through the shared ring summary as SuccessStars level stars (never a ring arc), so every surface agrees and the AI-interview tier never shares its wording.
