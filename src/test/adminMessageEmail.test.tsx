@@ -3,7 +3,7 @@ import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   adminMessageSubject, adminMessageText, buildAdminMessageData, buildMessageView, categoryForType, clip, finishFor, formatBody, renderAdminMessage, safePortalPath,
-  badgeFor, decisionSteps, DECISION_OUTCOMES, DECISION_SUBJECTS,
+  badgeFor, decisionSteps, DECISION_OUTCOMES, DECISION_SUBJECTS, FOOTER_PARTS, MESSAGE_COPY,
 } from '../../supabase/functions/_shared/adminMessageEmail';
 import {
   adminEmailHeader, canUntickEmail, emailKindOf, typeAlreadyEmailed, MAX_RECIPIENTS_PER_ACTION, PER_RECIPIENT_PER_HOUR,
@@ -255,3 +255,58 @@ describe('review decisions — one shared sender and layout', () => {
 function plainBody(v: { blocks: ReturnType<typeof formatBody> }) {
   return v.blocks.map((b) => (b.t === 'p' ? b.lines.map((l) => l.map((p) => p.text).join('')).join('\n') : '')).join('\n');
 }
+
+describe('modern e-mail layout — safe HTML and service-only footer', () => {
+  const full = { v: 1, category: 'action', summary: 'Two quick changes', action_label: 'Update', deadline: '2026-11-06', context: { kind: 'other', label: 'Profile' } };
+  const textOf = (markup: string) => markup.replace(/<[^>]+>/g, ' ').replace(/&#x27;|&#39;/g, "'").replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
+  const footerOf = (markup: string) => textOf(markup.split('data-part="footer"')[1] ?? '');
+  // Words that would turn an app e-mail into promotion, or make claims we cannot back (owner rule: current facts only).
+  const BANNED = [/why ai support 360/i, /24\s*\/\s*7/, /\d+\s*\+/, /\d+\s*%/, /guarantee/i, /best|leading|#1|top-rated/i, /testimonial|trusted by|customers love/i,
+    /verified (sap )?consultants/i, /vetted experts/i, /steady (sap )?requests/i, /fair rate/i, /sign up|join now|upgrade|offer|discount/i, /لماذا/, /مضمون/];
+
+  it('is Outlook/Gmail-safe: layout tables, inline styles only, no <style>, scripts, web fonts or extra images', () => {
+    for (const lang of ['en', 'ar']) {
+      const out = html(buildAdminMessageData(mail(1, { lang, meta: full }), SITE));
+      expect(out).toContain('role="presentation"');
+      expect(out).not.toMatch(/<style|<script|<link|@import|fonts\.googleapis/i);
+      expect(out.match(/<img [^>]*>/g)).toEqual([expect.stringContaining('alt="AI Support 360"')]);
+      expect(out).toContain('max-width:600px'); // fluid single column on phones
+      expect(out).toContain('bgcolor="#1B2559"'); // button cell keeps its colour in Outlook
+    }
+  });
+
+  it('the footer holds only the approved service lines, in both languages', () => {
+    for (const lang of ['en', 'ar'] as const) {
+      const c = MESSAGE_COPY[lang] as Record<string, unknown>;
+      const allowed = [...FOOTER_PARTS.map((k) => String(c[k])), 'info@aisupport360.com', '·'];
+      let rest = footerOf(html(buildAdminMessageData(mail(1, { lang, meta: full }), SITE)));
+      for (const a of allowed.sort((x, y) => y.length - x.length)) rest = rest.split(a).join(' ');
+      expect(rest.replace(/[\s.,،؟?]/g, '')).toBe('');
+    }
+  });
+
+  it('no promotional value blocks or unbacked claims anywhere in the footer or plain text (single and digest, EN/AR)', () => {
+    for (const lang of ['en', 'ar']) for (const n of [1, 3]) {
+      const d = buildAdminMessageData(mail(n, { lang, meta: full }), SITE);
+      const foot = footerOf(html(d));
+      const plainFoot = adminMessageText(d).split('\n---\n').pop() ?? '';
+      for (const re of BANNED) { expect(foot).not.toMatch(re); expect(plainFoot).not.toMatch(re); }
+    }
+  });
+
+  it('a plain-text alternative exists with help, preferences link and company line', () => {
+    const t = adminMessageText(buildAdminMessageData(mail(1, { lang: 'ar', meta: full }), SITE));
+    expect(t).toContain(MESSAGE_COPY.ar.helpLine);
+    expect(t).toContain('info@aisupport360.com');
+    expect(t).toContain(`${SITE}/notifications/pause`);
+    expect(t).toContain('AI Support 360 · www.aisupport360.com');
+  });
+
+  it('Arabic e-mail flips direction: right-aligned card, lists and gradient bar', () => {
+    const out = html(buildAdminMessageData(mail(1, { lang: 'ar', meta: full, body: '- one\n- two' }), SITE));
+    expect(out).toContain('dir="rtl"');
+    expect(out).toContain('direction:rtl;text-align:right');
+    expect(out).toContain('padding-right:22px');
+    expect(out).toContain('linear-gradient(270deg');
+  });
+});
