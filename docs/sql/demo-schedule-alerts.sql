@@ -1,3 +1,4 @@
+-- lovable-cron-fallback-reviewed: owner-approved 15-minute demo reminder check; first reminder is due 1 business hour after booking, the HTTP call fires only while a reminder is due.
 -- =====================================================================================================================
 -- Demo booked: schedule needed (owner request 2026-10-31). PREPARED, NOT APPLIED: the owner reviews first.
 --
