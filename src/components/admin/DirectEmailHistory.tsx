@@ -75,7 +75,7 @@ export default function DirectEmailHistory() {
                     <TableCell className="text-end text-xs tabular-nums">{r.recipients}{r.excluded > 0 && <span className="text-muted-foreground"> ({t('ade.excluded_n', '{{n}} left out', { n: r.excluded })})</span>}</TableCell>
                     <TableCell className="whitespace-nowrap text-xs">
                       {r.channel === 'in_app' ? t('ade.in_app_n', '{{n}} in-app', { n: r.in_app })
-                        : t('ade.status_line', '{{sent}} sent · {{queued}} queued · {{skipped}} skipped · {{failed}} failed', r)}
+                        : t('ade.status_line', '{{sent}} sent · {{queued}} queued · {{skipped}} skipped · {{failed}} failed', { sent: r.sent, queued: r.queued, skipped: r.skipped, failed: r.failed })}
                     </TableCell>
                     <TableCell className="text-xs">{r.actor_name ?? '—'}</TableCell>
                   </TableRow>
