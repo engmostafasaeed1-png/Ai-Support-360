@@ -1,6 +1,6 @@
 // Admin endpoint for demo bookings (Demo requests page). Caller must be an admin / super admin.
 //
-//   { request_id, slot_index, note }                   confirm a time the requester proposed (legacy RPC)
+//   { request_id, slot_index, note }                   confirm a time the requester proposed (via admin_demo_schedule)
 //   { action: 'schedule', request_id, date, time, tz, duration_min, meeting_link, note }   confirm / move the demo
 //   { action: 'cancel', request_id, reason }           cancel the demo
 //
@@ -12,7 +12,7 @@ import { ADMIN_ROLES, adminClient, authenticateUser, getUserRoles, hasAnyRole, j
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts';
 import { TEAM_EMAIL } from '../_shared/contact.ts';
-import { buildDemoUpdateView, readDemoSettings, type DemoRequestRow, type DemoUpdateKind } from '../_shared/demoSchedule.ts';
+import { buildDemoUpdateView, readDemoSettings, validTz, type DemoRequestRow, type DemoUpdateKind } from '../_shared/demoSchedule.ts';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
@@ -61,9 +61,32 @@ Deno.serve(async (req) => {
     kind = 'cancelled';
     version = String((data as { version?: number })?.version ?? '');
   } else {
+    // "Confirm this time" on a slot the requester proposed. It goes through admin_demo_schedule so meeting_at (what the
+    // e-mail, their page, the .ics and the admin list read) moves to the new time; the legacy RPC never touched it.
     const slotIndex = Number.isInteger(body.slot_index) ? (body.slot_index as number) : 0;
-    const { error } = await userClient.rpc('admin_confirm_reschedule_slot', { _request_id: requestId, _slot_index: slotIndex, _note: note ?? undefined });
-    if (error) return jsonResponse(req, { error: error.message }, 400);
+    const { data: cur } = await admin.from('demo_requests')
+      .select('status, proposed_slots, timezone, meeting_duration_min, meeting_link').eq('id', requestId).maybeSingle();
+    if (!cur) return jsonResponse(req, { error: 'Demo request not found' }, 404);
+    if (cur.status !== 'rescheduling') return jsonResponse(req, { error: 'This demo is not waiting for a new time' }, 400);
+    const slots = Array.isArray(cur.proposed_slots) ? (cur.proposed_slots as Array<{ date?: unknown; time?: unknown }>) : [];
+    const slot = slots[slotIndex];
+    const date = str(slot?.date, 10);
+    const time = str(slot?.time, 8).slice(0, 5);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{1,2}:\d{2}$/.test(time)) return jsonResponse(req, { error: 'This proposed time is not valid' }, 400);
+    const { data: st } = await admin.from('platform_settings').select('value').eq('key', 'demo_schedule_alerts').maybeSingle();
+    const duration = cur.meeting_duration_min ?? readDemoSettings(st?.value).default_duration_min;
+    const { data, error } = await userClient.rpc('admin_demo_schedule', {
+      _id: requestId, _date: date, _time: time, _tz: validTz(cur.timezone) ? cur.timezone : 'UTC',
+      _duration_min: duration, _meeting_link: cur.meeting_link || null, _note: note,
+    });
+    if (error) return jsonResponse(req, { error: error.code === 'PGRST202' ? 'not_installed' : error.message }, 400);
+    kind = (data as { kind?: string })?.kind === 'rescheduled' ? 'rescheduled' : 'confirmed';
+    version = String((data as { version?: number })?.version ?? '');
+    // The proposal is answered: clear it, as the legacy confirm did.
+    const { error: clearErr } = await admin.from('demo_requests')
+      .update({ scheduled_date: date, scheduled_slot: time, proposed_slots: null, reschedule_reason: null, reschedule_requested_at: null })
+      .eq('id', requestId);
+    if (clearErr) console.error('admin-confirm-demo-reschedule: clearing proposal failed', { code: clearErr.code });
   }
 
   const { data: row } = await admin.from('demo_requests').select('*').eq('id', requestId).maybeSingle();
