@@ -141,6 +141,7 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
         )}
         {/* Actions */}
         <div className="mt-4 flex flex-wrap gap-2">
+          {u.consultant_id && <Button size="sm" variant="outline" onClick={() => { if (u.consultant_id) onOpenConsultant(u.consultant_id); }}>{t("admin.fullProfile.view", "View full profile")}</Button>}
           {can('users.edit') && !lockedBySuper && <Button size="sm" variant="outline" onClick={() => setDialog('edit')}><Pencil className="me-1 h-4 w-4" />{t('um.edit', 'Edit')}</Button>}
           {can('users.roles') && !self && <Button size="sm" variant="outline" onClick={() => setDialog('roles')}><Shield className="me-1 h-4 w-4" />{t('um.roles', 'Roles')}</Button>}
           {can('users.suspend') && !self && !deleted && !merged && !lockedBySuper && (u.status === 'suspended'
@@ -316,6 +317,7 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
         onSend={async (v, emailHeader) => after(await run('notify', u.id, { payload: v, emailHeader, ok: t('um.message_sent', 'Notification sent') }))} />}
       {dialog === 'merge' && <MergeDialog user={u} busy={busy} onClose={close}
         onMerge={async (keep, reason) => after(await run('merge', u.id, { payload: { into: keep }, reason, ok: t('um.merged_ok', 'Accounts merged') }))} />}
+      {u.consultant_id && (dialog === "suspend" || dialog === "reactivate") && <Button variant="outline" onClick={() => { if (u.consultant_id) onOpenConsultant(u.consultant_id); }}>{t("admin.fullProfile.view", "View full profile")}</Button>}
       <SuspendDialog open={dialog === 'suspend'} user={u} busy={busy} onClose={close}
         onConfirm={async (reason, until) => after(await run('suspend', u.id, { payload: { until: until || null }, reason, ok: t('um.suspended_ok', 'Suspended and signed out'),
           undo: () => run('reactivate', u.id, { ok: t('um.reactivated_ok', 'Reactivated') }) }))} />
@@ -375,7 +377,7 @@ function Overview({ u, data, onOpenConsultant }: { u: UserRow & { invited_at?: s
         {u.consultant_id && (
           <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border p-3">
             <span>{t('um.role_consultant', 'Consultant')} · {u.verification_status ? verificationLabel(t, u.verification_status) : '—'}{u.completion != null ? ` · ${u.completion}%` : ''}{u.badge ? ` · ${u.badge}` : ''}</span>
-            <Button size="sm" variant="outline" onClick={() => onOpenConsultant(u.consultant_id!)}>{t('admin.fullProfile.view', 'View full profile')}</Button>
+            <Button size="sm" variant="outline" onClick={() => { if (u.consultant_id) onOpenConsultant(u.consultant_id); }}>{t('admin.fullProfile.view', 'View full profile')}</Button>
             <Button size="sm" variant="ghost" asChild><Link to={`/admin/approvals?consultant=${u.consultant_id}`}>{t('um.verification', 'Verification')}</Link></Button>
           </div>
         )}

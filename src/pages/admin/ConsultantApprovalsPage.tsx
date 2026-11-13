@@ -45,7 +45,7 @@ export default function ConsultantApprovalsPage() {
   const linkedConsultant = searchParams.get('consultant');
   const closeProfile = () => {
     setFullProfileId(null);
-    if (linkedConsultant) { const next = new URLSearchParams(searchParams); next.delete('consultant'); setSearchParams(next, { replace: true }); }
+    if (linkedConsultant) { const next = new URLSearchParams(searchParams); next.delete('consultant'); next.delete('profile'); setSearchParams(next, { replace: true }); }
   };
   const [expanded, setExpanded] = useState<string | null>(null);
   const [filterKey, setFilterKey] = useState(STATUS_FILTERS[0].key);
@@ -233,16 +233,20 @@ export default function ConsultantApprovalsPage() {
   const allRows = consultants || [];
   const list = bankMissingOnly ? allRows.filter((c: any) => payoutStateFor(payoutMap, c.id) === 'missing') : allRows;
 
+  const profileId = fullProfileId || linkedConsultant;
+  const profileRow = allRows.find((c: any) => c.id === profileId);
+  const profileActions = profileRow && <div className="flex flex-wrap justify-end gap-2">{decisionOptions(isVerificationState(profileRow.status) ? profileRow.status : 'pending').map(option => <Button key={option.to} size="sm" variant={option.tone === 'danger' ? 'destructive' : 'outline'} onClick={() => { closeProfile(); openDecision(profileRow.id, profileRow.name, option, profileRow.status); }}>{t(`profileReview.status.${option.to}`, option.label)}</Button>)}</div>;
   return (
     <div className="space-y-6">
-      <ConsultantFullProfileSheet consultantId={fullProfileId || linkedConsultant} onClose={closeProfile} />
+      <ConsultantFullProfileSheet consultantId={profileId} onClose={closeProfile} decisionBar={profileActions} fullPage={searchParams.get('profile') === 'page'} />
+      {searchParams.get('profile') !== 'page' && <>
       <div>
         <h1 className="text-2xl font-bold text-foreground">{t('approvals_page.title')}</h1>
         <p className="text-sm text-muted-foreground">{isError ? '' : `${list.length} ${filter.label.toLowerCase()}`}</p>
       </div>
 
       {!isGuest && <OverdueItemsBanner />}
-      <ApproveWithItemsDialog target={conditionalTarget} onClose={() => setConditionalTarget(null)} onDone={refreshList} />
+      <ApproveWithItemsDialog target={conditionalTarget} onClose={() => setConditionalTarget(null)} onDone={refreshList} onOpenProfile={id => setFullProfileId(id)} />
 
 
       <div className="flex flex-wrap gap-2" role="group" aria-label="Consultant status">
@@ -431,6 +435,7 @@ export default function ConsultantApprovalsPage() {
                       </div>
 
                       <div className="flex items-center gap-3 justify-end flex-wrap mt-4">
+                        <Button variant="outline" size="sm" onClick={() => setFullProfileId(c.id)}>{t('admin.fullProfile.view', 'View full profile')}</Button>
                         <span className="text-xs text-muted-foreground me-auto">{t('approvals_page.applied')}: {c.appliedAt}</span>
                         <Button variant="outline" size="sm" onClick={() => setReinterviewTarget({ id: c.id, name: c.name })}>
                           <RotateCcw className="w-3.5 h-3.5 me-1" /> {t('interview.reinterview', 'Re-Interview')}
@@ -466,6 +471,7 @@ export default function ConsultantApprovalsPage() {
           })}
         </div>
       )}
+      </>}
       <Dialog open={!!decisionTarget} onOpenChange={(open) => !open && setDecisionTarget(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -476,6 +482,7 @@ export default function ConsultantApprovalsPage() {
               {decisionTarget?.name} — {t('approvals_page.decision_desc', 'add an optional comment. It is saved in the audit log and e-mailed to the consultant with this decision.')}
             </DialogDescription>
           </DialogHeader>
+          {decisionTarget && <Button variant="outline" onClick={() => setFullProfileId(decisionTarget.id)}>{t('admin.fullProfile.view', 'View full profile')}</Button>}
           <div className="space-y-2">
             <Label htmlFor="decision-reason" className="text-sm">Reason / notes (optional)</Label>
             <Textarea
@@ -489,7 +496,7 @@ export default function ConsultantApprovalsPage() {
             <p className="text-[11px] text-muted-foreground text-end">{decisionReason.length}/1000</p>
             {decisionTarget && !isGuest && consultantOutcome(decisionTarget.from, decisionTarget.option.to) && (
               <DecisionEmailNotice consultantId={decisionTarget.id} subject="consultant_profile" comment={decisionReason}
-                outcomes={[consultantOutcome(decisionTarget.from, decisionTarget.option.to)!]} link="/consultant/verification" />
+                outcomes={[consultantOutcome(decisionTarget.from, decisionTarget.option.to) ?? 'review']} link="/consultant/verification" />
             )}
           </div>
           <DialogFooter>

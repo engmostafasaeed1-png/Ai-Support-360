@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { defaultVerificationKinds } from '@/lib/consultantRoles';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -68,8 +69,9 @@ export function useVerificationItems(consultantId?: string) {
 
 /** Admin: approve now, list what still has to be checked within the period. */
 export function ApproveWithItemsDialog({
-  target, onClose, onDone,
-}: { target: { id: string; name: string; roles?: string[] | null } | null; onClose: () => void; onDone: () => void }) {
+  target, onClose, onDone, onOpenProfile,
+}: { target: { id: string; name: string; roles?: string[] | null } | null; onClose: () => void; onDone: () => void; onOpenProfile?: (id: string) => void }) {
+  const { t } = useTranslation();
   // Certificates for hands-on roles; LinkedIn and references for managers, pre-sales and other non-technical roles.
   const [kinds, setKinds] = useState<string[]>(['certificates']);
   useEffect(() => { if (target) setKinds(defaultVerificationKinds(target.roles)); }, [target]);
@@ -133,6 +135,7 @@ export function ApproveWithItemsDialog({
             {target?.name} appears to clients right away. The items below must be completed within the period.
           </DialogDescription>
         </DialogHeader>
+        {target && onOpenProfile && <Button variant="outline" onClick={() => onOpenProfile(target.id)}>{t('admin.fullProfile.view', 'View full profile')}</Button>}
         <div className="space-y-4">
           <div className="space-y-2">
             {ITEM_KINDS.map(k => (

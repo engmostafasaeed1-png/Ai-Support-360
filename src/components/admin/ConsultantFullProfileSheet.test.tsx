@@ -7,6 +7,7 @@ vi.mock('@/hooks/useProfileFieldRules', () => ({ useProfileFieldRules: () => ({ 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }) }));
 import ConsultantFullProfileSheet, { ConsultantFullProfileBody } from './ConsultantFullProfileSheet';
 const full = {
+  finance_allowed: true,
   consultant: { verification_status: 'verified', rating: 4.5, total_reviews: 12, bio: '<b>Stored biography</b>', linkedin_url: 'https://www.linkedin.com/in/sara', availability_status: 'available', sap_role: 'Functional', total_sap_years: 10, ai_skills_score: 80 },
   account: { email: 'sara@example.test', provider: 'google' }, profile: { display_name: 'Sara' }, private: {},
   counts: { tickets_assigned: 3, bids: 4, ndas_signed: 2 }, missing_required_fields: ['bio'],
@@ -24,19 +25,25 @@ function show(data: unknown = full) {
 beforeEach(() => rpc.mockReset());
 afterEach(() => {cleanup();vi.useRealTimers();});
 describe('consultant full profile sheet', () => {
+  it('cannot reveal bank identifiers without finance permission', () => {
+    render(<ConsultantFullProfileBody data={{...full,finance_allowed:false}} />); select('Payout');
+    fireEvent.click(screen.getByRole('button',{name:'Show'}));
+    expect(screen.queryByText(full.payout.iban)).toBeNull();
+    expect(screen.queryByText(full.payout.account_number)).toBeNull();
+  });
   it('loads the audited RPC and presents all six tabs with full records', async () => {
     show();await screen.findByRole('tab',{name:'Overview'});
     expect(rpc).toHaveBeenCalledWith('admin_consultant_full_profile',{_cid:'c1'});
     expect(screen.getByText('Payout details ready')).toBeInTheDocument();
-    for(const name of ['Overview','Personal & links','Experience','Records','Interviews','Payout']) expect(screen.getByRole('tab',{name})).toBeInTheDocument();
-    expect(screen.getByText('Biography')).toBeInTheDocument();
+    for(const name of ['Overview','Personal & links','Experience','Records','Interviews','Review & history','Payout']) expect(screen.getByRole('tab',{name})).toBeInTheDocument();
+    expect(screen.getAllByText('Biography').length).toBeGreaterThan(0);
     select('Records');expect(screen.getByText('Example company')).toBeInTheDocument();expect(screen.getByText('Example university')).toBeInTheDocument();
     select('Interviews');expect(screen.getByText('Useful evaluation')).toBeInTheDocument();
   });
   it('handles an almost empty object in every tab without crashing', async () => {
     show({consultant:{},profile:null,payout:null});await screen.findByRole('tab',{name:'Overview'});
     expect(screen.getByText('Payout details missing')).toBeInTheDocument();
-    for(const name of ['Overview','Personal & links','Experience','Records','Interviews','Payout']) {select(name);expect(screen.getAllByText('Not provided').length).toBeGreaterThan(0);}
+    for(const name of ['Overview','Personal & links','Experience','Records','Interviews','Review & history','Payout']) {select(name);expect(screen.getAllByText('Not provided').length).toBeGreaterThan(0);}
   });
   it('opens safe outbound links with noopener and renders biography as text', async () => {
     show();await screen.findByRole('tab',{name:'Overview'});select('Personal & links');

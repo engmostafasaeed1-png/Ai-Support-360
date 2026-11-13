@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Full consultant review UI: reused audited profile drawer/full page, checklist, sticky decisions, per-item comment previews, finance masking, EN/AR, signed-in desktop/mobile checks and focused tests.
+- [ ] Expanded profile sections and item-comment saving: owner must apply docs/sql/admin-profile-review-view.sql (prepared only; isolated function parsing passed, live execution intentionally not performed).
+
 - [x] Demo booked alerts (Oct 31, owner) built: "Demo booked: schedule needed" admin e-mail + bell (all form details, preferred slots in both time zones, respond-by deadline from 1 business hour setting, open/propose/reply buttons, tentative .ics on the admin page), reminders (once after deadline, then daily max 2, stop when scheduled), requester e-mails for confirmed/rescheduled/cancelled in the shared layout EN/AR, dedupe + duplicate protection. docs/sql/demo-schedule-alerts.sql + test (8/8 on a private copy), NOT applied, not published.
 - [ ] Apply docs/sql/demo-schedule-alerts.sql and deploy demo-request-notify + admin-confirm-demo-reschedule: awaits owner review.
 - [x] All SAP jobs as consultants (Oct 26, owner): role catalogue (28 roles, 11 categories, admin page), 1 main + up to 4 roles, legacy labels mapped (unknown kept as Other), role-aware fields (manager/pre-sales details, technical fields never forced), "Type of help needed" on requests + matching, directory Role filter, team card role, interview focus/rubric + 3 templates, suggested rate ranges, verification defaults, public wording EN/AR, tests. docs/sql/consultant-roles.sql + test (5/5 on a private copy), NOT applied.
