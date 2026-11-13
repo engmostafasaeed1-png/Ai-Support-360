@@ -16590,6 +16590,16 @@ export type Database = {
       admin_permission_catalog: { Args: never; Returns: string[] }
       admin_permission_groups_list: { Args: never; Returns: Json }
       admin_profile_reminder_stats: { Args: never; Returns: Json }
+      admin_profile_review_item: {
+        Args: {
+          _cid: string
+          _comment?: string
+          _item: string
+          _kind: string
+          _outcome: string
+        }
+        Returns: Json
+      }
       admin_publish_consultant_policy: {
         Args: {
           _body_ar: string
@@ -16960,6 +16970,10 @@ export type Database = {
       }
       admin_user_detail: { Args: { _uid: string }; Returns: Json }
       admin_user_export: { Args: { _uid: string }; Returns: Json }
+      admin_user_full_profile: {
+        Args: { _cid?: string; _uid?: string }
+        Returns: Json
+      }
       admin_users_bulk: {
         Args: {
           _action: string
