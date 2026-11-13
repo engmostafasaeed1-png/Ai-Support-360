@@ -1,4 +1,12 @@
 {
+  "requiredProfile": {
+    "column": "Required fields",
+    "missing": "{{count}} missing",
+    "unavailable": "Not checked",
+    "message": "Complete these required fields before submitting: {{fields}}.",
+    "saveFailed": "Could not save",
+    "submitFailed": "Could not submit"
+  },
   "consultant_profile_hub": {
     "title": "Profile",
     "details": "Profile details",

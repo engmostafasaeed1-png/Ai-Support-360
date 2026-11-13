@@ -813,6 +813,13 @@
       "when": 1794609221727,
       "tag": "0115_admin_profile_review_view",
       "breakpoints": true
+    },
+    {
+      "idx": 116,
+      "version": "7",
+      "when": 1794610736568,
+      "tag": "0116_profile_required_validation",
+      "breakpoints": true
     }
   ]
 }

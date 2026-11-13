@@ -1,4 +1,5 @@
 import OpenFullProfile from '@/components/admin/OpenFullProfile';
+import { requiredCount } from '@/lib/requiredProfile';
 import { useState } from 'react';
 import ClientViewHint from '@/components/admin/ClientViewHint';
 import { useSearchParams } from 'react-router-dom';
@@ -232,6 +233,15 @@ export default function ConsultantApprovalsPage() {
   };
 
   const allRows = consultants || [];
+  const requiredQ = useQuery({
+    queryKey: ['admin-required-profile-fields', allRows.map((c: any) => c.id)],
+    enabled: !isGuest && allRows.length > 0,
+    queryFn: async () => {
+      const result = await safeRpc('admin_required_profile_fields', { _ids: allRows.map((c: any) => c.id) });
+      if (result.error) throw result.error;
+      return result.data;
+    },
+  });
   const list = bankMissingOnly ? allRows.filter((c: any) => payoutStateFor(payoutMap, c.id) === 'missing') : allRows;
 
   const profileId = fullProfileId || linkedConsultant;
@@ -313,6 +323,12 @@ export default function ConsultantApprovalsPage() {
                       {!isGuest && <PolicyAcceptedBadge consultantId={c.id} />}
                     </div>
                     <div className="flex items-center gap-2">
+                      {!isGuest && <div className="min-w-24 text-center">
+                        <p className="text-xs text-muted-foreground">{t('requiredProfile.column', 'Required fields')}</p>
+                        <Badge variant={requiredCount(requiredQ.data, c.id) ? 'destructive' : 'outline'}>
+                          {requiredCount(requiredQ.data, c.id) === null ? t('requiredProfile.unavailable', 'Not checked') : t('requiredProfile.missing', { count: requiredCount(requiredQ.data, c.id), defaultValue: '{{count}} missing' })}
+                        </Badge>
+                      </div>}
                       {!isGuest && <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); setFullProfileId(c.id); }}>{t('admin.fullProfile.view', 'View full profile')}</Button>}
                       <div className="text-center hidden sm:block">
                         <div className="flex items-center gap-1">

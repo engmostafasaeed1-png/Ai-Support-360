@@ -156,3 +156,5 @@
 - [x] Admin messages by e-mail: one shared trigger + worker, e-mail choice on admin send boxes, delivery status on user card and settings, docs/sql/admin-message-email.sql + tests (unapplied)
 - [x] Admin messages organised: shared e-mail/in-app layout, compose box (templates, preview, test send), history table + CSV
 - [ ] Admin messages by e-mail: owner reviews and applies docs/sql/admin-message-email.sql
+
+- [x] Required validation: 0116 applied, bilingual rejection text and admin missing-count column/checklist added; 28 tests passed, real admin counts/whitespace checks and mobile verified; enforce remains false. No publishing or real profile submission performed.

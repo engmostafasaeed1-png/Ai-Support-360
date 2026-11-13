@@ -1,4 +1,12 @@
 {
+  "requiredProfile": {
+    "column": "الحقول المطلوبة",
+    "missing": "{{count}} غير مكتمل",
+    "unavailable": "لم يتم التحقق",
+    "message": "أكمل هذه الحقول المطلوبة قبل الإرسال: {{fields}}.",
+    "saveFailed": "تعذّر الحفظ",
+    "submitFailed": "تعذّر الإرسال"
+  },
   "consultant_profile_hub": {
     "title": "الملف الشخصي",
     "details": "تفاصيل الملف الشخصي",

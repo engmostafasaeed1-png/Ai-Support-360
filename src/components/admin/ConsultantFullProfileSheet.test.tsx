@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const rpc = vi.hoisted(() => vi.fn());
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { rpc, storage: { from: () => ({ createSignedUrl: () => Promise.resolve({ data: { signedUrl: 'https://files.example/test.pdf' }, error: null }) }) } } }));
 vi.mock('@/hooks/useProfileFieldRules', () => ({ useProfileFieldRules: () => ({ labels: new Map([['bio', 'Biography']]) }) }));
-vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (_key: string, fallback: string) => fallback }) }));
+vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (_key: string, fallback: string | { defaultValue?: string; count?: number }) => typeof fallback === 'string' ? fallback : fallback?.defaultValue?.replace('{{count}}', String(fallback.count)) ?? _key }) }));
 import ConsultantFullProfileSheet, { ConsultantFullProfileBody } from './ConsultantFullProfileSheet';
 const full = {
   finance_allowed: true,

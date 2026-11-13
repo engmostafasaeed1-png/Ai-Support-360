@@ -16811,6 +16811,13 @@ export type Database = {
         Args: { _note: string; _payment_id: string }
         Returns: undefined
       }
+      admin_required_profile_fields: {
+        Args: { _ids: string[] }
+        Returns: {
+          consultant_id: string
+          missing: string[]
+        }[]
+      }
       admin_responsiveness_disputes: { Args: never; Returns: Json }
       admin_responsiveness_overview: {
         Args: never
@@ -17593,6 +17600,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      client_required_missing: { Args: { _profile: Json }; Returns: string[] }
       client_resubmit_for_approval: {
         Args: { p_message?: string }
         Returns: undefined
@@ -18397,6 +18405,10 @@ export type Database = {
       }
       profile_interview_weight: { Args: never; Returns: number }
       profile_list_is_valid: { Args: { _list: string[] }; Returns: boolean }
+      profile_required_value_present: {
+        Args: { _value: Json }
+        Returns: boolean
+      }
       propose_ticket_rate: {
         Args: { _hourly_rate: number; _ticket_id: string }
         Returns: string

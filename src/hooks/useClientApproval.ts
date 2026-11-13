@@ -3,6 +3,8 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import type { ClientApproval } from '@/lib/clientApproval';
+import { useTranslation } from 'react-i18next';
+import { requiredProfileMessage } from '@/lib/requiredProfile';
 
 export const CLIENT_APPROVAL_KEY = ['client-approval'] as const;
 
@@ -27,6 +29,7 @@ export function useClientApproval() {
 
 export function useResubmitForApproval() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (message: string) => {
       const note = message.trim();
@@ -37,6 +40,6 @@ export function useResubmitForApproval() {
       void qc.invalidateQueries({ queryKey: CLIENT_APPROVAL_KEY });
       toast.success('Sent again. An administrator will review it.');
     },
-    onError: (e: Error) => toast.error('Could not send it again', { description: e.message }),
+    onError: (e: Error) => toast.error(t('requiredProfile.submitFailed', 'Could not submit'), { description: requiredProfileMessage(e.message, t) }),
   });
 }

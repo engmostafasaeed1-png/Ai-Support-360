@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getClientOnboardingState } from '@/lib/clientOnboarding';
+import { useTranslation } from 'react-i18next';
+import { requiredProfileMessage } from '@/lib/requiredProfile';
 
 export interface ClientProfile {
   id: string;
@@ -70,6 +72,7 @@ export function useClientProfileData() {
 
 export function useUpdateClientProfile() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (updates: Partial<ClientProfile>) => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -107,6 +110,6 @@ export function useUpdateClientProfile() {
       qc.invalidateQueries({ queryKey: ['client-profile-full'] });
       toast.success('Company profile updated');
     },
-    onError: (err: any) => toast.error('Update failed', { description: err.message }),
+    onError: (err: any) => toast.error(t('requiredProfile.saveFailed', 'Could not save'), { description: requiredProfileMessage(err.message, t) }),
   });
 }
