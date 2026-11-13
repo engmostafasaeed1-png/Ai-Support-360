@@ -138,7 +138,7 @@ export function useAdminTickets() {
         .limit(50);
       if (error) throw error;
 
-      const result: Record<string, Array<{ id: string; title: string; client: string; module: string; urgency: string; created: string }>> = {
+      const result: Record<string, Array<{ id: string; title: string; client: string; client_id?: string; module: string; urgency: string; created: string }>> = {
         new: [], under_review: [], matched: [], in_progress: [], waiting_for_client: [], resolved: [], closed: [],
       };
 
@@ -149,6 +149,7 @@ export function useAdminTickets() {
             id: t.id,
             title: t.title,
             client: 'Client',
+            client_id: t.client_id,
             module: t.sap_module,
             urgency: t.urgency || 'medium',
             created: new Date(t.created_at).toLocaleDateString(),

@@ -1,3 +1,5 @@
+import { AdminProfileHost, AdminProfileSearch } from '@/components/admin/UserFullProfile';
+import { useSearchParams } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Outlet } from 'react-router-dom';
 import SuperAdminSidebar from './SuperAdminSidebar';
@@ -13,6 +15,7 @@ import Footer from '@/components/landing/Footer';
 import { Link } from 'react-router-dom';
 
 export default function SuperAdminLayout() {
+  const [profileParams] = useSearchParams();
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-canvas relative">
@@ -32,6 +35,7 @@ export default function SuperAdminLayout() {
               </Badge>
             </div>
             <div className="flex items-center gap-3">
+              <AdminProfileSearch />
               <NotificationBell basePath="/super-admin" />
             </div>
           </FixedHeader>
@@ -41,7 +45,8 @@ export default function SuperAdminLayout() {
           <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-6 mt-14 md:mt-24">
             <PageTransition>
               <PageErrorBoundary homePath="/super-admin">
-                <Outlet />
+                <AdminProfileHost />
+                {profileParams.get('profilePage') !== '1' && <Outlet />}
               </PageErrorBoundary>
             </PageTransition>
           </main>

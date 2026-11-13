@@ -3,7 +3,8 @@ import ClientViewHint from '@/components/admin/ClientViewHint';
 import FavouriteButton from '@/components/favourites/FavouriteButton';
 import { Fragment, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import OpenFullProfile from '@/components/admin/OpenFullProfile';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +44,7 @@ function Attachment({ attachment }: { attachment: any }) {
 }
 export default function TicketBids({ ticketId, ticket = {}, onInvite = () => {}, readOnly = false }: { ticketId: string; ticket?: BiddingTicket; onInvite?: () => void; readOnly?: boolean }) {
   const queryClient = useQueryClient();
+  const adminView = useLocation().pathname.startsWith('/admin');
   const [wide, setWide] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
   useEffect(() => {
     const media = window.matchMedia('(min-width: 1024px)');
@@ -85,6 +87,7 @@ export default function TicketBids({ ticketId, ticket = {}, onInvite = () => {},
       rating={Number(p.consultant_rating) || 0} reviews={Number(p.consultant_reviews) || 0} badge={p.ai_interview_badge} verified={p.verification_status === 'verified'} />
     <div className="min-w-0 space-y-1"><Link to={`/client/consultants/${p.consultant_id}`} className="font-semibold text-sm text-accent break-words">{p.consultant_name}</Link><FavouriteButton consultantId={p.consultant_id} name={p.consultant_name} size="sm" className="ms-1 align-middle" />
       {p.verification_status === 'verified' && <Badge variant="outline" className="ms-1 text-success gap-1"><ShieldCheck className="h-3 w-3" />Verified</Badge>}
+      {adminView && <OpenFullProfile consultantId={p.consultant_id} />}
       <ClientViewHint id={p.consultant_id} />
       <ConsultantRingPills consultantId={p.consultant_id} rating={Number(p.consultant_rating) || 0} reviews={Number(p.consultant_reviews) || 0} />
       <ConsultantLocation audience="client" city={p.city} country={p.country} className="text-[11px] text-muted-foreground" />

@@ -1,3 +1,4 @@
+import OpenFullProfile from '@/components/admin/OpenFullProfile';
 import { useState } from 'react';
 import DecisionEmailNotice from '@/components/admin/DecisionEmailNotice';
 import ClientViewHint from '@/components/admin/ClientViewHint';
@@ -140,6 +141,7 @@ function Loaded({ userId, installed, perms, me, superAdminCount, fourEyes, onOpe
           </div>
         )}
         {/* Actions */}
+        <OpenFullProfile userId={u.id} />
         <div className="mt-4 flex flex-wrap gap-2">
           {u.consultant_id && <Button size="sm" variant="outline" onClick={() => { if (u.consultant_id) onOpenConsultant(u.consultant_id); }}>{t("admin.fullProfile.view", "View full profile")}</Button>}
           {can('users.edit') && !lockedBySuper && <Button size="sm" variant="outline" onClick={() => setDialog('edit')}><Pencil className="me-1 h-4 w-4" />{t('um.edit', 'Edit')}</Button>}

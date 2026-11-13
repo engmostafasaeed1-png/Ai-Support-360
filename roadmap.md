@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Generic admin full-profile UI: role tabs, client/company/account/history, reusable user entry and header search, ticket/bid/payment/message/report shortcuts, client decisions and direct e-mail, EN/AR, 34 focused checks, signed-in missing-SQL desktop/mobile verified.
+- [ ] Generic profile live readback: owner must apply docs/sql/admin-profile-review-view.sql; isolated company read/audit-per-open/non-admin denial passed, no live migration or publishing.
+
 - [x] Full consultant review UI: reused audited profile drawer/full page, checklist, sticky decisions, per-item comment previews, finance masking, EN/AR, signed-in desktop/mobile checks and focused tests.
 - [ ] Expanded profile sections and item-comment saving: owner must apply docs/sql/admin-profile-review-view.sql (prepared only; isolated function parsing passed, live execution intentionally not performed).
 

@@ -1,3 +1,4 @@
+import OpenFullProfile from '@/components/admin/OpenFullProfile';
 import { useEffect, useState } from 'react';
 import TaskProgressPanel from '@/components/progress/TaskProgressPanel';
 import { matchSteps, understoodSummary } from '@/lib/matchProgress';
@@ -221,7 +222,7 @@ export default function SendMatchDialog({ open, onOpenChange, ticketId, ticketTi
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-foreground">{c.name}</p>
+                        <OpenFullProfile consultantId={c.consultant_id} name={c.name} />
                         {c.has_active_nda && <Shield className="w-3.5 h-3.5 text-emerald-500" />}
                         {c.verification_status === 'verified' && <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />}
                       </div>

@@ -6,7 +6,7 @@ Subdirectories have their own `AGENTS.md` (e.g. `supabase/functions/`, `docs/sql
 - Dimmed buttons use Button `reason` (keys and server codes in `src/lib/blockedReasons.ts`) or `busy`, never bare `disabled` (guard test; `disabled-ok:` opt-out), so each block says why and what next.
 - Shared Button drops its variant gradient when callers pass a base background colour (custom gradients kept), preserving emergency/status colours.
 - Consultant landing/pricing pages own head tags via useHeadTags (dedupe, restore on unmount), never also via RouteSeo, to avoid competing updates.
-- Admin profiles reuse the audited full-profile RPC and sheet/page; finance-only reveals, ephemeral queries, signed files and ame_decision_notice item reviews protect data and prevent duplicate mail.
+- AdminProfileHost routes all users through audited admin_user_full_profile, reusing role viewers; ephemeral data, finance masks and shared ame decisions protect privacy.
 - Invoice details use shared billing controls + admin confirm hook.
 - Timesheet PDF/CSV rows come only from the shared timesheet document helpers (screen amounts, approval metadata), so exports never diverge.
 - Credibility scores/star fills come only from the shared credibility library; photo performance rings only from lib/ringAvatar via ConsultantRing (map popups via its DOM twin), outer arc pure client rating, inner arc only public responsiveness, so all surfaces agree.

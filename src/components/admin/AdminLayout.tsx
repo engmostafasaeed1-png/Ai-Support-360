@@ -1,3 +1,5 @@
+import { AdminProfileHost, AdminProfileSearch } from '@/components/admin/UserFullProfile';
+import { useSearchParams } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
@@ -16,6 +18,7 @@ import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 
 export default function AdminLayout() {
   useSessionTimeout();
+  const [profileParams] = useSearchParams();
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-canvas relative">
@@ -33,6 +36,7 @@ export default function AdminLayout() {
             </div>
             <div className="flex items-center gap-3">
               <LanguageSwitchButton />
+              <AdminProfileSearch />
               <NotificationBell basePath="/admin" />
               <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary">Admin</Badge>
             </div>
@@ -43,7 +47,8 @@ export default function AdminLayout() {
           <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 pb-6 mt-14 md:mt-24">
             <PageTransition>
               <PageErrorBoundary homePath="/admin">
-                <Outlet />
+                <AdminProfileHost />
+                {profileParams.get('profilePage') !== '1' && <Outlet />}
               </PageErrorBoundary>
             </PageTransition>
           </main>

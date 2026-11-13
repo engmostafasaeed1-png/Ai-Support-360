@@ -1,3 +1,4 @@
+import OpenFullProfile from '@/components/admin/OpenFullProfile';
 import { useState, useEffect } from 'react';
 import TicketOutcomeControl from '@/components/client/TicketOutcomeControl';
 import { useTranslation } from 'react-i18next';
@@ -280,6 +281,7 @@ export default function TicketDetailPage() {
         </div>
       </div>
 
+      {isAdmin && <div className="flex flex-wrap gap-2"><OpenFullProfile userId={ticket.client_id} name="Client" /><OpenFullProfile consultantId={ticket.consultant_id ?? undefined} name={ticket.consultant_name ?? "Consultant"} /></div>}
       {isColleague && (
         <Card className="rounded-2xl border-border/50 bg-muted/30">
           <CardContent className="p-3 text-xs text-muted-foreground flex items-center gap-2">

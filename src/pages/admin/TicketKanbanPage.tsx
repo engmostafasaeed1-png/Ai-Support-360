@@ -1,3 +1,4 @@
+import OpenFullProfile from '@/components/admin/OpenFullProfile';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -87,7 +88,7 @@ export default function TicketKanbanPage() {
                           <Badge variant="secondary" className="text-[10px]">{ticket.module}</Badge>
                           <span className="text-[10px] text-muted-foreground">{ticket.created}</span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">{ticket.client}</p>
+                        <OpenFullProfile userId={ticket.client_id} name={ticket.client} />
                         {tt.active && <div className="mt-2"><TrackingRowChips summary={tt.summaries.get(ticket.id)} settings={tt.settings} /></div>}
                         {sla.on && <div className="mt-1"><SlaRowChip state={sla.map.get(ticket.id)} atRiskPct={sla.atRisk} /></div>}
                         {agreementTags.get(ticket.id) && <div className="mt-1"><AgreementTagChip name={agreementTags.get(ticket.id)!.name} reference={agreementTags.get(ticket.id)!.reference} /></div>}

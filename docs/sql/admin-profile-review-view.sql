@@ -168,3 +168,70 @@ EXCEPTION WHEN OTHERS THEN
 END
 $$;
 REVOKE ALL ON FUNCTION public.ame_on_item_review() FROM PUBLIC, anon, authenticated;
+
+-- Generic role router. Reuses admin_user_detail and admin_consultant_full_profile; no browser table grants.
+CREATE OR REPLACE FUNCTION public.admin_user_full_profile(_uid uuid DEFAULT NULL, _cid uuid DEFAULT NULL)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  _me uuid := auth.uid();
+  _base jsonb;
+  _account jsonb;
+  _roles jsonb;
+  _consultant jsonb;
+  _client jsonb;
+  _finance boolean;
+  _pause jsonb;
+  _preferences jsonb;
+  _cid_resolved uuid;
+BEGIN
+  IF NOT COALESCE(public.has_role(_me,'admin'::public.app_role),false) AND NOT COALESCE(public.has_role(_me,'super_admin'::public.app_role),false) THEN RAISE EXCEPTION 'Administrators only' USING ERRCODE='42501'; END IF;
+  IF NOT public.admin_can(_me,'users.read') THEN RAISE EXCEPTION 'User profile permission required' USING ERRCODE='42501'; END IF;
+  IF (_uid IS NULL) = (_cid IS NULL) THEN RAISE EXCEPTION 'Provide exactly one account or consultant ID' USING ERRCODE='22023'; END IF;
+  IF _cid IS NOT NULL THEN SELECT user_id INTO _uid FROM public.consultants WHERE id=_cid; END IF;
+  IF _uid IS NULL THEN RAISE EXCEPTION 'User not found' USING ERRCODE='P0002'; END IF;
+  _base := public.admin_user_detail(_uid);
+  _finance := public.admin_can(_me,'finance.view');
+  _account := (_base->'user') - 'bank' - 'payout' - 'iban' - 'account_number' - 'swift_bic';
+  SELECT COALESCE(jsonb_agg(role::text ORDER BY role::text),'[]'::jsonb) INTO _roles FROM public.user_roles WHERE user_id=_uid;
+  SELECT id INTO _cid_resolved FROM public.consultants WHERE user_id=_uid;
+  IF _roles ? 'consultant' AND _cid_resolved IS NOT NULL THEN _consultant:=public.admin_consultant_full_profile(_cid_resolved); END IF;
+  IF to_regprocedure('public.notification_pause_state(uuid)') IS NOT NULL THEN
+    EXECUTE 'SELECT public.notification_pause_state($1)' INTO _pause USING _uid;
+  END IF;
+  SELECT jsonb_build_object('language',p.preferred_language,'pause',_pause,'new_case_alerts',c.new_case_alerts,'profile_visible',c.profile_visible,'show_availability',c.show_availability)
+    INTO _preferences FROM public.profiles p LEFT JOIN public.consultants c ON c.user_id=p.user_id WHERE p.user_id=_uid;
+  IF _roles ? 'client' THEN
+    _client := jsonb_build_object(
+      'company', (SELECT to_jsonb(cp) - 'custom_nda_url' FROM public.client_profiles cp WHERE cp.user_id=_uid),
+      'custom_nda_path', (SELECT custom_nda_url FROM public.client_profiles WHERE user_id=_uid),
+      'billing', COALESCE((SELECT jsonb_agg(to_jsonb(b)-'updated_by') FROM public.tenant_billing_details b WHERE b.tenant_id IN (SELECT tenant_id FROM public.tenant_members WHERE user_id=_uid)),'[]'::jsonb),
+      'team', COALESCE((SELECT jsonb_agg(jsonb_build_object('user_id',m.user_id,'name',p.display_name,'role',m.org_role,'tenant_id',m.tenant_id,'joined_at',m.created_at)) FROM public.tenant_members m LEFT JOIN public.profiles p ON p.user_id=m.user_id WHERE m.tenant_id IN (SELECT tenant_id FROM public.tenant_members WHERE user_id=_uid)),'[]'::jsonb),
+      'landscape', (SELECT jsonb_build_object('sap_landscape',sap_landscape,'sap_modules',sap_modules,'sap_module_versions',sap_module_versions,'sap_product',sap_product,'sap_version',sap_version,'sap_system_ids',sap_system_ids,'sap_interfaces',sap_interfaces,'sap_landscape_notes',sap_landscape_notes) FROM public.client_profiles WHERE user_id=_uid),
+      'tickets', COALESCE((SELECT jsonb_agg(x) FROM (SELECT id,title,status,created_at FROM public.tickets WHERE client_id=_uid ORDER BY created_at DESC LIMIT 100) x),'[]'::jsonb),
+      'bids', COALESCE((SELECT jsonb_agg(x) FROM (SELECT p.id,p.ticket_id,p.consultant_id,p.status,p.created_at FROM public.proposals p JOIN public.tickets t ON t.id=p.ticket_id WHERE t.client_id=_uid ORDER BY p.created_at DESC LIMIT 100) x),'[]'::jsonb),
+      'payments', COALESCE((SELECT jsonb_agg(x) FROM (SELECT id,invoice_number,status,amount,currency,created_at,paid_at,due_date FROM public.payments WHERE client_id=_uid ORDER BY created_at DESC LIMIT 100) x),'[]'::jsonb),
+      'ndas', COALESCE((SELECT jsonb_agg(jsonb_build_object('id',id,'signed_at',signed_at,'client_signed_at',client_signed_at,'revoked_at',revoked_at)) FROM public.nda_agreements WHERE client_id=_uid),'[]'::jsonb),
+      'terms', COALESCE((SELECT jsonb_agg(jsonb_build_object('reference',reference,'agreed_at',agreed_at,'version',version,'status',status)) FROM public.sa_agreements WHERE client_id=_uid),'[]'::jsonb),
+      'ratings_given', COALESCE((SELECT jsonb_agg(jsonb_build_object('score',score,'comment',comment,'created_at',created_at)) FROM public.ratings WHERE client_id=_uid),'[]'::jsonb),
+      'ratings_received', COALESCE((SELECT jsonb_agg(jsonb_build_object('score',score,'communication_score',communication_score,'clarity_score',clarity_score,'cooperation_score',cooperation_score,'comment',comment,'hidden',hidden,'hidden_reason',hidden_reason,'created_at',created_at)) FROM public.client_reviews WHERE client_id=_uid),'[]'::jsonb),
+      'agreements', COALESCE((SELECT jsonb_agg(jsonb_build_object('id',id,'name',name,'reference',reference,'status',status,'start_date',start_date,'end_date',end_date)) FROM public.sa_agreements WHERE client_id=_uid),'[]'::jsonb),
+      'referral', COALESCE((SELECT jsonb_agg(jsonb_build_object('source',source,'status',status,'created_at',created_at)) FROM public.referrals WHERE referred_user_id=_uid),'[]'::jsonb),
+      'decisions', COALESCE((SELECT jsonb_agg(jsonb_build_object('event',event_type,'comment',note,'created_at',created_at)) FROM public.client_approval_events WHERE client_user_id=_uid),'[]'::jsonb)
+    );
+  END IF;
+  -- Unlike the older detail reader's ten-minute audit dedupe, every full-profile open is recorded.
+  INSERT INTO public.audit_logs(user_id,action,entity_type,entity_id,metadata)
+  VALUES(_me,'admin_viewed_user_full_profile','user',_uid,jsonb_build_object('roles',_roles,'finance_allowed',_finance));
+  RETURN jsonb_build_object(
+    'roles',_roles,'account',_account,'consultant',_consultant,'client',_client,'finance_allowed',_finance,
+    'can_verify_consultant',public.admin_can(_me,'consultants.verify'),'can_message',public.admin_can(_me,'users.message'),'can_review_client',public.admin_can(_me,'users.edit'),
+    'preferences',_preferences,'warnings',COALESCE(_base->'flags','{}'::jsonb) || jsonb_build_object('stored_contact_bypass_events',(SELECT count(*) FROM public.audit_logs WHERE (user_id=_uid OR entity_id=_uid) AND action IN ('contact_bypass','contact_bypass_attempt','contact_details_blocked'))),
+    'sessions',CASE WHEN public.admin_can(_me,'users.sessions') THEN _base->'sessions' ELSE '[]'::jsonb END,
+    'activity',COALESCE((SELECT jsonb_agg(x - 'metadata') FROM jsonb_array_elements(COALESCE(_base->'timeline','[]'::jsonb)) x),'[]'::jsonb),'decisions',_base->'notifications',
+    'messages',COALESCE((SELECT jsonb_agg(x) FROM (SELECT n.id,n.title,n.body,n.created_at,n.is_read FROM public.notifications n WHERE n.user_id=_uid AND (n.type IN ('admin_message','approval') OR n.meta->>'category'='decision') ORDER BY n.created_at DESC LIMIT 100) x),'[]'::jsonb),
+    'emails',COALESCE((SELECT jsonb_agg(x) FROM (SELECT id,notification_id,status,reason,kind,attempts,created_at,finished_at FROM public.admin_message_emails WHERE recipient=_uid ORDER BY created_at DESC LIMIT 100) x),'[]'::jsonb)
+  );
+END $$;
+REVOKE ALL ON FUNCTION public.admin_user_full_profile(uuid,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.admin_user_full_profile(uuid,uuid) TO authenticated;

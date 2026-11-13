@@ -1,3 +1,4 @@
+import OpenFullProfile from '@/components/admin/OpenFullProfile';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -98,7 +99,7 @@ export default function DirectEmailReport({ sendId, initial }: { sendId: string;
               const s = rowStatus(r, channel);
               return (
                 <TableRow key={r.user_id}>
-                  <TableCell className="text-sm"><p className="font-medium">{r.name || '—'}</p><p className="text-xs text-muted-foreground" dir="ltr">{r.email ?? '—'}</p></TableCell>
+                  <TableCell className="text-sm"><OpenFullProfile userId={r.user_id} name={r.name || '—'} /><p className="text-xs text-muted-foreground" dir="ltr">{r.email ?? '—'}</p></TableCell>
                   <TableCell className="text-xs">{r.lang === 'ar' ? 'العربية' : 'English'}</TableCell>
                   <TableCell className="text-xs">{r.in_app ? (r.read ? t('amh.read_yes', 'Read') : t('ade.delivered', 'Delivered')) : '—'}</TableCell>
                   <TableCell>

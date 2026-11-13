@@ -1,3 +1,4 @@
+import OpenFullProfile from '@/components/admin/OpenFullProfile';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -494,7 +495,7 @@ function RecipientRow({ r, excluded, reason, onToggle }: { r: PreviewRecipient; 
   return (
     <li className="flex items-center gap-3 px-3 py-2 text-sm">
       <Checkbox checked={!reason && !excluded} disabled={!!reason} onCheckedChange={(v) => onToggle(!!v)} aria-label={t('bmsg.include_x', 'Include {{name}}', { name: r.name })} />
-      <div className="min-w-0 flex-1"><p className="truncate font-medium">{r.name}</p>
+      <div className="min-w-0 flex-1"><OpenFullProfile userId={r.user_id} name={r.name} />
         <p className="truncate text-xs text-muted-foreground">{[r.role && t(`bmsg.role_${r.role}`, r.role), r.country, r.lang === 'ar' ? 'العربية' : 'English'].filter(Boolean).join(' · ')}</p></div>
       <div className="flex shrink-0 flex-wrap justify-end gap-1">
         {reason ? <Badge variant="outline" className="text-[10px]">{reason}</Badge> : <>

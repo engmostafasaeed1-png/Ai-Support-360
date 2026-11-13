@@ -1,3 +1,4 @@
+import OpenFullProfile from '@/components/admin/OpenFullProfile';
 import { useTranslation } from 'react-i18next';
 import ClientViewHint from '@/components/admin/ClientViewHint';
 import { ArrowDown, ArrowUp, AtSign } from 'lucide-react';
@@ -86,7 +87,7 @@ export default function UsersList({ rows, loading, columns, selected, focus, sor
                   </th>
                 );
               })}
-              {onEmail && <th scope="col" className="w-12 px-3 py-3"><span className="sr-only">{t('um.actions', 'Actions')}</span></th>}
+              {<th scope="col" className="w-12 px-3 py-3"><span className="sr-only">{t('um.actions', 'Actions')}</span></th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
@@ -97,7 +98,7 @@ export default function UsersList({ rows, loading, columns, selected, focus, sor
                 <td className="px-3 py-3"><Checkbox checked={selected.has(u.id)} onCheckedChange={() => onToggle(u.id)} aria-label={t('um.select_person', 'Select {{name}}', { name: u.name || u.email })} /></td>
                 <td className="max-w-64 px-3 py-3">{person(u)}</td>
                 {columns.map((c) => <td key={c} className="px-3 py-3 text-muted-foreground">{cell(u, c)}</td>)}
-                {onEmail && <td className="px-3 py-3"><EmailButton u={u} onEmail={onEmail} /></td>}
+                <td className="px-3 py-3"><div className="flex gap-1"><OpenFullProfile userId={u.id} name={u.name || u.email} compact />{onEmail && <EmailButton u={u} onEmail={onEmail} />}</div></td>
               </tr>
             ))}
           </tbody>
@@ -109,7 +110,7 @@ export default function UsersList({ rows, loading, columns, selected, focus, sor
           <li key={u.id} data-row={i} tabIndex={-1} className={cn('flex gap-3 p-3', focus === i && 'bg-primary/5')}>
             <Checkbox className="mt-2" checked={selected.has(u.id)} onCheckedChange={() => onToggle(u.id)} aria-label={t('um.select_person', 'Select {{name}}', { name: u.name || u.email })} />
             <div className="min-w-0 flex-1 space-y-1.5">
-              <div className="flex items-start justify-between gap-2">{person(u)}{onEmail && <EmailButton u={u} onEmail={onEmail} />}</div>
+              <div className="flex items-start justify-between gap-2">{person(u)}<OpenFullProfile userId={u.id} name={u.name || u.email} compact />{onEmail && <EmailButton u={u} onEmail={onEmail} />}</div>
               <div className="flex flex-wrap gap-1">
                 <Badge variant={STATUS_VARIANT[u.status]} className="text-[10px]">{statusLabel(t, u.status)}</Badge>
                 {u.roles.map((r) => <Badge key={r} variant="outline" className="text-[10px]">{roleLabel(t, r)}</Badge>)}

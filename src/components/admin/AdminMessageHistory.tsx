@@ -1,3 +1,4 @@
+import OpenFullProfile from '@/components/admin/OpenFullProfile';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -99,7 +100,7 @@ export default function AdminMessageHistory() {
                   return (
                     <TableRow key={r.id}>
                       <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{fmt(r.created_at)}</TableCell>
-                      <TableCell className="text-sm">{r.recipient_name || '—'}{r.is_test && <Badge variant="outline" className="ms-1 text-[10px]">TEST</Badge>}</TableCell>
+                      <TableCell className="text-sm"><OpenFullProfile userId={r.recipient} name={r.recipient_name || '—'} />{r.is_test && <Badge variant="outline" className="ms-1 text-[10px]">TEST</Badge>}</TableCell>
                       <TableCell><Badge variant="outline" className={cn('rounded-full text-[11px]', CATEGORY_UI[r.category]?.chip)}>{MESSAGE_COPY[lang].categories[r.category] ?? r.category}</Badge></TableCell>
                       <TableCell className="max-w-[18rem] truncate text-sm" title={r.subject ?? ''}>{isOutcome(r.decision) && <Badge variant="outline" className="me-1 rounded-full px-1.5 py-0 text-[10px]">{DECISION_COPY[lang].badges[badgeFor(r.decision)]}</Badge>}{r.subject || '—'}{r.important && <span className="ms-1 text-[11px] text-warning">· {t('ame.important_short', 'important')}</span>}</TableCell>
                       <TableCell className="whitespace-nowrap text-xs">{channelLabel(r)}{r.direct_send && <Badge variant="outline" className="ms-1 px-1.5 py-0 text-[10px]">{t('ade.direct_short', 'direct')}</Badge>}</TableCell>

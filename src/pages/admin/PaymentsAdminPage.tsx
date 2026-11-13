@@ -1,3 +1,4 @@
+import OpenFullProfile from '@/components/admin/OpenFullProfile';
 import { useEffect, useMemo, useState } from 'react';
 import { isReferralPayout } from '@/lib/referrals';
 import ClientViewHint from '@/components/admin/ClientViewHint';
@@ -199,8 +200,8 @@ export default function PaymentsAdminPage() {
                           <div className="text-xs text-muted-foreground font-mono">{i.reference}</div>
                           {i.description && <div className="text-xs text-muted-foreground max-w-[220px] truncate">{i.description}</div>}
                         </TableCell>
-                        <TableCell className="text-sm">{i.client_name}</TableCell>
-                        <TableCell className="text-sm">{i.consultant_name || '-'}</TableCell>
+                        <TableCell className="text-sm"><OpenFullProfile userId={i.client_id} name={i.client_name} /></TableCell>
+                        <TableCell className="text-sm"><OpenFullProfile consultantId={i.consultant_id} name={i.consultant_name || '-'} /></TableCell>
                         <TableCell className="text-end">
                           <div className="font-semibold">{money(i.amount, i.currency)}</div>
                           {i.pricing_model === 'v2' && i.base_amount != null && (
@@ -288,8 +289,8 @@ export default function PaymentsAdminPage() {
                           <div className="font-medium text-sm">{i.invoice_number}</div>
                           <div className="text-xs text-muted-foreground font-mono">{i.reference}</div>
                         </TableCell>
-                        <TableCell className="text-sm">{i.client_name}</TableCell>
-                        <TableCell className="text-sm">{i.consultant_name || '-'}</TableCell>
+                        <TableCell className="text-sm"><OpenFullProfile userId={i.client_id} name={i.client_name} /></TableCell>
+                        <TableCell className="text-sm"><OpenFullProfile consultantId={i.consultant_id} name={i.consultant_name || '-'} /></TableCell>
 <TableCell className="text-xs"><Link to={`/invoice/${i.id}`} className="text-primary hover:underline">View / print</Link></TableCell>
                         <TableCell className="text-xs">
                           {i.status === 'pending' ? (
@@ -357,7 +358,7 @@ export default function PaymentsAdminPage() {
                     {payoutsSorted.map((p) => (
                       <TableRow key={p.id}>
                         <TableCell className="text-sm">
-                          <div className="font-medium">{p.consultant_name}</div>
+                          <OpenFullProfile consultantId={p.consultant_id} name={p.consultant_name} />
                           {isReferralPayout(p) && <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">Referral reward (paid by the platform)</Badge>}
                           <ClientViewHint id={p.consultant_id} />
                           <PayoutReadinessBadge ready={p.has_details === true} />

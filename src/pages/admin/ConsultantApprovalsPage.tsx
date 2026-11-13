@@ -1,3 +1,4 @@
+import OpenFullProfile from '@/components/admin/OpenFullProfile';
 import { useState } from 'react';
 import ClientViewHint from '@/components/admin/ClientViewHint';
 import { useSearchParams } from 'react-router-dom';
@@ -306,6 +307,7 @@ export default function ConsultantApprovalsPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground">{c.name}</p>
                       <ClientViewHint id={c.id} />
+                      {!isGuest && <OpenFullProfile userId={c.user_id} consultantId={c.id} />}
                       <p className="text-xs text-muted-foreground">{c.modules.join(' · ')}</p>
                       <ConsultantLocation audience="admin" city={c.city} country={c.country} className="text-xs text-muted-foreground" />
                       {!isGuest && <PolicyAcceptedBadge consultantId={c.id} />}
@@ -482,6 +484,7 @@ export default function ConsultantApprovalsPage() {
               {decisionTarget?.name} — {t('approvals_page.decision_desc', 'add an optional comment. It is saved in the audit log and e-mailed to the consultant with this decision.')}
             </DialogDescription>
           </DialogHeader>
+          {decisionTarget && <OpenFullProfile consultantId={decisionTarget.id} />}
           {decisionTarget && <Button variant="outline" onClick={() => setFullProfileId(decisionTarget.id)}>{t('admin.fullProfile.view', 'View full profile')}</Button>}
           <div className="space-y-2">
             <Label htmlFor="decision-reason" className="text-sm">Reason / notes (optional)</Label>

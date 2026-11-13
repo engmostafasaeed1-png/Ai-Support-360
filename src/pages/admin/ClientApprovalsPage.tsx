@@ -1,3 +1,4 @@
+import OpenFullProfile from '@/components/admin/OpenFullProfile';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -220,6 +221,7 @@ function ReviewDialog({ row, onClose }: { row: Row; onClose: () => void }) {
           <DialogDescription>{row.email}</DialogDescription>
         </DialogHeader>
 
+        <OpenFullProfile userId={row.user_id} />
         {row.comment && (row.status === 'changes_requested' || row.status === 'rejected') ? (
           <div className="rounded-xl border border-border/60 bg-muted/30 p-3 text-sm">
             <p className="mb-1 text-xs font-medium text-muted-foreground">
@@ -476,8 +478,8 @@ export default function ClientApprovalsPage() {
       ) : (
         <div className="space-y-2">
           {shown.map((r) => (
+            <div key={r.user_id}><OpenFullProfile userId={r.user_id} />
             <button
-              key={r.user_id}
               type="button"
               onClick={() => setOpen(r.user_id)}
               className="flex w-full flex-col gap-3 rounded-2xl border border-border/60 bg-card p-4 text-start transition-colors hover:bg-muted/40 sm:flex-row sm:items-center"
@@ -506,7 +508,7 @@ export default function ClientApprovalsPage() {
                 </span>
                 <StatusBadge status={r.status} />
               </div>
-            </button>
+            </button></div>
           ))}
         </div>
       )}

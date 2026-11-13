@@ -127,7 +127,7 @@ export function ConsultantFullProfileBody({ data, onChanged }: { data: FullConsu
   </Tabs>;
 }
 
-function ProfileDecisionBar({ consultantId, status, onChanged }: { consultantId: string; status: unknown; onChanged: () => void }) {
+export function ProfileDecisionBar({ consultantId, status, onChanged }: { consultantId: string; status: unknown; onChanged: () => void }) {
   const { t } = useTranslation();
   const [target, setTarget] = useState<string | null>(null);
   const [comment, setComment] = useState('');
