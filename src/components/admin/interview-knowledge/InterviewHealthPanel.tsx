@@ -4,7 +4,7 @@ import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { safeRpc } from '@/lib/safeRpc';
 
-type Health = { last_success: string | null; last_error: { at: string; status: number; message: string } | null };
+type Health = { average_ms?: number | null; p95_ms?: number | null; last_success: string | null; last_error: { at: string; status: number; message: string } | null };
 export default function InterviewHealthPanel() {
   const { t, i18n } = useTranslation();
   const health = useQuery({ queryKey: ['admin-interview-health'], retry: false, queryFn: async () => {
@@ -17,6 +17,8 @@ export default function InterviewHealthPanel() {
     <div className="flex items-center justify-between gap-2"><h2 className="font-semibold text-foreground">{t('interview.health_title')}</h2>
       <Button variant="ghost" size="icon" busy={health.isFetching} aria-label={t('common.refresh')} title={t('common.refresh')} onClick={() => void health.refetch()}><RefreshCw className="h-4 w-4" /></Button></div>
     {health.error ? <p role="status" className="text-sm text-muted-foreground">{t('interview.health_pending')}</p> : <dl className="grid gap-3 text-sm sm:grid-cols-2">
+      <div><dt className="text-muted-foreground">{t('interview.health_average')}</dt><dd>{health.data?.average_ms != null ? `${(health.data.average_ms / 1000).toFixed(2)} s` : t('interview.health_none')}</dd></div>
+      <div><dt className="text-muted-foreground">{t('interview.health_p95')}</dt><dd>{health.data?.p95_ms != null ? `${(health.data.p95_ms / 1000).toFixed(2)} s` : t('interview.health_none')}</dd></div>
       <div><dt className="text-muted-foreground">{t('interview.health_success')}</dt><dd>{time(health.data?.last_success)}</dd></div>
       <div><dt className="text-muted-foreground">{t('interview.health_error')}</dt><dd className="break-words">{time(health.data?.last_error?.at)}{health.data?.last_error && <p>{health.data.last_error.message}</p>}</dd></div>
     </dl>}

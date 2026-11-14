@@ -581,6 +581,18 @@
     "ai_skills_assessment": "AI Skills Assessment"
   },
   "interview": {
+    "reply_label": "Your answer",
+    "reply_placeholder": "Write or record your answer…",
+    "reply_hint": "Enter adds a new line. Ctrl/Cmd+Enter sends your answer.",
+    "reply_short": "Add at least 3 characters before sending your answer.",
+    "send_answer": "Send answer",
+    "add_voice": "Add more by voice",
+    "stop_recording": "Stop recording",
+    "edit_last": "Edit last answer",
+    "append_answer": "I need to add something",
+    "health_average": "Average time to first words",
+    "health_p95": "95th percentile time to first words",
+
     "try_again": "Try again",
     "saved_retry": "The interviewer could not reply. Your answers are saved; please try again.",
     "rate_retry": "The interviewer is busy. Your answers are saved; please wait a moment and try again.",

@@ -31,6 +31,8 @@ export interface VoiceOptions {
   lang: string;
   /** Hands-free: call onIdle after this much silence once everything said has been transcribed (0 = never). */
   idleMs?: number;
+  /** Interview review mode uses browser recognition first when supported. */
+  preferBrowser?: boolean;
   /** Text heard since start() (cumulative, in spoken order). */
   onText?: (text: string) => void;
   onIdle?: (text: string) => void;
@@ -199,6 +201,7 @@ export function useVoiceRecognizer(options: VoiceOptions) {
     setFallbackReason(null);
     setStatus('starting');
 
+    if (optsRef.current.preferBrowser && hasWebSpeech() && startWeb(sid)) return;
     const canRecord = canRecordAudio();
     const server = canRecord ? await probeServerVoice() : { ready: false, reason: 'unsupported' as FallbackReason, maxSegmentSeconds: 30 };
     if (sid !== session.current) return;

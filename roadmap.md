@@ -2,6 +2,9 @@
 - [ ] Interview stale-session cleanup and admin health readback: apply prepared docs/sql/interview-start-fix.sql; remains unapplied as requested, no sessions deleted and no publishing.
 # Roadmap
 
+- [x] Interview fast replies: explicit editable drafts, edit/append cancellation, compact streaming turns, browser-first voice, static prompt cache, timing health; 55 tests and signed-in desktop/mobile checked. Synthetic first text 1.73s → 0.36s; updated real turn server first text 1.60s. No publishing.
+- [ ] Interview timing averages/P95: apply docs/sql/interview-fast-reply.sql after owner review; SQL remains unapplied. No representative speed distribution or actual microphone speech was measured.
+
 - [x] Pending consultant draft-save regression: onboarding saves no longer claim completion; 15 tests passed, a real temporary pending consultant saved/reopened edits with 23 missing items, status stayed draft/pending; no SQL or publishing.
 
 - [x] Generic admin full-profile UI: role tabs, client/company/account/history, reusable user entry and header search, ticket/bid/payment/message/report shortcuts, client decisions and direct e-mail, EN/AR, 34 focused checks, signed-in missing-SQL desktop/mobile verified.

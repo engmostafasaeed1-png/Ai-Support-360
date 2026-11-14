@@ -17,6 +17,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { TrustBadge } from './TrustBadge';
 import { classifyStartError, ERROR_TEXT, logStartErrorOnce } from '@/lib/interviewStart';
 import { fetchInterviewTurn } from '@/lib/interviewRecovery';
+import InterviewReplyBox from './InterviewReplyBox';
+import { readAnswerDraft, saveAnswerDraft, reviseAnswer, validAnswer } from '@/lib/interviewReply';
 import InterviewBasisNotice from './InterviewBasisNotice';
 import { useVoiceRecognizer } from '@/hooks/useVoiceRecognizer';
 import { joinText } from '@/lib/voice/transcriptAssembler';
@@ -228,7 +230,14 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   const [reward, setReward] = useState<{ ai_interview_badge: string; credibility_credits: number } | null>(null);
   const [phase, setPhase] = useState<'disclaimer' | 'chat' | 'evaluating' | 'results'>('disclaimer');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(() => readAnswerDraft(interviewId));
+  const [revisionMode, setRevisionMode] = useState<'edit' | 'append' | null>(null);
+  const turnController = useRef<AbortController | null>(null);
+  const turnGeneration = useRef(0);
+  const sendLock = useRef(false);
+  const pendingAnswer = useRef('');
+  useEffect(() => { saveAnswerDraft(interviewId, input); }, [interviewId, input]);
+  useEffect(() => () => { turnController.current?.abort(); }, []);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
@@ -275,20 +284,18 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     interviewId,
     lang: interviewLang,
     // Hands-free: the answer is sent after 2 seconds of silence, once everything said has been written down.
-    idleMs: conversationMode ? 2000 : 0,
+    idleMs: 0,
+    preferBrowser: true,
     onText: (spoken) => {
       const full = joinText(voiceBaseRef.current, spoken);
       pendingTextRef.current = full;
       lastVoiceTextRef.current = full;
       setInput(full);
     },
-    onIdle: () => {
-      if (conversationMode) sendVoiceAnswerRef.current?.();
-    },
+
   });
   const voiceRef = useRef(voice);
   voiceRef.current = voice;
-  const sendVoiceAnswerRef = useRef<() => void>();
   const isListening = voice.listening;
   useEffect(() => {
     if (voice.notice) setMicNotice(t(voice.notice.key, voice.notice.text));
@@ -432,28 +439,6 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     };
   }, []);
 
-  /** Hands-free send: everything said has been written down and the consultant has paused. */
-  sendVoiceAnswerRef.current = () => {
-    const text = pendingTextRef.current.trim();
-    if (!text || isStreaming) return;
-    const meta = voiceRef.current.answerMeta();
-    logVoiceAnswer({ context: 'interview', interviewId, meta, edited: false, chars: text.length });
-    learnFromAnswer({
-      interviewId, answerOrder: messagesRef.current.filter((m) => m.role === 'user').length + 1,
-      answerMs: questionAtRef.current ? Date.now() - questionAtRef.current : null,
-      shown: text, final: text, meta, language: interviewLang, partialVoice: partialVoiceRef.current,
-    });
-    pendingTextRef.current = '';
-    lastVoiceTextRef.current = '';
-    setInput('');
-    setInterimTranscript('');
-    voiceRef.current.cancel();
-    const userMsg: ChatMessage = { role: 'user', content: text };
-    const newHistory = [...messagesRef.current, userMsg];
-    setMessages(newHistory);
-    sendToAIRef.current?.(newHistory);
-  };
-
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
@@ -507,9 +492,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => {
       setIsSpeaking(false);
-      if (conversationMode && shouldAutoResumeRef.current && voiceRef.current.supported) {
-        setTimeout(() => startListeningRef.current?.(), 100);
-      }
+      if (conversationMode && shouldAutoResumeRef.current && voiceRef.current.supported) startListeningRef.current?.();
     };
     utterance.onerror = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
@@ -540,24 +523,31 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   }, [startListening, stopListening]);
 
   const sendToAI = async (chatHistory: ChatMessage[]) => {
+    if (sendLock.current) return;
+    const generation = ++turnGeneration.current;
+    const controller = new AbortController();
+    turnController.current = controller;
+    sendLock.current = true;
     setIsStreaming(true);
     setTurnRetryAllowed(true);
-    setIsSpeaking(true);
+    setIsSpeaking(false);
     lastSpokenRef.current = '';
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const accessToken = session?.access_token;
       if (!accessToken) { setError('Please sign in again.'); setIsStreaming(false); setIsSpeaking(false); return; }
       const resp = await fetchInterviewTurn(() => fetch(CHAT_URL, {
-        method: 'POST',
+        method: 'POST', signal: controller.signal,
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
         body: JSON.stringify({ interview_id: interviewId, messages: chatHistory, lang: interviewLang, voice_gender: voiceGender, tone: interviewerTone }),
       }));
+      if (generation !== turnGeneration.current || controller.signal.aborted) return;
       if (!resp.ok || !resp.body) {
         const errBody = await resp.json().catch(() => null);
         const safeMessage = typeof errBody?.error === 'string' ? errBody.error : '';
         setTurnRetryAllowed(resp.status === 429 || resp.status >= 500);
         setError(resp.status === 402 || resp.status === 403 ? safeMessage || t('interview.service_blocked') : resp.status === 429 ? t('interview.rate_retry') : t('interview.saved_retry'));
+        if (pendingAnswer.current) { setInput(pendingAnswer.current); saveAnswerDraft(interviewId, pendingAnswer.current); }
         logStartErrorOnce('service', { message: safeMessage || `Interview response HTTP ${resp.status}` }, 'interview-turn');
         return;
       }
@@ -568,6 +558,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
       let assistantText = '';
       while (true) {
         const { done, value } = await reader.read();
+        if (generation !== turnGeneration.current || controller.signal.aborted) { await reader.cancel(); return; }
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         let newlineIdx: number;
@@ -609,14 +600,21 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
           setInterviewStarted(true);
           setStartedAt(new Date());
         }
+        if (inputLatestRef.current.trim() === pendingAnswer.current) { setInput(''); saveAnswerDraft(interviewId, ''); }
+        pendingAnswer.current = '';
         speakText(assistantText);
       }
     } catch (err: any) {
+      if (controller.signal.aborted || generation !== turnGeneration.current) return;
+      if (pendingAnswer.current) { setInput(pendingAnswer.current); saveAnswerDraft(interviewId, pendingAnswer.current); }
       console.error('Stream error:', err);
       const code = classifyStartError(err);
       setError(code === 'network' ? t(ERROR_TEXT[code].key, ERROR_TEXT[code].message) : t('interview.saved_retry'));
       logStartErrorOnce(code, err, chatHistory.length === 0 ? 'interview-greeting' : 'interview-turn');
     } finally {
+      if (generation !== turnGeneration.current) return;
+      sendLock.current = false;
+      turnController.current = null;
       setIsStreaming(false);
       setIsSpeaking(false);
       // Auto-save conversation after each exchange
@@ -626,20 +624,22 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
           skill_results: latest as any,
         }).eq('id', interviewId).then(() => {});
       }
-      if (!ttsEnabled) {
-        setTimeout(() => {
-          setIsSpeaking(false);
-          if (conversationMode && shouldAutoResumeRef.current && voiceRef.current.supported) startListeningRef.current?.();
-        }, 150);
-      }
+      if (!ttsEnabled) setIsSpeaking(false);
     }
   };
 
   sendToAIRef.current = sendToAI;
 
   const handleSend = async () => {
-    const text = input.trim();
-    if (!text || isStreaming) return;
+    let text = inputLatestRef.current.trim();
+    if (!validAnswer(text) || sendLock.current || isStreaming) return;
+    sendLock.current = true;
+    setIsStreaming(true);
+    await voiceRef.current.stop();
+    text = inputLatestRef.current.trim();
+    sendLock.current = false;
+    setIsStreaming(false);
+    pendingAnswer.current = text;
     const usedVoice = !!lastVoiceTextRef.current;
     const answerMeta = usedVoice ? voiceRef.current.answerMeta() : null;
     logVoiceAnswer({ context: 'interview', interviewId, meta: answerMeta, edited: usedVoice && text !== lastVoiceTextRef.current.trim(), chars: text.length });
@@ -649,13 +649,17 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
       shown: usedVoice ? lastVoiceTextRef.current : '', final: text, meta: answerMeta, language: interviewLang, partialVoice: partialVoiceRef.current,
     });
     lastVoiceTextRef.current = '';
-    setInput('');
+    // Keep the sent draft until the first complete question acknowledges it.
     setInterimTranscript('');
     pendingTextRef.current = '';
     voiceRef.current.cancel();
     const userMsg: ChatMessage = { role: 'user', content: text };
-    const newHistory = [...messages, userMsg];
+    const base = messagesRef.current;
+    const newHistory = revisionMode ? reviseAnswer(base, text, revisionMode === 'append') : base.at(-1)?.role === 'user' ? reviseAnswer(base, text) : [...base, userMsg];
+    setRevisionMode(null);
+    messagesRef.current = newHistory;
     setMessages(newHistory);
+    saveAnswerDraft(interviewId, text);
     await sendToAI(newHistory);
     inputRef.current?.focus();
   };
@@ -722,8 +726,20 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  const reviseLast = (mode: 'edit' | 'append') => {
+    turnController.current?.abort();
+    ++turnGeneration.current;
+    turnController.current = null;
+    sendLock.current = false;
+    setIsStreaming(false); setIsSpeaking(false);
+    window.speechSynthesis?.cancel();
+    const last = [...messagesRef.current].reverse().find(m => m.role === 'user');
+    if (!last) return;
+    const history = reviseAnswer(messagesRef.current, last.content);
+    messagesRef.current = history; setMessages(history);
+    setRevisionMode(mode);
+    setInput(mode === 'edit' ? last.content : '');
+    inputRef.current?.focus();
   };
 
   // Results screen
@@ -1263,42 +1279,13 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                   <RefreshCw className="w-3 h-3" /> Repeat
                 </Button>
               </div>
-              <div className="flex gap-2">
-                <textarea
-                  ref={inputRef}
-                  value={input}
-                  onChange={e => {
-                    // Typing takes over: stop the mic and keep exactly what the user typed
-                    if (voiceRef.current.listening || voiceRef.current.pending > 0) voiceRef.current.cancel();
-                    pendingTextRef.current = '';
-                    setInput(e.target.value);
-                  }}
-                  onKeyDown={handleKeyDown}
-                  placeholder={isListening ? "Speak now... or type here" : "Type your answer and press Enter (or click 🎤 to speak)"}
-                  rows={2}
-                  className="flex-1 resize-none bg-white/5 border border-white/10 text-white placeholder:text-white/30 text-sm rounded-xl p-3 focus:outline-none focus:border-primary/50 disabled:opacity-50"
-                />
-                {voice.supported && (
-                  <Button
-                    size="icon"
-                    onClick={toggleListening}
-                    busy={isStreaming}
-                    className={`h-auto w-12 rounded-xl shrink-0 transition-all ${
-                      isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400'
-                    }`}
-                  >
-                    {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                  </Button>
-                )}
-                <Button
-                  size="icon"
-                  onClick={handleSend}
-                  busy={isStreaming} reason={!input.trim() && 'type_message_first'}
-                  className="h-auto w-12 rounded-xl bg-primary hover:bg-primary/90 shrink-0"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
+              {messages.some(m => m.role === 'user') && <div className="flex flex-wrap gap-2 mb-2">
+                {isStreaming && <Button type="button" className="bg-background text-foreground" variant="outline" size="sm" onClick={() => reviseLast('edit')}>{t('interview.edit_last')}</Button>}
+                <Button type="button" className="bg-background text-foreground" variant="outline" size="sm" onClick={() => reviseLast('append')}>{t('interview.append_answer')}</Button>
+              </div>}
+              <InterviewReplyBox ref={inputRef} value={input} busy={isStreaming} listening={isListening} voiceSupported={voice.supported}
+                onChange={text => { if (voiceRef.current.listening || voiceRef.current.pending > 0) voiceRef.current.cancel(); setInput(text); }}
+                onSend={() => void handleSend()} onVoice={toggleListening} />
             </div>
           </div>
         </div>
