@@ -16451,6 +16451,7 @@ export type Database = {
           verification_status: string
         }[]
       }
+      admin_interview_health: { Args: never; Returns: Json }
       admin_interview_question_action: {
         Args: { _action: string; _key: string; _reason: string; _text: string }
         Returns: Json
@@ -18036,6 +18037,7 @@ export type Database = {
         }[]
       }
       ik_version_key: { Args: { _v: string }; Returns: string }
+      interview_abandon_stale: { Args: never; Returns: number }
       interview_role: {
         Args: { _session_id: string; _user_id: string }
         Returns: string
@@ -20580,7 +20582,12 @@ export type Database = {
       integration_platform: "zendesk" | "freshdesk" | "jira" | "servicenow"
       integration_status: "active" | "inactive" | "error"
       interview_mode: "ai" | "physical" | "online"
-      interview_status: "pending" | "in_progress" | "completed" | "reviewed"
+      interview_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "reviewed"
+        | "abandoned"
       match_request_status:
         | "pending"
         | "accepted"
@@ -20780,7 +20787,13 @@ export const Constants = {
       integration_platform: ["zendesk", "freshdesk", "jira", "servicenow"],
       integration_status: ["active", "inactive", "error"],
       interview_mode: ["ai", "physical", "online"],
-      interview_status: ["pending", "in_progress", "completed", "reviewed"],
+      interview_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "reviewed",
+        "abandoned",
+      ],
       match_request_status: [
         "pending",
         "accepted",
