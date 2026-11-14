@@ -1,3 +1,4 @@
+- [x] Interview latency follow-up: six recent messages + 1,200-character summary, 150-token streamed Gemini Flash Lite turns, bounded session context cache, nonblocking persistence; deployed ai-interview-chat, 23 tests pass. Signed-in clarification first visible words 1.92s; recorded server first text 0.86–1.74s. No schema changes or publishing; owner will measure representative Send-answer turns on live site.
 - [x] Interview startup: fixed transcript replay limit and unsupported reasoning, deployed chat function, added bilingual delayed retry/health UI, 28 focused tests and signed-in successful reply verified.
 - [ ] Interview stale-session cleanup and admin health readback: apply prepared docs/sql/interview-start-fix.sql; remains unapplied as requested, no sessions deleted and no publishing.
 # Roadmap

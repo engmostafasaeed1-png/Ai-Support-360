@@ -16,6 +16,7 @@ import aiFemaleAvatar from '@/assets/ai-interviewer-female.jpg';
 import { useQueryClient } from '@tanstack/react-query';
 import { TrustBadge } from './TrustBadge';
 import { classifyStartError, ERROR_TEXT, logStartErrorOnce } from '@/lib/interviewStart';
+import { compactInterviewContext } from '../../../supabase/functions/_shared/interviewContext';
 import { fetchInterviewTurn } from '@/lib/interviewRecovery';
 import InterviewReplyBox from './InterviewReplyBox';
 import { readAnswerDraft, saveAnswerDraft, reviseAnswer, validAnswer } from '@/lib/interviewReply';
@@ -236,6 +237,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   const turnGeneration = useRef(0);
   const sendLock = useRef(false);
   const pendingAnswer = useRef('');
+  const pendingVoiceMetrics = useRef<(() => void) | null>(null);
   useEffect(() => { saveAnswerDraft(interviewId, input); }, [interviewId, input]);
   useEffect(() => () => { turnController.current?.abort(); }, []);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -536,10 +538,11 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
       const { data: { session } } = await supabase.auth.getSession();
       const accessToken = session?.access_token;
       if (!accessToken) { setError('Please sign in again.'); setIsStreaming(false); setIsSpeaking(false); return; }
+      const turnContext = compactInterviewContext(chatHistory);
       const resp = await fetchInterviewTurn(() => fetch(CHAT_URL, {
         method: 'POST', signal: controller.signal,
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-        body: JSON.stringify({ interview_id: interviewId, messages: chatHistory, lang: interviewLang, voice_gender: voiceGender, tone: interviewerTone }),
+        body: JSON.stringify({ interview_id: interviewId, messages: turnContext.recent, running_summary: `Exchanges so far: ${chatHistory.filter(m => m.role === 'user').length}.\n${turnContext.summary}`.slice(0, 1200), lang: interviewLang, voice_gender: voiceGender, tone: interviewerTone }),
       }));
       if (generation !== turnGeneration.current || controller.signal.aborted) return;
       if (!resp.ok || !resp.body) {
@@ -556,6 +559,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
       const decoder = new TextDecoder();
       let buffer = '';
       let assistantText = '';
+      let answerSaveStarted = false;
       while (true) {
         const { done, value } = await reader.read();
         if (generation !== turnGeneration.current || controller.signal.aborted) { await reader.cancel(); return; }
@@ -581,6 +585,15 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
               assistantText += content;
+              if (!answerSaveStarted) {
+                answerSaveStarted = true;
+                // First paint is not held up by persistence or voice-learning writes.
+                setTimeout(() => {
+                  if (controller.signal.aborted || generation !== turnGeneration.current) return;
+                  void supabase.from('interview_sessions').update({ skill_results: messagesRef.current as any }).eq('id', interviewId).then(({ error }) => { if (error) logStartErrorOnce('service', error, 'interview-answer-save'); });
+                  pendingVoiceMetrics.current?.(); pendingVoiceMetrics.current = null;
+                }, 0);
+              }
               setMessages(prev => {
                 const last = prev[prev.length - 1];
                 if (last?.role === 'assistant' && prev.length === chatHistory.length + 1) {
@@ -642,12 +655,17 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     pendingAnswer.current = text;
     const usedVoice = !!lastVoiceTextRef.current;
     const answerMeta = usedVoice ? voiceRef.current.answerMeta() : null;
-    logVoiceAnswer({ context: 'interview', interviewId, meta: answerMeta, edited: usedVoice && text !== lastVoiceTextRef.current.trim(), chars: text.length });
-    learnFromAnswer({
-      interviewId, answerOrder: messages.filter((m) => m.role === 'user').length + 1,
-      answerMs: questionAtRef.current ? Date.now() - questionAtRef.current : null,
-      shown: usedVoice ? lastVoiceTextRef.current : '', final: text, meta: answerMeta, language: interviewLang, partialVoice: partialVoiceRef.current,
-    });
+    const shownVoiceText = lastVoiceTextRef.current;
+    const partialVoice = partialVoiceRef.current;
+    const answerMs = questionAtRef.current ? Date.now() - questionAtRef.current : null;
+    pendingVoiceMetrics.current = () => {
+      logVoiceAnswer({ context: 'interview', interviewId, meta: answerMeta, edited: usedVoice && text !== shownVoiceText.trim(), chars: text.length });
+      learnFromAnswer({
+        interviewId, answerOrder: messages.filter((m) => m.role === 'user').length + 1,
+        answerMs,
+        shown: usedVoice ? shownVoiceText : '', final: text, meta: answerMeta, language: interviewLang, partialVoice,
+      });
+    };
     lastVoiceTextRef.current = '';
     // Keep the sent draft until the first complete question acknowledges it.
     setInterimTranscript('');
