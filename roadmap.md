@@ -2,6 +2,8 @@
 - [ ] Interview stale-session cleanup and admin health readback: apply prepared docs/sql/interview-start-fix.sql; remains unapplied as requested, no sessions deleted and no publishing.
 # Roadmap
 
+- [ ] Pending consultant draft-save regression: remove completion transition from shared save, verify pending edits persist and approval gate remains unchanged; no SQL or publishing.
+
 - [x] Generic admin full-profile UI: role tabs, client/company/account/history, reusable user entry and header search, ticket/bid/payment/message/report shortcuts, client decisions and direct e-mail, EN/AR, 34 focused checks, signed-in missing-SQL desktop/mobile verified.
 - [ ] Generic profile live readback: owner must apply docs/sql/admin-profile-review-view.sql; isolated company read/audit-per-open/non-admin denial passed, no live migration or publishing.
 

@@ -15,12 +15,20 @@ const tableData: Record<string, unknown> = {
   consultants: { id: 'c1', bio: 'Saved bio', hourly_rate: 50, currency: 'USD', timezone: 'Asia/Riyadh', languages: ['en'], city: 'Riyadh', country: 'SA' },
 };
 const writes: { table: string; arg: any }[] = [];
+let incompletePendingProfile = false;
 const builder = (table: string): any => {
+  let error: { message: string } | null = null;
   const b: any = new Proxy({}, {
     get(_t, prop) {
-      if (prop === 'then') return (res: any) => res({ data: [], error: null });
+      if (prop === 'then') return (res: any) => res({ data: [], error });
       if (prop === 'maybeSingle' || prop === 'single') return () => Promise.resolve({ data: tableData[table] ?? null, error: null });
-      if (prop === 'update' || prop === 'upsert' || prop === 'insert') return (arg: any) => { writes.push({ table, arg }); return b; };
+      if (prop === 'update' || prop === 'upsert' || prop === 'insert') return (arg: any) => {
+        writes.push({ table, arg });
+        if (incompletePendingProfile && table === 'profiles' && arg.onboarding_completed === true) {
+          error = { message: 'missing_required:cv,bank_details,ai_interview,service_policy' };
+        }
+        return b;
+      };
       return () => b;
     },
   });
@@ -60,6 +68,8 @@ vi.mock('./steps/ProfileStep', () => ({
 vi.mock('./steps/CertificationsStep', () => ({ default: () => null }));
 vi.mock('./steps/EducationStep', () => ({ default: () => null }));
 vi.mock('./steps/ProjectsStep', () => ({ default: () => null }));
+vi.mock('./steps/AvailabilityStep', () => ({ default: () => null }));
+vi.mock('./steps/InterviewStep', () => ({ default: () => null }));
 vi.mock('@/components/consultant/WeeklyAvailabilityEditor', () => ({ default: () => null }));
 vi.mock('@/components/consultant/HoldPanel', () => ({ default: () => null }));
 
@@ -75,7 +85,27 @@ const qc = new QueryClient();
 const ui = () => <QueryClientProvider client={qc}><MemoryRouter><ConsultantOnboarding embedded /></MemoryRouter></QueryClientProvider>;
 
 describe('ConsultantOnboarding embedded: unsaved typing', () => {
-  beforeEach(() => { mounts.skills = 0; mounts.experience = 0; tVersion = 0; currentT = makeT(); });
+  beforeEach(() => { incompletePendingProfile = false; writes.length = 0; mounts.skills = 0; mounts.experience = 0; tVersion = 0; currentT = makeT(); });
+
+  it('saves pending profile edits even when CV, bank, interview and policy requirements are missing', async () => {
+    incompletePendingProfile = true;
+    render(ui());
+    await screen.findByDisplayValue('Saved Name');
+    fireEvent.change(screen.getByLabelText('Bio'), { target: { value: 'Pending consultant updated bio' } });
+    await act(async () => { fireEvent.click(screen.getAllByRole('button', { name: 'Save' })[0]); });
+    await waitFor(() => expect(writes.some(w => w.table === 'consultants' && w.arg.bio === 'Pending consultant updated bio')).toBe(true));
+    expect(writes.some(w => w.arg.onboarding_completed === true)).toBe(false);
+  });
+
+  it('onboarding saves the incomplete draft before moving to the interview, without claiming completion', async () => {
+    incompletePendingProfile = true;
+    render(<QueryClientProvider client={qc}><MemoryRouter initialEntries={['/?step=7']}><ConsultantOnboarding /></MemoryRouter></QueryClientProvider>);
+    const save = await screen.findByRole('button', { name: 'Save & Continue to Interview' });
+    await act(async () => { fireEvent.click(save); });
+    await waitFor(() => expect(writes.some(w => w.table === 'consultant_private')).toBe(true));
+    expect(writes.find(w => w.table === 'profiles')?.arg).toEqual({ user_id: 'u1', display_name: 'Saved Name' });
+    expect(writes.some(w => w.arg.onboarding_completed === true)).toBe(false);
+  });
 
   it('first load fills every field', async () => {
     render(ui());

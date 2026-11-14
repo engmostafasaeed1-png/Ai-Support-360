@@ -309,11 +309,11 @@ export default function ConsultantOnboarding({ embedded = false }: { embedded?: 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error(t('onboarding.error_auth')); return; }
 
-      // Update or create profile
+      // Save a draft, not a completion transition. The existing submission RPC
+      // validates required items after all profile sections have been saved.
       const { error: profileError } = await supabase.from('profiles').upsert({
         user_id: user.id,
         display_name: displayName,
-        onboarding_completed: true,
       }, { onConflict: 'user_id' });
 
       if (profileError) throw profileError;
