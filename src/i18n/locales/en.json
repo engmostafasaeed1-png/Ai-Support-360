@@ -581,6 +581,15 @@
     "ai_skills_assessment": "AI Skills Assessment"
   },
   "interview": {
+    "try_again": "Try again",
+    "saved_retry": "The interviewer could not reply. Your answers are saved; please try again.",
+    "rate_retry": "The interviewer is busy. Your answers are saved; please wait a moment and try again.",
+    "service_blocked": "The AI service needs administrator attention. Your answers are saved.",
+    "health_title": "Interview service health",
+    "health_success": "Last successful turn",
+    "health_error": "Last error",
+    "health_none": "Not recorded yet",
+    "health_pending": "Interview health is unavailable until the prepared database update is applied.",
     "reinterview": "Re-Interview",
     "request_reinterview": "Request Re-Interview",
     "reinterview_for": "Schedule a re-interview for {{name}}",

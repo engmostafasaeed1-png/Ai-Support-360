@@ -22,6 +22,7 @@ import KnowledgeDocumentsPanel from '@/components/admin/interview-knowledge/Know
 import KnowledgeCoveragePanel from '@/components/admin/interview-knowledge/KnowledgeCoveragePanel';
 import KnowledgePreviewPanel from '@/components/admin/interview-knowledge/KnowledgePreviewPanel';
 import KnowledgeSettingsPanel from '@/components/admin/interview-knowledge/KnowledgeSettingsPanel';
+import InterviewHealthPanel from '@/components/admin/interview-knowledge/InterviewHealthPanel';
 import VoiceMetricsPanel from '@/components/admin/interview-knowledge/VoiceMetricsPanel';
 import VoiceLearningPanel from '@/components/admin/interview-knowledge/VoiceLearningPanel';
 import { useKnowledgeReady, useKnowledgeSettings } from '@/hooks/useInterviewKnowledge';
@@ -262,7 +263,7 @@ export default function InterviewTrainingPage() {
         <TabsContent value="documents"><KnowledgeDocumentsPanel ready={ready} /></TabsContent>
         <TabsContent value="coverage"><KnowledgeCoveragePanel ready={ready} /></TabsContent>
         <TabsContent value="preview"><KnowledgePreviewPanel ready={ready} /></TabsContent>
-        <TabsContent value="settings"><KnowledgeSettingsPanel ready={ready} /></TabsContent>
+        <TabsContent value="settings"><InterviewHealthPanel /><KnowledgeSettingsPanel ready={ready} /></TabsContent>
         <TabsContent value="voice"><VoiceMetricsPanel /></TabsContent>
         <TabsContent value="learning"><VoiceLearningPanel /></TabsContent>
         <TabsContent value="configs" className="space-y-6">

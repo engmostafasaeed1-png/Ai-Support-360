@@ -1,3 +1,5 @@
+- [x] Interview startup: fixed transcript replay limit and unsupported reasoning, deployed chat function, added bilingual delayed retry/health UI, 28 focused tests and signed-in successful reply verified.
+- [ ] Interview stale-session cleanup and admin health readback: apply prepared docs/sql/interview-start-fix.sql; remains unapplied as requested, no sessions deleted and no publishing.
 # Roadmap
 
 - [x] Generic admin full-profile UI: role tabs, client/company/account/history, reusable user entry and header search, ticket/bid/payment/message/report shortcuts, client decisions and direct e-mail, EN/AR, 34 focused checks, signed-in missing-SQL desktop/mobile verified.

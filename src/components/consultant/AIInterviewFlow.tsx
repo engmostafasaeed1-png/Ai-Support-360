@@ -16,6 +16,7 @@ import aiFemaleAvatar from '@/assets/ai-interviewer-female.jpg';
 import { useQueryClient } from '@tanstack/react-query';
 import { TrustBadge } from './TrustBadge';
 import { classifyStartError, ERROR_TEXT, logStartErrorOnce } from '@/lib/interviewStart';
+import { fetchInterviewTurn } from '@/lib/interviewRecovery';
 import InterviewBasisNotice from './InterviewBasisNotice';
 import { useVoiceRecognizer } from '@/hooks/useVoiceRecognizer';
 import { joinText } from '@/lib/voice/transcriptAssembler';
@@ -233,6 +234,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
   const [bodyLanguage, setBodyLanguage] = useState<BodyLanguageResult | null>(null);
   const [error, setError] = useState('');
+  const [turnRetryAllowed, setTurnRetryAllowed] = useState(true);
   const [cameraNotice, setCameraNotice] = useState('');
   const [micNotice, setMicNotice] = useState('');
   const [micOn, setMicOn] = useState(!textOnly);
@@ -539,22 +541,25 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
 
   const sendToAI = async (chatHistory: ChatMessage[]) => {
     setIsStreaming(true);
+    setTurnRetryAllowed(true);
     setIsSpeaking(true);
     lastSpokenRef.current = '';
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const accessToken = session?.access_token;
       if (!accessToken) { setError('Please sign in again.'); setIsStreaming(false); setIsSpeaking(false); return; }
-      const resp = await fetch(CHAT_URL, {
+      const resp = await fetchInterviewTurn(() => fetch(CHAT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
         body: JSON.stringify({ interview_id: interviewId, messages: chatHistory, lang: interviewLang, voice_gender: voiceGender, tone: interviewerTone }),
-      });
+      }));
       if (!resp.ok || !resp.body) {
-        if (resp.status === 429) { setError('Rate limited — please try again in a moment.'); setIsStreaming(false); setIsSpeaking(false); return; }
         const errBody = await resp.json().catch(() => null);
-        const msg = typeof errBody?.error === 'string' ? errBody.error : 'Failed to connect to interviewer';
-        throw new Error(msg);
+        const safeMessage = typeof errBody?.error === 'string' ? errBody.error : '';
+        setTurnRetryAllowed(resp.status === 429 || resp.status >= 500);
+        setError(resp.status === 402 || resp.status === 403 ? safeMessage || t('interview.service_blocked') : resp.status === 429 ? t('interview.rate_retry') : t('interview.saved_retry'));
+        logStartErrorOnce('service', { message: safeMessage || `Interview response HTTP ${resp.status}` }, 'interview-turn');
+        return;
       }
       setError('');
       const reader = resp.body.getReader();
@@ -576,6 +581,12 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
           if (jsonStr === '[DONE]') break;
           try {
             const parsed = JSON.parse(jsonStr);
+            if (parsed.error || parsed.choices?.[0]?.delta?.refusal) {
+              setTurnRetryAllowed(false);
+              setError(t('interview.service_blocked'));
+              setIsSpeaking(false);
+              return;
+            }
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
               assistantText += content;
@@ -603,11 +614,11 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     } catch (err: any) {
       console.error('Stream error:', err);
       const code = classifyStartError(err);
-      const generic = !err?.message || err.message === 'Failed to connect to interviewer' || code === 'network';
-      setError(generic ? t(ERROR_TEXT[code].key, ERROR_TEXT[code].message) : err.message);
+      setError(code === 'network' ? t(ERROR_TEXT[code].key, ERROR_TEXT[code].message) : t('interview.saved_retry'));
       logStartErrorOnce(code, err, chatHistory.length === 0 ? 'interview-greeting' : 'interview-turn');
     } finally {
       setIsStreaming(false);
+      setIsSpeaking(false);
       // Auto-save conversation after each exchange
       const latest = messagesRef.current;
       if (latest.length > 0) {
@@ -1189,11 +1200,10 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
               {error && (
                 <div role="alert" className="flex flex-wrap items-center gap-2 text-xs text-red-400 mb-2">
                   <AlertTriangle className="w-3.5 h-3.5" /> {error}
-                  {!isStreaming && (messages.length === 0 || messages[messages.length - 1]?.role === 'user') && (
-                    <button type="button" onClick={() => { setError(''); if (messagesRef.current.length === 0) void startInterviewAfterDisclaimer(); else void sendToAI(messagesRef.current); }}
-                      className="ms-auto rounded-md border border-red-400/40 px-2 py-0.5 font-medium text-red-300 hover:bg-red-500/10">
-                      {t('common.retry', 'Retry')}
-                    </button>
+                  {!isStreaming && turnRetryAllowed && (messages.length === 0 || messages[messages.length - 1]?.role === 'user') && (
+                    <Button type="button" size="sm" variant="outline" onClick={() => { setError(''); if (messagesRef.current.length === 0) void startInterviewAfterDisclaimer(); else void sendToAI(messagesRef.current); }} className="ms-auto">
+                      <RefreshCw className="h-4 w-4 me-1" />{t('interview.try_again', 'Try again')}
+                    </Button>
                   )}
                 </div>
               )}

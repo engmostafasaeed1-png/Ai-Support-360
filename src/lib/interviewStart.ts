@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { reportError } from '@/lib/errorReporter';
+import { safeRpc } from '@/lib/safeRpc';
 
 /** Why an AI interview cannot start right now. Every reason has a visible message and, where possible, the action that fixes it. */
 export type StartBlockCode = 'checking' | 'signed_out' | 'no_profile' | 'missing_name' | 'missing_role';
@@ -101,6 +102,8 @@ export function resolveAiInterviewSession(consultantId: string, db: Db = supabas
   const running = inflight.get(consultantId);
   if (running) return running;
   const job = (async () => {
+    // Prepared RPC: until applied, retain existing resumability rather than mutate from the browser.
+    if (db === (supabase as unknown as Db)) await safeRpc('interview_abandon_stale');
     const { data: rows, error } = await db.from('interview_sessions')
       .select('id, status, created_at, interview_style')
       .eq('consultant_id', consultantId).eq('interview_type', 'ai')

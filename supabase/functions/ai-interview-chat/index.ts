@@ -6,10 +6,11 @@ import { corsHeaders as sharedCorsHeaders, adminClient, withinRateLimit } from "
 import { hasInterviewAnswers, validateInterviewEvaluation } from "../_shared/interviewEvaluation.ts";
 import { ensureInterviewPlan, knowledgeTablesReady, loadKnowledgeSettings, planPromptBlock, type PlannedQuestion } from "../_shared/interviewKnowledge.ts";
 import { extractPlanTag, stripPlanTags } from "../_shared/interviewPlan.ts";
+import { INTERVIEW_MESSAGE_CHAR_LIMIT, INTERVIEW_MESSAGE_COUNT_LIMIT } from "../_shared/interviewInput.ts";
 
 const BodySchema = z.object({
   interview_id: z.string().uuid(),
-  messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) })).max(80).optional(),
+  messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(INTERVIEW_MESSAGE_CHAR_LIMIT) })).max(INTERVIEW_MESSAGE_COUNT_LIMIT).optional(),
   action: z.enum(["evaluate", "copilot"]).optional(),
   lang: z.string().max(10).optional(),
   voice_gender: z.enum(["male", "female"]).optional(),
@@ -57,8 +58,7 @@ function questionSource(q: PlannedQuestion | undefined): Record<string, unknown>
   };
 }
 
-// Remembers, while this function instance lives, which reasoning effort the gateway accepted for the interview chat.
-let chatEffort: string | null = null;
+// The selected model accepts low reasoning; do not probe unsupported efforts.
 
 serve(async (req) => {
   const t0 = Date.now();
@@ -586,62 +586,47 @@ CRITICAL LANGUAGE INSTRUCTION: You MUST conduct this entire interview in ${inter
       ...safeMessages,
     ];
 
-    // Every turn is a person waiting for the answer, so ask for the lowest reasoning effort that the gateway accepts (the first one that works is remembered).
-    const efforts = [...new Set([chatEffort, "none", "minimal", "low"].filter((e): e is string => !!e))];
+    const usedEffort = "low";
     const tCall = Date.now();
-    let response: Response | null = null;
-    let usedEffort = "";
-    for (let i = 0; i < efforts.length; i++) {
-      usedEffort = efforts[i];
-      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "openai/gpt-6-astra",
-          reasoning_effort: usedEffort,
-          messages: chatMessages,
-          stream: true,
-          // reasoning tokens count against this limit, so it has to leave room for the visible answer
-          max_completion_tokens: style === "scenario" ? 1000 : 800,
-        }),
-      });
-      if ((response.status === 400 || response.status === 422) && i < efforts.length - 1) {
-        console.error("ai-interview-chat: effort not accepted", usedEffort, response.status, (await response.text()).slice(0, 300));
-        continue;
-      }
-      break;
-    }
-    if (!response) throw new Error("AI gateway error");
-    if (response.ok) chatEffort = usedEffort;
-
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "openai/gpt-6-astra", reasoning_effort: usedEffort,
+        messages: chatMessages, stream: true, max_completion_tokens: style === "scenario" ? 1000 : 800 }),
+    });
     if (!response.ok) {
-      console.error("ai-interview-chat: gateway error", response.status, (await response.text()).slice(0, 300));
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited, please try again later" }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required" }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error("AI gateway error");
+      const body = await response.json().catch(() => null);
+      const message = body?.message || body?.error?.message || (typeof body?.error === "string" ? body.error : "The interviewer is temporarily unavailable. Your answers are saved.");
+      await supabase.from("audit_logs").insert({ user_id: authUser.id, action: "ai_interview_turn_error",
+        entity_type: "interview_session", entity_id: interview_id, metadata: { status: response.status, message: String(message).slice(0, 600) } });
+      return new Response(JSON.stringify({ error: message, retryable: response.status === 429 || response.status >= 500 }), {
+        status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": response.headers.get("Retry-After") || "3" },
+      });
     }
-    if (!response.body) throw new Error("AI gateway error");
+    if (!response.body) throw new Error("The interviewer returned no response.");
 
     // Log how long each part took: preparation, wait for the first words, the whole answer.
     const tHeaders = Date.now();
     let tFirst = 0;
+    let visibleText = false;
+    let scanBuffer = '';
     const timed = response.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
         if (!tFirst) tFirst = Date.now();
+        scanBuffer += new TextDecoder().decode(chunk);
+        let split: number;
+        while ((split = scanBuffer.indexOf('\n')) >= 0) {
+          const line = scanBuffer.slice(0, split); scanBuffer = scanBuffer.slice(split + 1);
+          if (line.startsWith('data: ') && !line.includes('[DONE]')) {
+            try { if (JSON.parse(line.slice(6)).choices?.[0]?.delta?.content) visibleText = true; } catch { /* incomplete/non-text event */ }
+          }
+        }
         controller.enqueue(chunk);
       },
-      flush() {
+      async flush(controller) {
+        if (!visibleText) controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ error: 'The interviewer returned no text. Your answers are saved.', terminal: true })}\n\n`));
+        await supabase.from("audit_logs").insert({ user_id: authUser.id, action: visibleText ? "ai_interview_turn_success" : "ai_interview_turn_error",
+          entity_type: "interview_session", entity_id: interview_id, metadata: visibleText ? { model: "openai/gpt-6-astra" } : { status: 200, message: "The interviewer returned no text. The request ended without retry." } });
         console.log(JSON.stringify({
           tag: "interview-chat-timing", style, lang: interviewLang, effort: usedEffort, turn: (messages || []).length,
           prepMs: tCall - t0, headersMs: tHeaders - tCall, firstChunkMs: tFirst ? tFirst - tCall : null, totalMs: Date.now() - tCall,

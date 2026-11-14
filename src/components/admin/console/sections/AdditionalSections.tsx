@@ -2,6 +2,7 @@ import { BarChart3, HardDrive, ScrollText, Video, GraduationCap, CalendarClock }
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import InterviewHealthPanel from '@/components/admin/interview-knowledge/InterviewHealthPanel';
 
 function SectionShell({ icon: Icon, title, description, children }: { icon: any; title: string; description: string; children: React.ReactNode }) {
   return (
@@ -65,6 +66,7 @@ export function MeetingEventsConsoleSection() {
 export function InterviewTrainingConsoleSection() {
   return (
     <SectionShell icon={GraduationCap} title="Interview Training" description="Manage AI interview question banks and training data">
+      <InterviewHealthPanel />
       <LinkCard to="/admin/interview-training" label="Open interview training" />
     </SectionShell>
   );

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { safeRpc } from '@/lib/safeRpc';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ export default function InterviewsPage() {
         .eq('user_id', user.id)
         .maybeSingle();
       if (!consultant) return [];
+      await safeRpc('interview_abandon_stale');
       const { data, error } = await supabase
         .from('interview_sessions')
         .select('*')
