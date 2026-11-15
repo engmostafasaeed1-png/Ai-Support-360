@@ -1,6 +1,6 @@
 type Turn = { role: string; content: string };
 const promptCache = new Map<string, { at: number; data: unknown }>();
-const sessionCache = new Map<string, { at: number; data: Promise<unknown> }>();
+const sessionCache = new Map<string, { at: number; entries: Map<string, { at: number; data: Promise<unknown> }> }>();
 export const INTERVIEW_TURN_MODEL = 'google/gemini-3.1-flash-lite';
 export const INTERVIEW_TURN_MAX_TOKENS = 150;
 export const INTERVIEW_RECENT_MESSAGES = 6;
@@ -12,12 +12,26 @@ export function interviewReplyFormat(style: string) {
 }
 /** Server-only, bounded ephemeral context; call only after fresh session ownership checks. Never store answers here. */
 export async function cachedInterviewSession<T>(key: string, load: () => PromiseLike<T>, ttlMs = 30 * 60 * 1000): Promise<T> {
-  const hit = sessionCache.get(key);
-  if (hit && Date.now() - hit.at < ttlMs) return hit.data as Promise<T>;
-  if (sessionCache.size >= 20) sessionCache.delete(sessionCache.keys().next().value ?? '');
+  const now = Date.now();
+  // Group profile, prompts and plan under interview + consultant, not three quota slots.
+  const sessionKey = key.split(':').slice(0, 2).join(':');
+  for (const [id, session] of sessionCache) {
+    if (now - session.at >= 30 * 60 * 1000) sessionCache.delete(id);
+  }
+  let session = sessionCache.get(sessionKey);
+  const hit = session?.entries.get(key);
+  if (hit && now - hit.at < ttlMs) return hit.data as Promise<T>;
+  if (!session) {
+    if (sessionCache.size >= 20) sessionCache.delete(sessionCache.keys().next().value ?? '');
+    session = { at: now, entries: new Map() };
+    sessionCache.set(sessionKey, session);
+  }
   const data = Promise.resolve(load());
-  sessionCache.set(key, { at: Date.now(), data });
-  try { return await data; } catch (error) { sessionCache.delete(key); throw error; }
+  session.entries.set(key, { at: now, data });
+  try { return await data; } catch (error) { if (session.entries.get(key)?.data === data) session.entries.delete(key); throw error; }
+}
+export function invalidateInterviewSessionEntry(key: string): void {
+  sessionCache.get(key.split(':').slice(0, 2).join(':'))?.entries.delete(key);
 }
 /** Only admin-authored static prompt material; never cache candidate profiles or answers. */
 export async function cachedInterviewPrompt<T>(key: string, load: () => PromiseLike<T>): Promise<T> {

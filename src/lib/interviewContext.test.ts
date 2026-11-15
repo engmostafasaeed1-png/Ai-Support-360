@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { compactInterviewContext, cachedInterviewSession, INTERVIEW_TURN_MAX_TOKENS, INTERVIEW_COMMENT_MAX_WORDS, interviewQuestionMaxWords } from '../../supabase/functions/_shared/interviewContext';
 describe('bounded interview history', () => {
   it('keeps six recent messages verbatim and a short running summary', () => {
@@ -22,5 +22,27 @@ describe('bounded interview history', () => {
     expect(await cachedInterviewSession('session-a', load)).toEqual({ area: 'FI' });
     expect(await cachedInterviewSession('session-b', load)).toEqual({ area: 'MM' });
     expect(calls).toBe(2);
+  });
+  it('holds twenty complete sessions rather than twenty individual context entries', async () => {
+    const load = vi.fn(async () => 'context');
+    for (let i = 0; i < 20; i++) {
+      for (const part of ['profile', 'prompts', 'plan']) await cachedInterviewSession(`quota-${i}:consultant:${part}`, load);
+    }
+    await cachedInterviewSession('quota-0:consultant:profile', load);
+    expect(load).toHaveBeenCalledTimes(60);
+    await cachedInterviewSession('quota-20:consultant:profile', load);
+    await cachedInterviewSession('quota-0:consultant:profile', load);
+    expect(load).toHaveBeenCalledTimes(62);
+  });
+  it('expires session context after thirty minutes', async () => {
+    const clock = vi.spyOn(Date, 'now');
+    const load = vi.fn(async () => 'context');
+    try {
+      clock.mockReturnValue(1000000);
+      await cachedInterviewSession('expiry:consultant:profile', load);
+      clock.mockReturnValue(1000000 + 30 * 60 * 1000);
+      await cachedInterviewSession('expiry:consultant:profile', load);
+      expect(load).toHaveBeenCalledTimes(2);
+    } finally { clock.mockRestore(); }
   });
 });

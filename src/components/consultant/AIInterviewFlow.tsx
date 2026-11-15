@@ -230,6 +230,14 @@ function ScoreBar({ label, score, icon }: { label: string; score: number; icon: 
 export default function AIInterviewFlow({ interviewId, onComplete, onCancel, textOnly = false }: Props) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
+  const warmedInterview = useRef<string | null>(null);
+  useEffect(() => {
+    if (warmedInterview.current === interviewId) return;
+    warmedInterview.current = interviewId;
+    // Opens on the pre-interview screen for both new and resumed sessions.
+    // Never wait for warm-up or let its failure interrupt the interview.
+    void supabase.functions.invoke('ai-interview-chat', { body: { action: 'warmup', interview_id: interviewId } }).catch(() => undefined);
+  }, [interviewId]);
   const [reward, setReward] = useState<{ ai_interview_badge: string; credibility_credits: number } | null>(null);
   const [phase, setPhase] = useState<'disclaimer' | 'chat' | 'evaluating' | 'results'>('disclaimer');
   const [messages, setMessages] = useState<ChatMessage[]>([]);

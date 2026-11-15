@@ -6,14 +6,15 @@ import { corsHeaders as sharedCorsHeaders, adminClient, withinRateLimit } from "
 import { hasInterviewAnswers, validateInterviewEvaluation } from "../_shared/interviewEvaluation.ts";
 import { ensureInterviewPlan, knowledgeTablesReady, loadKnowledgeSettings, planPromptBlock, type PlannedQuestion } from "../_shared/interviewKnowledge.ts";
 import { extractPlanTag, stripPlanTags } from "../_shared/interviewPlan.ts";
-import { compactInterviewContext, cachedInterviewPrompt, cachedInterviewSession, interviewReplyFormat, INTERVIEW_TURN_MODEL, INTERVIEW_TURN_MAX_TOKENS } from "../_shared/interviewContext.ts";
+import { compactInterviewContext, cachedInterviewPrompt, cachedInterviewSession, invalidateInterviewSessionEntry, interviewReplyFormat, INTERVIEW_TURN_MODEL, INTERVIEW_TURN_MAX_TOKENS } from "../_shared/interviewContext.ts";
+import { interviewAccessAllowed, warmInterviewContext } from "../_shared/interviewWarmup.ts";
 import { INTERVIEW_MESSAGE_CHAR_LIMIT, INTERVIEW_MESSAGE_COUNT_LIMIT } from "../_shared/interviewInput.ts";
 
 const BodySchema = z.object({
   interview_id: z.string().uuid(),
   messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(INTERVIEW_MESSAGE_CHAR_LIMIT) })).max(INTERVIEW_MESSAGE_COUNT_LIMIT).optional(),
   running_summary: z.string().max(1200).optional(),
-  action: z.enum(["evaluate", "copilot"]).optional(),
+  action: z.enum(["evaluate", "copilot", "warmup"]).optional(),
   lang: z.string().max(10).optional(),
   voice_gender: z.enum(["male", "female"]).optional(),
   tone: z.enum(["friendly", "formal", "strict"]).optional(),
@@ -120,9 +121,6 @@ serve(async (req) => {
     };
     const interviewLang = (lang && langNames[lang]) || "English";
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -130,17 +128,15 @@ serve(async (req) => {
     // Get interview + consultant info
     const { data: interview, error: intErr } = await supabase
       .from("interview_sessions")
-      .select("consultant_id, interview_type, status, interview_style")
+      .select("consultant_id, interview_type, status, interview_style, consultants!interview_sessions_consultant_id_fkey(user_id, consultant_skills(sap_module))")
       .eq("id", interview_id)
       .single();
     if (intErr || !interview) throw new Error("Interview not found");
 
     // --- Ownership check: caller must be the consultant or an admin ---
-    const { data: consultantRow } = await supabase
-      .from("consultants")
-      .select("user_id")
-      .eq("id", interview.consultant_id)
-      .single();
+    // Fresh joined consultant ownership and module facts; never served from cache.
+    const joinedConsultant = interview.consultants;
+    const consultantRow = Array.isArray(joinedConsultant) ? joinedConsultant[0] : joinedConsultant;
     // Owners need no additional permission round trips. Other callers are checked freshly.
     const [adminRole, interviewerRole] = consultantRow?.user_id === authUser.id && action !== 'copilot'
       ? [{ data: false }, { data: null }]
@@ -152,7 +148,8 @@ serve(async (req) => {
     const isInterviewer = interviewerRole.data === "interviewer";
     const sessionContextKey = `${interview_id}:${interview.consultant_id}`;
     const style = (interview as any).interview_style || "standard";
-    if (action === "copilot" ? !(isInterviewer || isAdmin) : (consultantRow?.user_id !== authUser.id && !isAdmin)) {
+    const access = { owner: consultantRow?.user_id === authUser.id, admin: isAdmin, interviewer: isInterviewer };
+    if (!interviewAccessAllowed(access, action)) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -164,29 +161,38 @@ serve(async (req) => {
       });
     }
 
-    // Start independent profile reads alongside knowledge setup, after fresh ownership checks.
-    const profileContext = cachedInterviewSession(`${sessionContextKey}:profile`, () => Promise.all([
-      supabase.from('consultant_skills').select('sap_module, proficiency_level, years_experience').eq('consultant_id', interview.consultant_id),
-      supabase.from('certifications').select('name, issuer').eq('consultant_id', interview.consultant_id),
-      supabase.from('profiles').select('display_name').eq('user_id', consultantRow?.user_id || '').maybeSingle(),
-      supabase.from('consultants').select('sap_role, sap_roles, bio').eq('id', interview.consultant_id).maybeSingle(),
-    ]));
-    // Knowledge-based plan (docs/sql/interview-knowledge.sql). Off, or not applied yet: today's behaviour, unchanged.
-    let knowledge: { settings: Awaited<ReturnType<typeof loadKnowledgeSettings>>; plan: any; questions: PlannedQuestion[] } | null = null;
-    if (action !== "copilot") {
-      try {
-        const settings = await cachedInterviewPrompt("knowledge-settings", () => loadKnowledgeSettings(supabase));
-        if (settings.enabled && (await cachedInterviewPrompt("knowledge-ready", () => knowledgeTablesReady(supabase)))) {
-          const planResult = await cachedInterviewSession(`${sessionContextKey}:plan`,
-            () => supabase.from("interview_plans").select("status, plan, questions").eq("interview_id", interview_id).maybeSingle(), 3000);
-          const row = planResult.data;
-          knowledge = { settings, plan: row?.status === "ready" ? row.plan : null, questions: row?.status === "ready" && Array.isArray(row.questions) ? row.questions : [] };
-        }
-      } catch (e) {
-        console.warn("interview knowledge unavailable:", (e as Error).message);
-        knowledge = null;
-      }
-    }
+    const consultantModules = (consultantRow?.consultant_skills || []).map((s: any) => s.sap_module);
+    const moduleKey = [...consultantModules].sort().join(',');
+    // All independent context loads start together after fresh access checks.
+    const loadContext = () => Promise.all([
+      cachedInterviewSession(`${sessionContextKey}:profile`, () => Promise.all([
+        supabase.from('consultant_skills').select('sap_module, proficiency_level, years_experience').eq('consultant_id', interview.consultant_id),
+        supabase.from('certifications').select('name, issuer').eq('consultant_id', interview.consultant_id),
+        supabase.from('profiles').select('display_name').eq('user_id', consultantRow?.user_id || '').maybeSingle(),
+        supabase.from('consultants').select('sap_role, sap_roles, bio').eq('id', interview.consultant_id).maybeSingle(),
+      ])),
+      cachedInterviewSession(`${sessionContextKey}:prompts`, () => Promise.all([
+        cachedInterviewPrompt(`training:${moduleKey}`, () => supabase.from('interview_training_config').select('*').eq('is_active', true).in('sap_module', ['general', ...consultantModules])),
+        cachedInterviewPrompt(`library:${moduleKey}`, () => supabase.from('interview_question_library').select('question, key_points, author_name, difficulty').eq('is_active', true).in('sap_module', ['general', ...consultantModules]).limit(60)),
+        supabase.from('interview_templates').select('sap_module, seniority, role_focus, title, focus_areas, instructions, sample_questions, question_count').eq('is_active', true).in('sap_module', ['general', ...consultantModules]),
+      ])),
+      action === 'copilot' ? Promise.resolve(null) : Promise.all([
+        cachedInterviewPrompt('knowledge-settings', () => loadKnowledgeSettings(supabase)),
+        cachedInterviewPrompt('knowledge-ready', () => knowledgeTablesReady(supabase)),
+        cachedInterviewSession(`${sessionContextKey}:plan`, () => supabase.from('interview_plans').select('status, plan, questions').eq('interview_id', interview_id).maybeSingle(), 30000),
+      ]).then(([settings, ready, planResult]) => {
+        if (!settings.enabled || !ready) return null;
+        const row = planResult.data;
+        // A warm-up must not hide a plan created by the greeting in the meantime.
+        if (row?.status !== 'ready') invalidateInterviewSessionEntry(`${sessionContextKey}:plan`);
+        return { settings, plan: row?.status === 'ready' ? row.plan : null, questions: row?.status === 'ready' && Array.isArray(row.questions) ? row.questions as PlannedQuestion[] : [] };
+      }).catch(() => null),
+    ]);
+    // No API key requirement, AI request, plan generation, status change or audit on warm-up.
+    if (action === 'warmup') return warmInterviewContext(access, loadContext, corsHeaders);
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
+    const [profileContext, promptContext, knowledge] = await loadContext();
     const startPlan = () => {
       if (!knowledge || knowledge.plan) return;
       const task = ensureInterviewPlan(supabase, { interviewId: interview_id, consultantId: interview.consultant_id, lang: lang || "en", apiKey: LOVABLE_API_KEY, settings: knowledge.settings })
@@ -197,7 +203,7 @@ serve(async (req) => {
     };
 
     // Get consultant skills for context
-    const [{ data: skills }, { data: certs }, { data: profile }, { data: roleRow }] = await profileContext;
+    const [{ data: skills }, { data: certs }, { data: profile }, { data: roleRow }] = profileContext;
     const primaryRole = normalizeRoles((roleRow as any)?.sap_roles ?? [], (roleRow as any)?.sap_role).primary;
     const roleFocus = interviewFocusFor(primaryRole);
     const roleText = INTERVIEW_FOCUS_TEXT[roleFocus];
@@ -429,13 +435,7 @@ Include one question_scores entry per candidate answer, in the same order the an
       });
     }
 
-    // Fetch admin training configs for relevant modules
-    const consultantModules = (skills || []).map(s => s.sap_module);
-    const [{ data: trainingConfigs }, { data: libRows }, { data: tpls }] = await cachedInterviewSession(`${sessionContextKey}:prompts`, () => Promise.all([
-      cachedInterviewPrompt(`training:${[...consultantModules].sort().join(',')}`, () => supabase.from('interview_training_config').select('*').eq('is_active', true).in('sap_module', ['general', ...consultantModules])),
-      cachedInterviewPrompt(`library:${[...consultantModules].sort().join(',')}`, () => supabase.from('interview_question_library').select('question, key_points, author_name, difficulty').eq('is_active', true).in('sap_module', ['general', ...consultantModules]).limit(60)),
-      supabase.from('interview_templates').select('sap_module, seniority, role_focus, title, focus_areas, instructions, sample_questions, question_count').eq('is_active', true).in('sap_module', ['general', ...consultantModules]),
-    ]));
+    const [{ data: trainingConfigs }, { data: libRows }, { data: tpls }] = promptContext;
 
     let customQuestionsBlock = "";
     let trainingInstructionsBlock = "";
