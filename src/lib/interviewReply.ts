@@ -1,6 +1,5 @@
 export type InterviewReply = { role: 'user' | 'assistant'; content: string };
-export const MIN_ANSWER_CHARS = 3;
-export const validAnswer = (text: string) => text.trim().length >= MIN_ANSWER_CHARS;
+export { canSendAnswer as validAnswer } from './interviewConversation';
 export function reviseAnswer(history: InterviewReply[], text: string, append = false): InterviewReply[] {
   let index = history.length - 1;
   while (index >= 0 && history[index].role !== 'user') index--;

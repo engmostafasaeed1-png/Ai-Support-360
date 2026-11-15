@@ -40,7 +40,7 @@ export function startWebSpeech(o: {
   if (!C) return null;
   let active = true;
   let restarts = 0;
-  let rec: Rec;
+  let rec: Rec = new C();
   const make = () => {
     rec = new C();
     rec.lang = toSpeechLang(o.lang);
@@ -70,7 +70,7 @@ export function startWebSpeech(o: {
     };
   };
   make();
-  try { rec!.start(); } catch { return null; }
+  try { rec.start(); } catch { return null; }
   return {
     stop() {
       active = false;

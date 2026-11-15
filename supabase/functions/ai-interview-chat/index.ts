@@ -17,6 +17,7 @@ const BodySchema = z.object({
   lang: z.string().max(10).optional(),
   voice_gender: z.enum(["male", "female"]).optional(),
   tone: z.enum(["friendly", "formal", "strict"]).optional(),
+  answer_accuracy: z.object({ recognizer: z.enum(['typed', 'server', 'webspeech']), language: z.enum(['en-US', 'ar-SA']), edits: z.number().int().min(0).max(100000) }).nullable().optional(),
 });
 
 // Fixed first message of the interview. It does not need the model, so it is sent at once (the model needed 10-15 s to think about it).
@@ -602,7 +603,7 @@ Use ${interviewLang} throughout. Keep SAP terms, T-codes and product names in En
       flush(controller) {
         if (!visibleText) controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ error: 'The interviewer returned no text. Your answers are saved.', terminal: true })}\n\n`));
         const audit = Promise.resolve(supabase.from("audit_logs").insert({ user_id: authUser.id, action: visibleText ? "ai_interview_turn_success" : "ai_interview_turn_error",
-          entity_type: "interview_session", entity_id: interview_id, metadata: visibleText ? { model: INTERVIEW_TURN_MODEL, first_text_ms: tVisible - t0, prep_ms: tCall - t0, total_ms: Date.now() - t0 } : { status: 200, message: "The interviewer returned no text. The request ended without retry." } })).then(({ error }) => { if (error) console.warn("Interview timing audit failed"); });
+          entity_type: "interview_session", entity_id: interview_id, metadata: visibleText ? { model: INTERVIEW_TURN_MODEL, first_text_ms: tVisible - t0, prep_ms: tCall - t0, total_ms: Date.now() - t0, ...(parsed.data.answer_accuracy ? { answer_accuracy: parsed.data.answer_accuracy } : {}) } : { status: 200, message: "The interviewer returned no text. The request ended without retry." } })).then(({ error }) => { if (error) console.warn("Interview timing audit failed"); });
         const rt = (globalThis as any).EdgeRuntime;
         if (rt?.waitUntil) rt.waitUntil(audit);
         console.log(JSON.stringify({

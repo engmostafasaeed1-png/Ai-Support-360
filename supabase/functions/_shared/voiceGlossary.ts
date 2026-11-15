@@ -200,6 +200,14 @@ const isTechnical = (term: string) => /[A-Z].*[A-Z]|\d|\//.test(term.slice(1)) |
 
 /** Fixed misspellings that speech models commonly produce for SAP names. */
 const ALIASES: ReadonlyArray<[RegExp, string]> = [
+  [/\bas\s+for\s+hana\b/gi, "S/4HANA"],
+  [/\bfury\b/gi, "Fiori"],
+  [/\bb\s+t\s+p\b/gi, "BTP"],
+  [/\ba\s+b\s+a\s+p\b/gi, "ABAP"],
+  [/\bc\s+d\s+s\b/gi, "CDS"],
+  [/\bb\s+a\s+p\s+i\b/gi, "BAPI"],
+  [/\bbrf\s*(?:plus|\+)/gi, "BRF+"],
+  [/\bsuccess\s+factors\b/gi, "SuccessFactors"],
   [/\bS\s*\/?\s*(?:4|four)\s*\/?\s*hana\b/gi, "S/4HANA"],
   [/\bS\s*\/\s*4\b(?=\s+20\d\d\b)/gi, "S/4HANA"],
   [/\bBW\s*\/?\s*(?:4|four)\s*\/?\s*hana\b/gi, "BW/4HANA"],

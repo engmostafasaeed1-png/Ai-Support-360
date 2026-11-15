@@ -12,6 +12,8 @@ import { classifyMicError, MIC_PROBLEM_TEXT, type MicProblem } from '@/lib/voice
 import { joinText, TranscriptAssembler } from '@/lib/voice/transcriptAssembler';
 import { probeServerVoice, transcribeSegment, VoiceServerError, type FallbackReason, type VoiceContext } from '@/lib/voice/transcribeClient';
 import { deviceClass } from '../../supabase/functions/_shared/voiceRouting';
+import { correctTranscript, SAP_CORE_TERMS } from '../../supabase/functions/_shared/voiceGlossary';
+import { HEARING_WARNING_MS } from '@/lib/interviewConversation';
 
 export type VoiceStatus = 'idle' | 'starting' | 'listening' | 'paused' | 'error';
 export type VoiceEngine = 'server' | 'webspeech';
@@ -33,6 +35,12 @@ export interface VoiceOptions {
   idleMs?: number;
   /** Interview review mode uses browser recognition first when supported. */
   preferBrowser?: boolean;
+  /** Browser interim preview alongside authoritative server transcription. */
+  livePreview?: boolean;
+  onActivity?: () => void;
+  onInterim?: (text: string) => void;
+  onQuiet?: (milliseconds: number) => void;
+  onHearingProblem?: () => void;
   /** Text heard since start() (cumulative, in spoken order). */
   onText?: (text: string) => void;
   onIdle?: (text: string) => void;
@@ -74,12 +82,17 @@ export function useVoiceRecognizer(options: VoiceOptions) {
   const lastLevelAt = useRef(0);
   const lastModel = useRef<string | null>(null);
   const lastVersion = useRef<number | null>(null);
+  const lastRecognizedAt = useRef(0);
+  const hearingWarned = useRef(false);
+  const webPreview = useRef(false);
 
   const supported = canRecordAudio() || hasWebSpeech();
 
   const current = () => joinText(asm.current.text, webText.current);
   const emit = () => {
-    const t = current();
+    const t = correctTranscript(current(), [...SAP_CORE_TERMS, 'BTP', 'ABAP', 'CDS', 'MM', 'SD', 'FI', 'CO', 'PP', 'EWM', 'BRF+', 'SuccessFactors', 'Ariba']).text;
+    lastRecognizedAt.current = Date.now();
+    hearingWarned.current = false;
     setText(t);
     optsRef.current.onText?.(t);
   };
@@ -99,11 +112,16 @@ export function useVoiceRecognizer(options: VoiceOptions) {
     if (heard.current && quiet.current >= idleMs && asm.current.pending === 0) fireIdle(sid);
   }, [fireIdle]);
 
-  const startWeb = useCallback((sid: number): boolean => {
+  const startWeb = useCallback((sid: number, previewOnly = false): boolean => {
+    webPreview.current = previewOnly;
+    let previewText = '';
     const handle = startWebSpeech({
       lang: optsRef.current.lang,
       onFinal: (chunk) => {
         if (sid !== session.current) return;
+        lastRecognizedAt.current = Date.now(); hearingWarned.current = false;
+        optsRef.current.onActivity?.();
+        if (previewOnly) { previewText = joinText(previewText, chunk); setInterim(previewText); optsRef.current.onInterim?.(previewText); return; }
         webText.current = joinText(webText.current, chunk);
         setInterim('');
         emit();
@@ -116,10 +134,13 @@ export function useVoiceRecognizer(options: VoiceOptions) {
       onInterim: (t) => {
         if (sid !== session.current) return;
         setInterim(t);
+        optsRef.current.onInterim?.(t);
+        if (t) { optsRef.current.onActivity?.(); lastRecognizedAt.current = Date.now(); hearingWarned.current = false; }
         if (t) clearTimeout(idleTimer.current);
       },
       onProblem: (p) => {
         if (sid !== session.current) return;
+        if (previewOnly) { web.current?.stop(); web.current = null; return; }
         if (p === 'network') { setNotice(VOICE_NOTICES.network); return; }
         setNotice(MIC_PROBLEM_TEXT[p]);
         if (p === 'permission' || p === 'device') setFallbackReason(p);
@@ -130,9 +151,7 @@ export function useVoiceRecognizer(options: VoiceOptions) {
     });
     if (!handle) return false;
     web.current = handle;
-    engineRef.current = 'webspeech';
-    setEngine('webspeech');
-    setStatus('listening');
+    if (!previewOnly) { engineRef.current = 'webspeech'; setEngine('webspeech'); setStatus('listening'); }
     return true;
   }, [fireIdle]);
 
@@ -147,6 +166,7 @@ export function useVoiceRecognizer(options: VoiceOptions) {
         if (r.model) lastModel.current = r.model;
         if (r.vocabVersion != null) lastVersion.current = r.vocabVersion;
         asm.current.resolve(index, r.text, r.rawText, r.rawByModel);
+        setInterim('');
         emit();
       })
       .catch((e: unknown) => {
@@ -159,6 +179,7 @@ export function useVoiceRecognizer(options: VoiceOptions) {
           // Keep listening with the browser's recogniser for the rest of this answer.
           rec.current.stop();
           rec.current = null;
+          web.current?.stop(); web.current = null;
           setNotice(err.fallback === 'quota' ? VOICE_NOTICES.quota : VOICE_NOTICES.switched);
           if (!startWeb(sid)) { setStatus('error'); setNotice(VOICE_NOTICES.segment_failed); }
         } else {
@@ -191,6 +212,7 @@ export function useVoiceRecognizer(options: VoiceOptions) {
     webText.current = '';
     quiet.current = 0;
     heard.current = false;
+    lastRecognizedAt.current = Date.now(); hearingWarned.current = false;
     idleFired.current = false;
     segments.current = 0;
     engineRef.current = null;
@@ -214,15 +236,16 @@ export function useVoiceRecognizer(options: VoiceOptions) {
             const now = performance.now();
             if (now - lastLevelAt.current > 80) { lastLevelAt.current = now; setLevel(l); }
           },
-          onSpeechStart: () => { heard.current = true; quiet.current = 0; },
+          onSpeechStart: () => { heard.current = true; quiet.current = 0; optsRef.current.onActivity?.(); },
           onSegment: (wav) => upload(sid, wav),
-          onQuiet: (q, h) => { quiet.current = q; heard.current = heard.current || h; maybeIdle(sid); },
+          onQuiet: (q, h) => { quiet.current = q; heard.current = heard.current || h; if (h) optsRef.current.onQuiet?.(q); maybeIdle(sid); },
         });
         if (sid !== session.current) { r.stop(); return; }
         rec.current = r;
         engineRef.current = 'server';
         setEngine('server');
         setStatus('listening');
+        if (optsRef.current.livePreview && hasWebSpeech()) startWeb(sid, true);
         return;
       } catch (e) {
         if (sid !== session.current) return;
@@ -242,6 +265,12 @@ export function useVoiceRecognizer(options: VoiceOptions) {
       setNotice(MIC_PROBLEM_TEXT.unsupported);
       setFallbackReason('unsupported');
       setStatus('error');
+    } else if (optsRef.current.livePreview && canRecord) {
+      // Meter-only capture on browser fallback; never upload this audio.
+      try {
+        const meter = await startMicRecorder({ onSegment: () => {}, onLevel: l => { if (sid === session.current) setLevel(l); } });
+        if (sid !== session.current) meter.stop(); else rec.current = meter;
+      } catch { /* Browser recognition still works without a separate meter. */ }
     }
   }, [maybeIdle, startWeb, upload]);
 
@@ -268,12 +297,12 @@ export function useVoiceRecognizer(options: VoiceOptions) {
 
   /** While the AI interviewer speaks: keep the microphone open but record nothing. */
   const pause = useCallback(() => {
-    if (rec.current) { rec.current.pause(); setStatus('paused'); setLevel(0); }
+    if (rec.current) { rec.current.pause(); web.current?.stop(); web.current = null; setInterim(''); setStatus('paused'); setLevel(0); }
     else if (web.current) { web.current.stop(); web.current = null; setStatus('paused'); setInterim(''); }
   }, []);
 
   const resume = useCallback(() => {
-    if (rec.current?.paused) { rec.current.resume(); setStatus('listening'); return; }
+    if (rec.current?.paused) { rec.current.resume(); if (!web.current && (webPreview.current || engineRef.current === 'webspeech')) startWeb(session.current, webPreview.current); setStatus('listening'); return; }
     if (engineRef.current === 'webspeech' && !web.current && status === 'paused') startWeb(session.current);
   }, [startWeb, status]);
 
@@ -283,6 +312,16 @@ export function useVoiceRecognizer(options: VoiceOptions) {
   }), []);
 
   useEffect(() => () => { session.current += 1; abort.current?.abort(); clearTimeout(idleTimer.current); rec.current?.stop(); web.current?.stop(); }, []);
+  useEffect(() => {
+    if (status !== 'listening') return;
+    lastRecognizedAt.current = Date.now();
+    const timer = setInterval(() => {
+      if (!hearingWarned.current && Date.now() - lastRecognizedAt.current >= HEARING_WARNING_MS) {
+        hearingWarned.current = true; optsRef.current.onHearingProblem?.();
+      }
+    }, 250);
+    return () => clearInterval(timer);
+  }, [status]);
 
   return {
     supported, status, engine, level, interim, pending, text, notice, fallback,

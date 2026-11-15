@@ -7,8 +7,9 @@ describe('editable interview answers', () => {
     expect(readAnswerDraft('one')).toBe('مسودة SAP\nMore details');
     expect(readAnswerDraft('two')).toBe('');
   });
-  it('blocks empty and fewer than three trimmed characters', () => {
-    expect(validAnswer('  ')).toBe(false); expect(validAnswer('ab')).toBe(false); expect(validAnswer('SAP')).toBe(true);
+  it('blocks empty and fewer than three words, including Arabic', () => {
+    expect(validAnswer('  ')).toBe(false); expect(validAnswer('SAP consultant')).toBe(false); expect(validAnswer('I configured SAP')).toBe(true);
+    expect(validAnswer('عملت على النظام')).toBe(true); expect(validAnswer('نظام واحد')).toBe(false);
   });
   const history: InterviewReply[] = [{ role: 'assistant', content: 'Question?' }, { role: 'user', content: 'Old answer' }, { role: 'assistant', content: 'Pending question' }];
   it('edits the last answer and cancels its pending follow-up', () => {

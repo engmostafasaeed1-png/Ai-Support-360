@@ -68,6 +68,9 @@ describe('SAP vocabulary hints', () => {
 
 describe('SAP spelling fixes after transcription', () => {
   const glossary = buildVoiceGlossary({ modules: ['SAP FI', 'SAP MM', 'ABAP'] }).keywords;
+  it('corrects common SAP mis-hearings from the shared dictionary', () => {
+    expect(correctTranscript('as for hana fury abap b t p success factors', [...glossary, 'ABAP', 'BTP', 'SuccessFactors']).text).toBe('S/4HANA Fiori ABAP BTP SuccessFactors');
+  });
   it('fixes the spelling of SAP terms', () => {
     const { text, changes } = correctTranscript('we checked ac doca after posting in miro and fb 60 on s4 hana', [...glossary, 'ACDOCA', 'MIRO', 'FB60']);
     expect(text).toBe('we checked ACDOCA after posting in MIRO and FB60 on S/4HANA');

@@ -29,6 +29,8 @@ import MicCheck from '@/components/voice/MicCheck';
 import VoiceConsentNote from '@/components/voice/VoiceConsentNote';
 import VoiceTrainingConsent from '@/components/voice/VoiceTrainingConsent';
 import { learnFromAnswer } from '@/lib/voice/learning';
+import { useInterviewAutoSend } from '@/hooks/useInterviewAutoSend';
+import { savedVoiceLanguage, VOICE_LANGUAGE_KEY, SPEECH_SILENCE_MS } from '@/lib/interviewConversation';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -226,7 +228,7 @@ function ScoreBar({ label, score, icon }: { label: string; score: number; icon: 
 }
 
 export default function AIInterviewFlow({ interviewId, onComplete, onCancel, textOnly = false }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [reward, setReward] = useState<{ ai_interview_badge: string; credibility_credits: number } | null>(null);
   const [phase, setPhase] = useState<'disclaimer' | 'chat' | 'evaluating' | 'results'>('disclaimer');
@@ -242,6 +244,9 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   useEffect(() => () => { turnController.current?.abort(); }, []);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const playbackRef = useRef(false);
+  const editCount = useRef(0);
+  const answerAccuracy = useRef<{ recognizer: 'typed' | 'server' | 'webspeech'; language: string; edits: number } | null>(null);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
   const [bodyLanguage, setBodyLanguage] = useState<BodyLanguageResult | null>(null);
   const [error, setError] = useState('');
@@ -259,6 +264,9 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   const avatarImg = voiceGender === 'male' ? aiMaleAvatar : aiFemaleAvatar;
   const [speechRate, setSpeechRate] = useState(1.0);
   const [interviewLang, setInterviewLang] = useState<'en' | 'fr' | 'ar' | 'es' | 'de' | 'ar-SA'>('en');
+  const [micLanguage, setMicLanguage] = useState(() => savedVoiceLanguage(i18n.language));
+  const [micLanguageOverride, setMicLanguageOverride] = useState(() => { try { return !!localStorage.getItem(VOICE_LANGUAGE_KEY); } catch { return false; } });
+  useEffect(() => { if (!micLanguageOverride) setMicLanguage(interviewLang.startsWith('ar') ? 'ar-SA' : 'en-US'); }, [interviewLang, micLanguageOverride]);
   // Text-only: no camera, no listening; the consultant types every answer.
   const [conversationMode, setConversationMode] = useState(!textOnly);
   const sendToAIRef = useRef<(h: ChatMessage[]) => Promise<void>>();
@@ -281,18 +289,34 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   // Learning loop: when the current question appeared and whether typed text preceded the spoken words.
   const questionAtRef = useRef<number | null>(null);
   const partialVoiceRef = useRef(false);
+  const pauseStartedAt = useRef<number | null>(null);
+  const pausedAnswerMs = useRef(0);
+  const handleSendRef = useRef<() => Promise<void>>();
+  const autoSend = useInterviewAutoSend({ text: input, blocked: phase !== 'chat' || isStreaming || isSpeaking || !!error, onSend: () => void handleSendRef.current?.() });
+  const autoSendRef = useRef(autoSend); autoSendRef.current = autoSend;
+  useEffect(() => {
+    if (autoSend.paused && pauseStartedAt.current === null) pauseStartedAt.current = Date.now();
+    if (!autoSend.paused && pauseStartedAt.current !== null) { pausedAnswerMs.current += Date.now() - pauseStartedAt.current; pauseStartedAt.current = null; }
+  }, [autoSend.paused]);
+  const speechQuietRef = useRef(false);
   const voice = useVoiceRecognizer({
     context: 'interview',
     interviewId,
-    lang: interviewLang,
-    // Hands-free: the answer is sent after 2 seconds of silence, once everything said has been written down.
+    lang: micLanguage,
     idleMs: 0,
-    preferBrowser: true,
+    livePreview: true,
+    onActivity: () => { speechQuietRef.current = false; autoSendRef.current.cancel(); setMicNotice(''); },
+    onQuiet: milliseconds => {
+      if (milliseconds < SPEECH_SILENCE_MS && !speechQuietRef.current) { speechQuietRef.current = true; autoSendRef.current.arm('speech', Math.max(50, SPEECH_SILENCE_MS - milliseconds)); }
+    },
+    onInterim: text => { if (text && voiceRef.current?.engine === 'webspeech') autoSendRef.current.cancel(); },
+    onHearingProblem: () => setMicNotice(t('interview.hearing_tip')),
     onText: (spoken) => {
       const full = joinText(voiceBaseRef.current, spoken);
       pendingTextRef.current = full;
       lastVoiceTextRef.current = full;
       setInput(full);
+      if (!speechQuietRef.current || autoSendRef.current.remaining === 0) autoSendRef.current.arm('speech');
     },
 
   });
@@ -304,9 +328,13 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   }, [voice.notice, t]);
   // Never record while the interviewer is talking or thinking, so its voice is not taken as the answer.
   useEffect(() => {
-    if (isSpeaking) voiceRef.current.pause();
-    else if (voiceRef.current.status === 'paused') voiceRef.current.resume();
-  }, [isSpeaking]);
+    if (isSpeaking || isStreaming || autoSend.paused || error) voiceRef.current.pause();
+    else if (phase === 'chat' && interviewStarted && conversationMode && shouldAutoResumeRef.current && !playbackRef.current) {
+      if (voiceRef.current.status === 'paused') voiceRef.current.resume();
+      else if (voiceRef.current.status === 'idle') startListeningRef.current?.();
+    }
+  }, [isSpeaking, isStreaming, autoSend.paused, error, phase, interviewStarted, conversationMode]);
+  const pauseEditing = () => { autoSend.pause(); voiceRef.current.pause(); };
 
   // Preload voices — some browsers load them asynchronously
   useEffect(() => {
@@ -385,11 +413,11 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
 
   // Timer
   useEffect(() => {
-    if (phase === 'chat') {
+    if (phase === 'chat' && !autoSend.paused) {
       timerRef.current = setInterval(() => setElapsedTime(t => t + 1), 1000);
     }
     return () => clearInterval(timerRef.current);
-  }, [phase]);
+  }, [phase, autoSend.paused]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -455,6 +483,9 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     const isOmar = /omar/i.test(parts.speaker?.name || '');
     const cleanText = parts.text.replace(/[#*_`~[\]()>]/g, '').replace(/\n+/g, '. ').replace(/\s+/g, ' ').trim();
     if (!cleanText || cleanText === lastSpokenRef.current) return;
+    playbackRef.current = true;
+    voiceRef.current.pause();
+    setIsSpeaking(true);
     lastSpokenRef.current = cleanText;
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
@@ -493,16 +524,16 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
 
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => {
+      playbackRef.current = false;
       setIsSpeaking(false);
-      if (conversationMode && shouldAutoResumeRef.current && voiceRef.current.supported) startListeningRef.current?.();
     };
-    utterance.onerror = () => setIsSpeaking(false);
+    utterance.onerror = () => { playbackRef.current = false; setIsSpeaking(false); };
     window.speechSynthesis.speak(utterance);
   }, [ttsEnabled, speechRate, voiceGender, interviewLang]);
 
   const startListening = useCallback(() => {
     const v = voiceRef.current;
-    if (!v.supported || v.listening) return;
+    if (!v.supported || v.listening || playbackRef.current || sendLock.current || autoSendRef.current.paused) return;
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
     // Spoken words are added after anything already typed in the answer box.
@@ -521,7 +552,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   }, []);
 
   const toggleListening = useCallback(() => {
-    if (voiceRef.current.listening) stopListening(); else startListening();
+    if (voiceRef.current.status === 'listening') { autoSendRef.current.pause(); voiceRef.current.pause(); }
+    else { autoSendRef.current.resume(); if (voiceRef.current.status === 'paused') voiceRef.current.resume(); else startListening(); }
   }, [startListening, stopListening]);
 
   const sendToAI = async (chatHistory: ChatMessage[]) => {
@@ -530,6 +562,8 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     const controller = new AbortController();
     turnController.current = controller;
     sendLock.current = true;
+    autoSendRef.current.cancel();
+    voiceRef.current.pause();
     setIsStreaming(true);
     setTurnRetryAllowed(true);
     setIsSpeaking(false);
@@ -542,7 +576,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
       const resp = await fetchInterviewTurn(() => fetch(CHAT_URL, {
         method: 'POST', signal: controller.signal,
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-        body: JSON.stringify({ interview_id: interviewId, messages: turnContext.recent, running_summary: `Exchanges so far: ${chatHistory.filter(m => m.role === 'user').length}.\n${turnContext.summary}`.slice(0, 1200), lang: interviewLang, voice_gender: voiceGender, tone: interviewerTone }),
+        body: JSON.stringify({ interview_id: interviewId, messages: turnContext.recent, running_summary: `Exchanges so far: ${chatHistory.filter(m => m.role === 'user').length}.\n${turnContext.summary}`.slice(0, 1200), lang: interviewLang, voice_gender: voiceGender, tone: interviewerTone, answer_accuracy: answerAccuracy.current }),
       }));
       if (generation !== turnGeneration.current || controller.signal.aborted) return;
       if (!resp.ok || !resp.body) {
@@ -608,6 +642,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
       if (assistantText) {
         messagesRef.current = [...chatHistory, { role: 'assistant', content: assistantText }];
         questionAtRef.current = Date.now();
+        pausedAnswerMs.current = 0; pauseStartedAt.current = autoSendRef.current.paused ? Date.now() : null;
         setMessages(messagesRef.current);
         if (!interviewStarted) {
           setInterviewStarted(true);
@@ -629,7 +664,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
       sendLock.current = false;
       turnController.current = null;
       setIsStreaming(false);
-      setIsSpeaking(false);
+      if (!playbackRef.current) setIsSpeaking(false);
       // Auto-save conversation after each exchange
       const latest = messagesRef.current;
       if (latest.length > 0) {
@@ -652,12 +687,19 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     text = inputLatestRef.current.trim();
     sendLock.current = false;
     setIsStreaming(false);
+    if (autoSendRef.current.paused && !manualSendingRef.current) return;
+    manualSendingRef.current = false;
+    if (!validAnswer(text)) return;
+    autoSendRef.current.resume();
     pendingAnswer.current = text;
     const usedVoice = !!lastVoiceTextRef.current;
     const answerMeta = usedVoice ? voiceRef.current.answerMeta() : null;
+    answerAccuracy.current = { recognizer: answerMeta?.engine ?? 'typed', language: micLanguage, edits: editCount.current };
+    editCount.current = 0;
     const shownVoiceText = lastVoiceTextRef.current;
     const partialVoice = partialVoiceRef.current;
-    const answerMs = questionAtRef.current ? Date.now() - questionAtRef.current : null;
+    const currentPauseMs = pauseStartedAt.current === null ? 0 : Date.now() - pauseStartedAt.current;
+    const answerMs = questionAtRef.current ? Math.max(0, Date.now() - questionAtRef.current - pausedAnswerMs.current - currentPauseMs) : null;
     pendingVoiceMetrics.current = () => {
       logVoiceAnswer({ context: 'interview', interviewId, meta: answerMeta, edited: usedVoice && text !== shownVoiceText.trim(), chars: text.length });
       learnFromAnswer({
@@ -679,8 +721,9 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     setMessages(newHistory);
     saveAnswerDraft(interviewId, text);
     await sendToAI(newHistory);
-    inputRef.current?.focus();
   };
+  const manualSendingRef = useRef(false);
+  handleSendRef.current = handleSend;
 
   const analyzeBodyLanguage = async (): Promise<BodyLanguageResult | null> => {
     if (framesRef.current.length === 0) return null;
@@ -745,6 +788,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
   };
 
   const reviseLast = (mode: 'edit' | 'append') => {
+    pauseEditing(); playbackRef.current = false;
     turnController.current?.abort();
     ++turnGeneration.current;
     turnController.current = null;
@@ -1263,7 +1307,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                 </div>
               )}
               {voice.interim && (
-                <div className="flex items-center gap-2 text-xs text-blue-300/70 mb-2 italic" dir="auto">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 italic" dir="auto">
                   <Mic className="w-3 h-3 animate-pulse" /> {voice.interim}
                 </div>
               )}
@@ -1301,9 +1345,11 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                 {isStreaming && <Button type="button" className="bg-background text-foreground" variant="outline" size="sm" onClick={() => reviseLast('edit')}>{t('interview.edit_last')}</Button>}
                 <Button type="button" className="bg-background text-foreground" variant="outline" size="sm" onClick={() => reviseLast('append')}>{t('interview.append_answer')}</Button>
               </div>}
-              <InterviewReplyBox ref={inputRef} value={input} busy={isStreaming} listening={isListening} voiceSupported={voice.supported}
-                onChange={text => { if (voiceRef.current.listening || voiceRef.current.pending > 0) voiceRef.current.cancel(); setInput(text); }}
-                onSend={() => void handleSend()} onVoice={toggleListening} />
+              <InterviewReplyBox ref={inputRef} value={input} busy={isStreaming} listening={voice.status === 'listening'} voiceSupported={voice.supported}
+                paused={autoSend.paused} remaining={autoSend.remaining} onPause={pauseEditing}
+                language={micLanguage} onLanguage={lang => { pauseEditing(); voiceRef.current.cancel(); setMicLanguage(lang); setMicLanguageOverride(true); try { localStorage.setItem(VOICE_LANGUAGE_KEY, lang); } catch { /* in-memory preference */ } }}
+                onChange={text => { editCount.current += 1; voiceBaseRef.current = text; if (voiceRef.current.listening || voiceRef.current.pending > 0) voiceRef.current.cancel(); setInput(text); if (!autoSend.paused) autoSend.arm('typing'); }}
+                onSend={() => { manualSendingRef.current = true; void handleSend(); }} onVoice={toggleListening} />
             </div>
           </div>
         </div>
@@ -1344,7 +1390,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
               <button onClick={() => setCamOn(!camOn)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${camOn ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'}`}>
                 {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
               </button>
-              <button onClick={() => { setTtsEnabled(!ttsEnabled); if (ttsEnabled) { window.speechSynthesis.cancel(); setIsSpeaking(false); } }} className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${ttsEnabled ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'}`} title={ttsEnabled ? 'Mute AI voice' : 'Enable AI voice'}>
+              <button onClick={() => { setTtsEnabled(!ttsEnabled); if (ttsEnabled) { playbackRef.current = false; window.speechSynthesis.cancel(); setIsSpeaking(false); } }} className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${ttsEnabled ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-red-500/20 text-red-400'}`} title={ttsEnabled ? 'Mute AI voice' : 'Enable AI voice'}>
                 {ttsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
               </button>
               <button className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
