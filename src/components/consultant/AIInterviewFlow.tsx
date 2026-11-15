@@ -1346,9 +1346,10 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
                 <Button type="button" className="bg-background text-foreground" variant="outline" size="sm" onClick={() => reviseLast('append')}>{t('interview.append_answer')}</Button>
               </div>}
               <InterviewReplyBox ref={inputRef} value={input} busy={isStreaming} listening={voice.status === 'listening'} voiceSupported={voice.supported}
-                paused={autoSend.paused} remaining={autoSend.remaining} onPause={pauseEditing}
+                paused={autoSend.paused} remaining={autoSend.remaining} countdownSource={autoSend.source} onPause={pauseEditing}
+                onCancelCountdown={() => { autoSend.pause(false); voiceRef.current.pause(); }}
                 language={micLanguage} onLanguage={lang => { pauseEditing(); voiceRef.current.cancel(); setMicLanguage(lang); setMicLanguageOverride(true); try { localStorage.setItem(VOICE_LANGUAGE_KEY, lang); } catch { /* in-memory preference */ } }}
-                onChange={text => { editCount.current += 1; voiceBaseRef.current = text; if (voiceRef.current.listening || voiceRef.current.pending > 0) voiceRef.current.cancel(); setInput(text); if (!autoSend.paused) autoSend.arm('typing'); }}
+                onChange={text => { editCount.current += 1; voiceBaseRef.current = text; if (voiceRef.current.listening || voiceRef.current.pending > 0) voiceRef.current.cancel(); setInput(text); autoSend.arm('typing'); }}
                 onSend={() => { manualSendingRef.current = true; void handleSend(); }} onVoice={toggleListening} />
             </div>
           </div>

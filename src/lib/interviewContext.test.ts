@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compactInterviewContext, cachedInterviewSession, INTERVIEW_TURN_MAX_TOKENS } from '../../supabase/functions/_shared/interviewContext';
+import { compactInterviewContext, cachedInterviewSession, INTERVIEW_TURN_MAX_TOKENS, INTERVIEW_COMMENT_MAX_WORDS, interviewQuestionMaxWords } from '../../supabase/functions/_shared/interviewContext';
 describe('bounded interview history', () => {
   it('keeps six recent messages verbatim and a short running summary', () => {
     const turns = Array.from({ length: 80 }, (_, i) => ({ role: i % 2 ? 'user' : 'assistant', content: `[[q: ${i}]] ${'x'.repeat(500)}` }));
@@ -12,6 +12,9 @@ describe('bounded interview history', () => {
     expect(compactInterviewContext([{ role: 'user', content: 'Latest answer' }], 'Earlier SAP context').summary).toBe('Earlier SAP context');
   });
   it('caps live replies at 150 output tokens', () => { expect(INTERVIEW_TURN_MAX_TOKENS).toBe(150); });
+  it('limits the comment to fifteen words', () => { expect(INTERVIEW_COMMENT_MAX_WORDS).toBe(15); });
+  it('limits non-scenario questions to thirty words', () => { for (const style of ['standard', 'discussion', 'panel']) expect(interviewQuestionMaxWords(style)).toBe(30); });
+  it('allows only scenario questions fifty words', () => { expect(interviewQuestionMaxWords('scenario')).toBe(50); });
   it('loads SAP context once per session without mixing sessions', async () => {
     let calls = 0;
     const load = async () => ({ area: ++calls === 1 ? 'FI' : 'MM' });

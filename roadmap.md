@@ -4,6 +4,8 @@
 - [ ] Interview stale-session cleanup and admin health readback: apply prepared docs/sql/interview-start-fix.sql; remains unapplied as requested, no sessions deleted and no publishing.
 # Roadmap
 
+- [x] Published interview regression: typing restarts idle countdown, clicks/speech edits pause temporarily, explicit Pause/Edit stays sticky, valid drafts re-arm after AI blockers; 15-word comment / 30-word question (scenario 50) prompt rules, profile reads overlap knowledge setup. 38 tests passed; signed-in three-key typing/countdown/sticky pause verified without submitting invented answers. Chat function deployed; no schema changes or publishing. Cold latency and representative generated reply length not remeasured.
+
 - [x] Interview fast replies: explicit editable drafts, edit/append cancellation, compact streaming turns, browser-first voice, static prompt cache, timing health; 55 tests and signed-in desktop/mobile checked. Synthetic first text 1.73s → 0.36s; updated real turn server first text 1.60s. No publishing.
 - [ ] Interview timing averages/P95: apply docs/sql/interview-fast-reply.sql after owner review; SQL remains unapplied. No representative speed distribution or actual microphone speech was measured.
 

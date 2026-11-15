@@ -5,6 +5,11 @@ export const INTERVIEW_TURN_MODEL = 'google/gemini-3.1-flash-lite';
 export const INTERVIEW_TURN_MAX_TOKENS = 150;
 export const INTERVIEW_RECENT_MESSAGES = 6;
 export const INTERVIEW_SUMMARY_CHAR_LIMIT = 1200;
+export const INTERVIEW_COMMENT_MAX_WORDS = 15;
+export const interviewQuestionMaxWords = (style: string) => style === 'scenario' ? 50 : 30;
+export function interviewReplyFormat(style: string) {
+  return `HARD REPLY RULE (overrides all bank, plan, template and style instructions): at most ONE comment sentence of at most ${INTERVIEW_COMMENT_MAX_WORDS} words, followed by exactly ONE question of at most ${interviewQuestionMaxWords(style)} words. ${style === 'scenario' ? 'Any scenario setup must fit inside that 50-word question; ask only one thing at a time.' : 'No multi-clause scenario setup; ask one direct question, not several requests joined together.'} Never add explanations, answer rubrics, repeated introductions or question lists. Metadata tags do not count as words. The 150-token output limit is a safety cap only, not a target. Begin visible words immediately after required metadata tags.`;
+}
 /** Server-only, bounded ephemeral context; call only after fresh session ownership checks. Never store answers here. */
 export async function cachedInterviewSession<T>(key: string, load: () => PromiseLike<T>, ttlMs = 30 * 60 * 1000): Promise<T> {
   const hit = sessionCache.get(key);
