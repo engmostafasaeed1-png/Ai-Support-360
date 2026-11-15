@@ -30,3 +30,5 @@
 - Adaptive coverage is deterministic, server-owned in existing transcript JSON via the prepared preservation trigger/RPC, and checked before display; the short model question is buffered to reject repeats before they reach the candidate.
 
 - Candidate scorecards use an isolated general-knowledge prompt without admin key points or library answers; validated partial rubrics never replace the three official scores, and charts are lazy with text tables always available.
+
+- Interview CV context caches only sanitized matching_summary plus expertise_keywords (600 characters total), labelled untrusted and used only for follow-ups; raw CV text never reaches the interviewer or scorecard.

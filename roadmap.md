@@ -1,6 +1,6 @@
 - [x] Step 1: deterministic adaptive coverage, repeat protection, server-owned JSON state and tests; prepared SQL only.
 - [x] Step 2: inspect existing scores, validated scorecard with lazy charts and bilingual comparisons; tests.
-- [ ] Step 3: bounded untrusted CV follow-up context; tests.
+- [x] Step 3: bounded untrusted CV follow-up context; tests.
 - [x] Hands-free interview: cancellable 2.5-second speech / 4-second typing send, three-word minimum, pause-safe timer, echo-safe listening, existing GPT Transcribe + browser preview, remembered language, SAP corrections and content-free accuracy audits. 141 tests passed; signed-in pause/timer, Enter and idle auto-send readback, desktop/mobile checked; spoken SAP WAV returned HTTP 200; accuracy audit read back (first text 629–2307ms). Chat/voice functions deployed; no schema changes or publishing. Real headset/accent accuracy remains for owner review.
 - [x] Interview latency follow-up: six recent messages + 1,200-character summary, 150-token streamed Gemini Flash Lite turns, bounded session context cache, nonblocking persistence; deployed ai-interview-chat, 23 tests pass. Signed-in clarification first visible words 1.92s; recorded server first text 0.86–1.74s. No schema changes or publishing; owner will measure representative Send-answer turns on live site.
 - [x] Interview startup: fixed transcript replay limit and unsupported reasoning, deployed chat function, added bilingual delayed retry/health UI, 28 focused tests and signed-in successful reply verified.
