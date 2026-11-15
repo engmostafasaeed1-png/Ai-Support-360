@@ -28,3 +28,5 @@
 - Demo bookings (docs/sql/demo-schedule-alerts.sql) e-mail only through demo-request-notify (one team alert per request via dsa_alert_claim, job-token reminder sweep via dsa_reminder_claim) and admin-confirm-demo-reschedule (requester e-mail per meeting version); content only from `_shared/demoSchedule.ts`, layout only from `_shared/demoScheduleEmail.ts` on the shared renderEmailShell, meeting links shown only on our request page, so bell, e-mail and pages agree.
 
 - Adaptive coverage is deterministic, server-owned in existing transcript JSON via the prepared preservation trigger/RPC, and checked before display; the short model question is buffered to reject repeats before they reach the candidate.
+
+- Candidate scorecards use an isolated general-knowledge prompt without admin key points or library answers; validated partial rubrics never replace the three official scores, and charts are lazy with text tables always available.

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,13 @@ interface ChatMessage {
   content: string;
 }
 
+const InterviewScorecard = lazy(() => import('./InterviewScorecard'));
+import type { QuestionScore, CompetencyScores } from '../../../supabase/functions/_shared/interviewEvaluation';
+
 interface EvaluationResult {
+  questions?: QuestionScore[];
+  competencies?: CompetencyScores | null;
+  scorecard_retry?: boolean;
   technical_score: number;
   soft_skills_score: number;
   overall_score: number;
@@ -753,6 +759,14 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
     }
   };
 
+  const [scorecardBusy, setScorecardBusy] = useState(false);
+  const retryScorecard = async () => {
+    setScorecardBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-interview-chat', { body: { interview_id: interviewId, action: 'scorecard', lang: interviewLang } });
+      if (!error && data?.scorecard) setEvaluation(old => old ? { ...old, ...data.scorecard, scorecard_retry: !data.scorecard.complete } : old);
+    } finally { setScorecardBusy(false); }
+  };
   const handleEndInterview = async () => {
     shouldAutoResumeRef.current = false;
     setPhase('evaluating');
@@ -772,7 +786,7 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
         fetch(CHAT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-          body: JSON.stringify({ interview_id: interviewId, messages, action: 'evaluate', voice_gender: voiceGender, tone: interviewerTone }),
+          body: JSON.stringify({ interview_id: interviewId, messages, action: 'evaluate', lang: interviewLang, voice_gender: voiceGender, tone: interviewerTone }),
         }),
         analyzeBodyLanguage(),
       ]);
@@ -870,6 +884,9 @@ export default function AIInterviewFlow({ interviewId, onComplete, onCancel, tex
           </CardContent>
         </Card>
 
+        <Suspense fallback={<p className="text-sm text-muted-foreground">{t('interview.scorecard.loading')}</p>}>
+          <InterviewScorecard questions={evaluation.questions ?? []} competencies={evaluation.competencies ?? null} answers={messages.filter(m => m.role === 'user').map(m => m.content)} retry={evaluation.scorecard_retry ?? false} busy={scorecardBusy} onRetry={retryScorecard} />
+        </Suspense>
         {/* Body Language Analysis Section */}
         {bodyLanguage && (
           <Card className="rounded-2xl border-border/50">
