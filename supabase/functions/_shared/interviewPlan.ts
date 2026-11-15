@@ -289,6 +289,7 @@ export function freshQuestions<T extends { question: string }>(candidates: reado
   return out;
 }
 
+// Adaptive coverage maps these stable plan kinds; candidate text never supplies a kind.
 const KINDS: QuestionKind[] = ["scenario", "troubleshooting", "design", "technical"];
 
 /**
