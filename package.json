@@ -95,6 +95,8 @@
   "devDependencies": {
     "@axe-core/react": "^4.11.2",
     "@eslint/js": "^9.32.0",
+    "@lovable.dev/vite-plugin-dev-server-bridge": "^1.0.2",
+    "@lovable.dev/vite-plugin-hmr-gate": "^1.8.3",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/react-query-devtools": "^5.100.1",
