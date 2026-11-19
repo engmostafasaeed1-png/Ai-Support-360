@@ -106,6 +106,7 @@ export const BLOCKED_REASONS = {
   reason_required: r('form', 'Give a reason first (at least {{min}} characters).', 'اذكر سببًا أولًا ({{min}} أحرف على الأقل).'),
   choose_option_first: r('form', 'Choose an option first.', 'اختر خيارًا أولًا.'),
   select_items_first: r('form', 'Select at least one item first.', 'حدّد عنصرًا واحدًا على الأقل أولًا.'),
+  enter_company_name: r('form', 'Enter your company name first.', 'أدخل اسم شركتك أولاً.'),
   choose_date_first: r('form', 'Choose a date first.', 'اختر تاريخًا أولًا.'),
   choose_time_first: r('form', 'Choose a date and time first.', 'اختر التاريخ والوقت أولًا.'),
   date_in_past: r('form', 'This time is in the past. Choose a later time.', 'هذا الوقت في الماضي. اختر وقتًا لاحقًا.'),

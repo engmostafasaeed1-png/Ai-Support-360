@@ -15,6 +15,7 @@ import { useGuestMode } from '@/contexts/GuestModeContext';
 import { useTenant } from '@/contexts/TenantContext';
 import { fireConfetti } from '@/lib/confetti';
 import { companyContextFields } from '@/lib/companyContext';
+import { parseMissingRequired, CLIENT_REQUIRED_LABEL_KEYS } from '@/lib/clientRequired';
 
 export interface ClientOnboardingData {
   companyName: string;
@@ -91,6 +92,10 @@ export default function ClientOnboarding() {
     prefill();
   }, [isGuest]);
 
+  useEffect(() => {
+    if (tenant?.name) setData(prev => (prev.companyName ? prev : { ...prev, companyName: tenant.name }));
+  }, [tenant?.name]);
+
   // Steps: Preferences → SAP Modules → Review (company info already captured during setup)
   const steps = [
     { key: 'preferences', label: t('client_onboarding.step_preferences') },
@@ -109,35 +114,22 @@ export default function ClientOnboarding() {
       setTimeout(() => navigate('/client'), 1200);
       return;
     }
+    const missingKeys: string[] = [];
+    if (!(data.companyName || tenant?.name || '').trim()) missingKeys.push('company_name');
+    if (!data.sapModules.length) missingKeys.push('sap_modules');
+    if (missingKeys.length) {
+      toast.error(t('client_onboarding.missing_required', { fields: missingKeys.map(k => t(CLIENT_REQUIRED_LABEL_KEYS[k])).join(', ') }));
+      setCurrentStep(missingKeys.includes('company_name') ? 0 : 1);
+      return;
+    }
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error(t('onboarding.error_auth')); return; }
 
-      // Update or create profile
-      const profilePayload = {
-        user_id: user.id,
-        display_name: data.companyName || tenant?.name,
-        phone: data.phone,
-        preferred_language: data.preferredLanguage,
-        onboarding_completed: true,
-      };
-      
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (existingProfile) {
-        await supabase.from('profiles').update(profilePayload).eq('user_id', user.id);
-      } else {
-        await supabase.from('profiles').insert(profilePayload);
-      }
-
       const { error } = await supabase.from('client_profiles').upsert({
         user_id: user.id,
-        company_name: data.companyName || tenant?.name,
+        company_name: (data.companyName || tenant?.name || '').trim(),
         company_size: data.companySize,
         industry: data.industry,
         ...companyContextFields(data.customerSegment, data.country),
@@ -151,18 +143,46 @@ export default function ClientOnboarding() {
       }, { onConflict: 'user_id' });
 
       if (error) throw error;
+
+      // Update or create profile only after the required client profile succeeds.
+      const profilePayload = {
+        user_id: user.id,
+        display_name: data.companyName || tenant?.name,
+        phone: data.phone,
+        preferred_language: data.preferredLanguage,
+        onboarding_completed: true,
+      };
+
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingProfile) {
+        await supabase.from('profiles').update(profilePayload).eq('user_id', user.id);
+      } else {
+        await supabase.from('profiles').insert(profilePayload);
+      }
+
       fireConfetti();
       toast.success(t('client_onboarding.success'));
       setTimeout(() => navigate('/client'), 1200);
     } catch (err) {
       console.error(err);
-      toast.error(t('onboarding.error_generic'));
+      const missing = parseMissingRequired((err as { message?: string })?.message);
+      if (missing) {
+        toast.error(t('client_onboarding.missing_required', { fields: missing.map(k => (CLIENT_REQUIRED_LABEL_KEYS[k] ? t(CLIENT_REQUIRED_LABEL_KEYS[k]) : k)).join(', ') }));
+      } else {
+        toast.error(t('onboarding.error_generic'));
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
   const canNext = () => {
+    if (currentStep === 0) return data.companyName.trim().length > 0;
     if (currentStep === 1) return data.sapModules.length > 0;
     return true;
   };
@@ -187,9 +207,8 @@ export default function ClientOnboarding() {
               const { data: { user } } = await supabase.auth.getUser();
               if (user) {
                 await supabase.from('profiles').update({ onboarding_completed: true }).eq('user_id', user.id);
-                await supabase.from('client_profiles').update({ onboarding_completed: true }).eq('user_id', user.id);
               }
-            } catch {}
+            } catch { toast.error(t('onboarding.error_generic')); }
             navigate('/client');
           }}
         >
@@ -237,7 +256,7 @@ export default function ClientOnboarding() {
           {t('onboarding.back')}
         </Button>
         {currentStep < steps.length - 1 ? (
-          <Button onClick={() => setCurrentStep(s => s + 1)} reason={!canNext() && 'select_items_first'} className="gap-1.5">
+          <Button onClick={() => setCurrentStep(s => s + 1)} reason={!canNext() && (currentStep === 0 ? 'enter_company_name' : 'select_items_first')} className="gap-1.5">
             {t('onboarding.next')}
             <ChevronRight className="w-4 h-4 rtl:rotate-180" />
           </Button>

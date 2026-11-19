@@ -24,6 +24,11 @@ export default function PreferencesStep({ data, onChange }: Props) {
   return (
     <div className="space-y-5">
       <div className="space-y-1.5">
+        <Label htmlFor="company_name">{t('client_onboarding.field_company_name')} *</Label>
+        <Input id="company_name" value={data.companyName} onChange={e => onChange({ companyName: e.target.value })} maxLength={120} autoComplete="organization" aria-required="true" />
+      </div>
+
+      <div className="space-y-1.5">
         <Label htmlFor="phone">{t('client_onboarding.phone')}</Label>
         <Input
           id="phone"
