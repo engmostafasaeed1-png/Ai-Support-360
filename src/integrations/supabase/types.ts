@@ -18038,6 +18038,10 @@ export type Database = {
       }
       ik_version_key: { Args: { _v: string }; Returns: string }
       interview_abandon_stale: { Args: never; Returns: number }
+      interview_coverage_save: {
+        Args: { _coverage: Json; _interview_id: string }
+        Returns: undefined
+      }
       interview_role: {
         Args: { _session_id: string; _user_id: string }
         Returns: string
